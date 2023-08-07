@@ -1,0 +1,43 @@
+<f:be.container>
+  <div class="typo3-fullDoc">
+    <div id="typo3-docheader">
+      <div class="typo3-docheader-functions">
+        <div class="left">
+          <f:be.menus.actionMenu>
+            <f:be.menus.actionMenuItem action="securityCheck" controller="" label="Security Info"/>
+            <f:be.menus.actionMenuItem action="plugins" controller="" label="Find Plugins"/>
+            <f:be.menus.actionMenuItem action="rootTemplates" controller="" label="Find root TS-templates"/>
+            <f:be.menus.actionMenuItem action="allTemplates" controller="" label="Find all TS-templates"/>
+            <f:be.menus.actionMenuItem action="configSizes" controller="" label="List biggest Config records"/>
+            <f:be.menus.actionMenuItem action="checkDomains" controller="" label="See robots.txt and sitemap.xml (pls wait a minute)"/>
+          </f:be.menus.actionMenu>
+        </div>
+        <div class="right">
+          <f:comment>
+            <f:be.pagePath/>
+          </f:comment>
+          <f:comment>
+            <f:be.pageInfo/>
+          </f:comment>
+        </div>
+      </div>
+      <div class="typo3-docheader-buttons">
+        <div class="left">
+
+        </div>
+        <div class="right">
+          <f:comment>
+            <f:be.buttons.shortcut/>
+          </f:comment>
+        </div>
+      </div>
+
+    </div>
+    <div id="typo3-docbody">
+      <div id="typo3-inner-docbody">
+        <f:flashMessages/>
+        <f:render section="content"/>
+      </div>
+    </div>
+  </div>
+</f:be.container>

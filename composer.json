@@ -1,0 +1,42 @@
+{
+  "name": "taketool/info",
+  "type": "typo3-cms-extension",
+  "description": "Provides a backend module for showing which templates included where. This supports Typo3 migration.",
+  "authors": [
+    {
+      "name": "Martin Keller",
+      "role": "Developer"
+    }
+  ],
+  "license": "GPL-2.0-or-later",
+  "require": {
+    "typo3/cms-core": "^10.4"
+  },
+  "require-dev": {
+    "typo3/testing-framework": "^6.8"
+  },
+  "autoload": {
+    "psr-4": {
+      "Taketool\\Info\\": "Classes"
+    }
+  },
+  "replace": {
+    "typo3-ter/info": "self.version"
+  },
+  "config": {
+    "vendor-dir": ".Build/vendor",
+    "bin-dir": ".Build/bin"
+  },
+  "scripts": {
+    "post-autoload-dump": [
+      "TYPO3\\TestingFramework\\Composer\\ExtensionTestEnvironment::prepare"
+    ]
+  },
+  "extra": {
+    "typo3/cms": {
+      "cms-package-dir": "{$vendor-dir}/typo3/cms",
+      "web-dir": ".Build/public",
+      "extension-key": "info"
+    }
+  }
+}

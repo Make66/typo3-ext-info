@@ -1,0 +1,102 @@
+<f:layout name="Default"/>
+<f:comment>
+  <f:debug>{pages4PluginType}</f:debug>
+</f:comment>
+<f:section name="content">
+
+  <h1>Plugin Info</h1>
+  <p>This tool finds all plugins that have a "list_type" configuration in tt_content.</p>
+
+  <f:if condition="{type}">
+    <f:then>
+      <h2>Plugin "{type}" found here:</h2>
+      <table class="table">
+        <tr>
+          <th>d|h uid</th>
+          <th>d|h pid</th>
+          <th>siteroot</th>
+          <th>rootline</th>
+        </tr>
+        <f:for each="{pages4PluginType}" as="plugin">
+          <tr>
+            <td>
+              <f:if condition="{plugin.cDeleted}">
+                <f:then>
+                  <core:icon identifier="apps-pagetree-drag-place-denied" size="small"/>
+                </f:then>
+                <f:else>
+                  <core:icon identifier="apps-pagetree-page-default" size="small"/>
+                </f:else>
+              </f:if>
+              <f:if condition="{plugin.cHidden}">
+                <f:then>
+                  <core:icon identifier="apps-pagetree-drag-place-denied" size="small"/>
+                </f:then>
+                <f:else>
+                  <core:icon identifier="apps-pagetree-page-default" size="small"/>
+                </f:else>
+              </f:if>
+              {plugin.uid}
+            </td>
+
+            <f:comment>{f:if condition({plugin.hidden then:'apps-pagetree-page-default', else:'apps-pagetree-drag-place-denied
+              ')}
+            </f:comment>
+
+            <td>
+              <f:if condition="{plugin.pDeleted}">
+                <f:then>
+                  <core:icon identifier="apps-pagetree-drag-place-denied" size="small"/>
+                </f:then>
+                <f:else>
+                  <core:icon identifier="apps-pagetree-page-default" size="small"/>
+                </f:else>
+              </f:if>
+              <f:if condition="{plugin.pHidden}">
+                <f:then>
+                  <core:icon identifier="apps-pagetree-drag-place-denied" size="small"/>
+                </f:then>
+                <f:else>
+                  <core:icon identifier="apps-pagetree-page-default" size="small"/>
+                </f:else>
+              </f:if>
+              {plugin.pid}
+            </td>
+
+            <td>{plugin.siteroot}</td>
+            <td>
+              <f:be.link parameters="{id: plugin.pid}" route="web_layout">/{plugin.rootline}</f:be.link>
+            </td>
+          </tr>
+        </f:for>
+
+        <f:for as="plugin" each="{pages4ContentType}">
+          <tr id="">
+            <td>{plugin.uid}</td>
+            <td>{plugin.pid}</td>
+            <td>{plugin.siteroot}</td>
+            <td>
+              <f:be.link parameters="{id: plugin.pid}" route="web_layout">{plugin.rootline}</f:be.link>
+            </td>
+          </tr>
+        </f:for>
+      </table>
+      <br>
+      <f:link.action action="plugins" class="btn btn-default">Back</f:link.action>
+    </f:then>
+
+    <f:else>
+      <h2>Select one PluginType to continue</h2>
+      <f:for each="{pluginTypes}" as="pT">
+        <f:link.action action="plugins" arguments="{type:pT.list_type}">{pT.list_type} ({pT.cnt})</f:link.action>
+        <br>
+      </f:for>
+      <h2>Select one ContentType to continue</h2>
+      <f:for each="{contentTypes}" as="cT">
+        <f:link.action action="plugins" arguments="{type:cT.CType}">{cT.CType} ({cT.cnt})</f:link.action>
+        <br>
+      </f:for>
+    </f:else>
+  </f:if>
+
+</f:section>

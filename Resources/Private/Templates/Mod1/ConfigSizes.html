@@ -1,0 +1,50 @@
+<f:layout name="Default"/>
+
+<f:section name="content">
+
+  <h1>Config Info sort by kursdata {sortBy}, biggest on top</h1>
+  <p>There are {configs->f:count()} configs</p>
+
+  <table class="table">
+    <tr>
+      <th>
+        <f:link.action action="configSizes" arguments="{sortBy:'uid'}">uid</f:link.action>
+      </th>
+      <th>
+        <f:link.action action="configSizes" arguments="{sortBy:'pid'}">pid</f:link.action>
+      </th>
+      <th>
+        <f:link.action action="configSizes" arguments="{sortBy:'mandant'}">mandant</f:link.action>
+      </th>
+      <th>
+        <f:link.action action="configSizes" arguments="{sortBy:'length'}">length</f:link.action>
+      </th>
+      <th>
+        <f:link.action action="configSizes" arguments="{sortBy:'cntCourses'}">cntCourses</f:link.action>
+      </th>
+      </th>
+      <th>
+        <f:link.action action="configSizes" arguments="{sortBy:'cntTermine'}">cntTermine</f:link.action>
+      </th>
+      </th>
+      <th>
+        <f:link.action action="configSizes" arguments="{sortBy:'termineAvgProKurs'}">termineAvgProKurs</f:link.action>
+      </th>
+      <th>
+        <f:link.action action="configSizes" arguments="{sortBy:'termineMaxProKurs'}">termineMaxProKurs</f:link.action>
+      </th>
+    </tr>
+    <f:for as="config" each="{configs}">
+      <tr id="{config.uid}">
+        <td>{config.uid}</td>
+        <td>{config.pid}</td>
+        <td>{config.mandant}</td>
+        <td>{config.length->f:format.bytes()}</td>
+        <td>{config.cntCourses}</td>
+        <td>{config.cntTermine}</td>
+        <td>{config.termineAvgProKurs}</td>
+        <td>{config.termineMaxProKurs}</td>
+      </tr>
+    </f:for>
+  </table>
+</f:section>

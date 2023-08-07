@@ -1,0 +1,14 @@
+{namespace tt=Taketool\Info\ViewHelpers}
+<f:layout name="Default"/>
+<f:section name="content">
+    <h1>View File</h1>
+    <p>See content of [{file}]</p>
+
+    <pre>{content}</pre>
+
+    <p style="margin-top: 3em;">
+        <f:link.action class="btn btn-default" action="securityCheck">zurück</f:link.action>
+        <f:link.action class="btn btn-default" action="deleteFile" arguments="{file:file}">delete (really!)</f:link.action>
+    </p>
+
+</f:section>

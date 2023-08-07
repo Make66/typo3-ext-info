@@ -1,0 +1,53 @@
+{
+  "modules": [],
+  "properties": {
+    "backendModules": [
+      {
+        "actions": {
+          "controllerActionCombinations": ""
+        },
+        "description": "shows which templates included where",
+        "key": "m1",
+        "mainModule": "system",
+        "name": "Template Info",
+        "tabLabel": ""
+      }
+    ],
+    "description": "Provides a backend module for showing which templates included where. This supports Typo3 migration.",
+    "emConf": {
+      "category": "module",
+      "custom_category": "",
+      "dependsOn": "typo3 => 9.5.0-10.4.99\n",
+      "disableLocalization": true,
+      "disableVersioning": true,
+      "generateDocumentationTemplate": true,
+      "generateEditorConfig": false,
+      "generateEmptyGitRepository": false,
+      "sourceLanguage": "en",
+      "state": "alpha",
+      "targetVersion": "10.4.0-10.4.99",
+      "version": "1.0.0"
+    },
+    "extensionKey": "info",
+    "name": "Template Info",
+    "originalExtensionKey": "",
+    "originalVendorName": "",
+    "persons": [
+      {
+        "company": "Taketool GmbH",
+        "email": "martin.keller@taketool.de",
+        "name": "Martin Keller",
+        "role": "Developer"
+      }
+    ],
+    "plugins": [],
+    "vendorName": "Taketool"
+  },
+  "wires": [],
+  "storagePath": "\/home\/thescottishgavel.com\/typo3conf\/ext\/",
+  "log": {
+    "last_modified": "2022-10-28 11:57",
+    "extension_builder_version": "10.0.4",
+    "be_user": " (1)"
+  }
+}

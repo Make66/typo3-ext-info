@@ -1,0 +1,28 @@
+<f:layout name="Default"/>
+
+<f:section name="content">
+
+  <h1>Template Info</h1>
+  <p>There are {templates->f:count()} <strong>root</strong> templates<br>
+    <f:link.action action="allTemplates" class="btn btn-default">show all templates</f:link.action>
+  </p>
+
+  <table class="table">
+    <tr>
+      <th>uid</th>
+      <th>pid</th>
+      <th>include_static_file</th>
+    </tr>
+    <f:for as="template" each="{templates}">
+      <tr id="{templates.uid}">
+        <td>{template.uid}</td>
+        <td>
+          <f:be.link parameters="{id: template.pid, action: 'InformationModule'}" route="web_ts">{template.pid}:{template.pagetitle}</f:be.link>
+        </td>
+        <td>
+          <f:format.raw>{template.include_static_file}</f:format.raw>
+        </td>
+      </tr>
+    </f:for>
+  </table>
+</f:section>

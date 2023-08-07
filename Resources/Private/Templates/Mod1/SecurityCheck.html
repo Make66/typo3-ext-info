@@ -1,0 +1,66 @@
+{namespace tt=Taketool\Info\ViewHelpers}
+<f:layout name="Default"/>
+<f:section name="content">
+  <h1>Security Check</h1>
+  <p>Items in red need your attention!</p>
+
+  <ul>
+    <f:if condition="{fileDenyPattern} != {fileDenyPattern_shouldBe}">
+      <li style="color: red">
+        $TYPO3_CONF_VARS['BE']['fileDenyPattern']: {fileDenyPattern}
+      </li>
+    </f:if>
+    <li>$TYPO3_CONF_VARS['BE']['fileExtensions']['webspace']['allow']:
+      <f:if condition="!{webspace_allow}">
+        <f:then>(empty)</f:then>
+        <f:else>{webspace_allow}</f:else>
+      </f:if>
+    </li>
+    <li>$TYPO3_CONF_VARS['BE']['fileExtensions']['webspace']['deny']:
+      <f:if condition="!{webspace_deny}">
+        <f:then>(empty)</f:then>
+        <f:else>{webspace_deny}</f:else>
+      </f:if>
+    </li>
+
+    <f:if condition="{unexpectedPhpOnPublicPath->f:count()}>0">
+      <li style="color: red">unexpected files on {publicPath}:
+        <pre><f:for each="{unexpectedPhpOnPublicPath}" as="file">
+                <f:render section="list1File" arguments="{file:file}"/>
+            </f:for></pre>
+      </li>
+    </f:if>
+
+    <f:if condition="{indexSize} != {indexSize_shouldBe}">
+      <li style="color: red">
+        {publicPath}/index.php altered: {indexSize} instead of {indexSize_shouldBe} bytes.
+      </li>
+    </f:if>
+
+    <f:if condition="{isPhpErrorsLogOnRoot}">
+      <li style="color: red">
+        There is a file that should not be there. php_errors.log &gt;
+        <f:link.action action="viewFile" arguments="{file:phpErrorsPath}">view content</f:link.action>
+      </li>
+    </f:if>
+
+    <f:if condition="{typo3tempPhps}->count()">
+      <li>
+        <span style="color:red;">The following illegal files have been found in /typo3temp/</span><br/>
+        <f:spaceless>
+          <pre><f:for as="file" each="{typo3tempPhps}"><f:render section="list1File" arguments="{file:file}"/></f:for></pre>
+        </f:spaceless>
+      </li>
+    </f:if>
+
+  </ul>
+</f:section>
+
+<f:section name="list1File">
+  {file.stat.mode} {file.stat.owner}:{file.stat.group}
+  <f:format.printf arguments="{1: file.stat.size}">%9s</f:format.printf>
+  {file.stat.ctime->f:format.date(format:'M d Y')}
+  <f:link.action action="viewFile" arguments="{file:file.file}">{file.file}</f:link.action>
+</f:section>
+
+<f:debug>{_all}</f:debug>

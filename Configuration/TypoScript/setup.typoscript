@@ -1,0 +1,15 @@
+# Module configuration
+module.tx_info_system_infom1 {
+    persistence {
+        storagePid = {$module.tx_info_m1.persistence.storagePid}
+    }
+
+    view {
+        templateRootPaths.0 = EXT:info/Resources/Private/Templates/Mod1/
+        templateRootPaths.1 = {$module.tx_info_m1.view.templateRootPath}
+        partialRootPaths.0 = EXT:info/Resources/Private/Partials/Mod1/
+        partialRootPaths.1 = {$module.tx_info_m1.view.partialRootPath}
+        layoutRootPaths.0 = EXT:info/Resources/Private/Layouts/Mod1/
+        layoutRootPaths.1 = {$module.tx_info_m1.view.layoutRootPath}
+    }
+}
