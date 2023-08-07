@@ -28,7 +28,7 @@ use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 /***************************************************************
  *  Copyright notice
  *
- *  (c) 2017-2018 Jonathan Heilmann <mail@jonathan-heilmann.de>
+ *  (c) 2022-2023 Martin Keller <martin.keller@taketool.de>
  *  All rights reserved
  *
  *  This script is part of the TYPO3 project. The TYPO3 project is
@@ -51,18 +51,18 @@ use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 /**
  * Module for the 'tool' extension.
  *
- * @author      Jonathan Heilmann <mail@jonathan-heilmann.de>
+ * @author      Martin Keller <martin.keller@taketool.de>
  * @package     Taketool
  * @subpackage  Tool
  */
 class Mod1Controller extends ActionController
 {
-    //https://test.taketool.net/typo3/index.php?route=%2Fmodule%2Ftools%2FInfoM1&token=65325b052ca36756bac2be7f06bd806db2fefaf1&tx_Info_tools_Infom1%5Btype%5D=news_pi1&tx_Info_tools_Infom1%5Baction%5D=plugins&tx_Info_tools_Infom1%5Bcontroller%5D=Mod1
     /**
      * @var QueryBuilder
      */
     protected ConnectionPool $connectionPool;
     protected PageRepository $pageRepository;
+    protected SiteConfiguration $siteConfiguration;
     protected string $publicPath;
     protected string $configPath;
     protected array $packageStates;
@@ -298,7 +298,6 @@ class Mod1Controller extends ActionController
     /**
      * @param string $file
      * @return void
-     * @throws NoSuchArgumentException
      */
     public function viewFileAction(string $file = '') // v11: ResponseInterface and no param
     {
@@ -335,7 +334,7 @@ class Mod1Controller extends ActionController
      * @param string $key
      * @return Closure
      */
-    private static function build_sorter($key)
+    private static function build_sorter(string $key): Closure
     {
         return function ($a, $b) use ($key) {
             return strnatcmp($b[$key], $a[$key]);
@@ -427,7 +426,7 @@ class Mod1Controller extends ActionController
     /**
      * @return array
      */
-    private function getAllPluginTypes()
+    private function getAllPluginTypes(): array
     {
         // 1st query: get pluginTypes
         $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
@@ -468,7 +467,7 @@ class Mod1Controller extends ActionController
      * @param string $showAll
      * @return array
      */
-    private function getAllTemplates($showAll = ''): array
+    private function getAllTemplates(string $showAll = ''): array
     {
         $query = $this->connectionPool->getQueryBuilderForTable('sys_template');
         if ($showAll == '1') {
@@ -636,7 +635,7 @@ class Mod1Controller extends ActionController
      * @param string $key
      * @return array
      */
-    private static function sort($array, $key)
+    private static function sort(array $array, string $key): array
     {
         usort($array, self::build_sorter($key));
         return $array;
