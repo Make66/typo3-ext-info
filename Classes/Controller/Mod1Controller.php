@@ -63,6 +63,9 @@ class Mod1Controller extends ActionController
      */
     protected ConnectionPool $connectionPool;
     protected PageRepository $pageRepository;
+    protected string $publicPath;
+    protected string $configPath;
+    protected array $packageStates;
 
     /**
      * @param PageRepository $pageRepository
@@ -79,279 +82,16 @@ class Mod1Controller extends ActionController
     {
         $this->connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
         $this->siteConfiguration = GeneralUtility::makeInstance(SiteConfiguration::class);
-
-    }
-
-    public function securityCheckAction()
-    {
-        //const $xid =
-
-        // l10n contains directories len!=2
         $environment = GeneralUtility::makeInstance(Environment::class);
-        $publicPath = $environment->getPublicPath();
-        $localConfPath = $publicPath . '/typo3conf/LocalConfiguration.php';
+        $this->publicPath = $environment->getPublicPath();
+        $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
 
-        //$allDomains = $this->getAllDomains();
-
-        // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['allow']
-        // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['deny']
-        // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] original or altered?
-
-        // $publicPath/index.php should not be writable: is_writable(string $filename): bool
-
-        // php_errors.log on root
-        $isPhpErrorsLogOnRoot = @is_file($publicPath . '/php_errors.log.php');
-
-        // v9: index.php should be a symlink: is_link()
-
-        // v10: index.php.len should be 987bytes or is assumed altered
-        $indexSize = @filesize($publicPath . '/index.php');
-
-        // get all .php files on root
-        $directoryEntries = [];
-        $phpFiles = [];
-        $dir = dir($publicPath);
-        if ($dir !== false) {
-            while (false !== ($entry = $dir->read())) {
-                $directoryEntries[] = $entry;
-                if (substr($entry, -4) == '.php') {
-                    $phpFiles[] = $this->stat($publicPath . '/' . $entry);
-                }
-            }
-            $dir->close();
+        // get loaded extensions
+        //\nn\t3::debug($this->configPath );
+        $this->packageStates = @include $this->configPath . '/PackageStates.php' ?: [];
+        if (!isset($this->packageStates['version']) || $this->packageStates['version'] < 5) {
+            throw new PackageStatesUnavailableException('The PackageStates.php file is either corrupt or unavailable.', 1381507733);
         }
-        $notIndexPhpFiles = $phpFiles;
-        $indexKey = array_search('index.php', array_column($phpFiles, 'entry'));
-        array_splice($notIndexPhpFiles, $indexKey);
-
-        //\nn\t3::debug($directoryEntries);
-        //\nn\t3::debug($notIndexPhpFiles);
-        //die();
-
-        // composer: typo3temp should not contain any .php: find ./|grep .php
-        // redirect stderr to stdout using 2>&1 to see error messages as well
-        $typo3tempPhps = [];
-        $cmd = 'find "' . $publicPath . '/typo3temp/" -type "f" -name "*.php" 2>&1';
-        exec($cmd, $output, $status);
-        foreach ($output as $file) {
-            $typo3tempPhps[] = $this->stat($file);
-        }
-        //\nn\t3::debug($typo3tempPhps);
-
-        $this->view->assignMultiple([
-            'fileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'],
-            'fileDenyPattern_shouldBe' => '\.(php[3-8]?|phpsh|phtml|pht|phar|shtml|cgi)(\..*)?$|\.pl$|^\.htaccess$',
-            'webspace_allow' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['allow'],
-            'webspace_deny' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['deny'],
-            'publicPath' => $publicPath,
-            'unexpectedPhpOnPublicPath' => $notIndexPhpFiles,
-            'indexSize' => $indexSize,
-            'indexSize_shouldBe' => 987,
-            'isPhpErrorsLogOnRoot' => $isPhpErrorsLogOnRoot,
-            'phpErrorsPath' => $publicPath . '/php_errors.log',
-            'typo3tempPhps' => $typo3tempPhps,
-
-        ]);
-
-        // php files where no php files should be: uploads
-
-    }
-
-    /**
-     * from all domains gets all robots.txt and sitemap.xml via https:// (might take long!)
-     *
-     * @return void
-     */
-    public function checkDomainsAction()
-    {
-        $allDomains = $this->getAllDomainsAndExtra();
-        //echo '<pre>'; echo serialize($allDomains);echo '</pre>'; die();
-        $this->view->assign('allDomains', $allDomains);
-    }
-
-    /**
-     * @param string $file
-     * @return void
-     * @throws NoSuchArgumentException
-     */
-    public function viewFileAction(string $file = '') // v11: ResponseInterface and no param
-    {
-        //\nn\t3::debug($file);
-
-        /* v11
-        if ($this->request->hasArgument('file')) {
-            $file = $this->request->getArgument('file');
-            //\nn\t3::debug($file);die();
-        */
-        $content = 'Content could not be loaded';
-        if ($file != '') {
-            $content = @file_get_contents($file);
-        }
-
-        $this->view->assign('file', $file);
-        $this->view->assign('content', $content);
-
-        // v11: return $this->htmlResponse();
-    }
-
-    public function deleteFileAction(string $file = '') // v11: ResponseInterface and no param
-    {
-        //\nn\t3::debug($file);
-
-
-        $content = 'File could not be deleted';
-        if ($file != '') {
-            $content = (@unlink($file))
-                ? 'File successfully deleted'
-                : 'File could not be deleted';
-        }
-        clearstatcache();
-
-        $this->view->assign('file', $file);
-        $this->view->assign('content', $content);
-
-        // v11: return $this->htmlResponse();
-    }
-
-    /* v11
-        protected function htmlResponse(string $html = null): ResponseInterface
-        {
-            return $this->responseFactory->createResponse()
-                ->withHeader('Content-Type', 'text/html; charset=utf-8')
-                ->withBody($this->streamFactory->createStream((string)($html ?? $this->view->render())));
-        }
-    */
-    /**
-     * @param string $fullpath
-     * @return array
-     */
-    private function stat(string $fullpath): array
-    {
-        clearstatcache();
-        $stat = @stat($fullpath);
-
-        if (!$stat) {
-            return [
-                'file' => '[cannot stat file]',
-                'stat' => [
-                    'uid' => '',
-                    'gid' => '',
-                    'mode' => '',
-                    'size' => '',
-                    'ctime' => '',
-                    'mtime' => '',
-                ],
-            ];
-        } else {
-            $posixUserInfo = @posix_getpwuid($stat['uid']);
-            $posixGroupInfo = @posix_getgrgid($stat['gid']);
-            //\nn\t3::debug($posixUserInfo);
-            //\nn\t3::debug($posixGroupInfo);
-            return [
-                'file' => $fullpath,
-                'stat' => [
-                    'owner' => $posixUserInfo['name'],
-                    'group' => $posixGroupInfo['name'],
-                    'mode' => substr(decoct($stat['mode']), -3, 3),
-                    'size' => $stat['size'],
-                    'ctime' => $stat['ctime'],
-                    'mtime' => $stat['mtime'],
-                ],
-            ];
-        }
-    }
-
-    /**
-     * returns array of rootPid => https://xxx/
-     *
-     * @return array
-     */
-    private function getAllDomains(): array
-    {
-        $domains = $this->siteConfiguration->getAllExistingSites($useCache = true);
-        //\nn\t3::debug($domains);
-        $domainUrls = [];
-        foreach ($domains as $domain) {
-            $robotsTxt = @file_get_contents($domain->getConfiguration()['base'] . '/robots.txt');
-            $sitemapXml = @file_get_contents($domain->getConfiguration()['base'] . '/sitemap.xml');
-            $domainUrls[$domain->getRootPageId()] = $domain->getConfiguration()['base'];
-        }
-        return $domainUrls;
-    }
-
-    /**
-     * returns array of rootPid => https://xxx/, isRobotTxt, robotTxt, isSitemapXml, sitemapXml
-     * Attention: takes a while in big installations with many domains!
-     *
-     * @return array
-     */
-    private function getAllDomainsAndExtra(): array
-    {
-        $domains = $this->siteConfiguration->getAllExistingSites($useCache = true);
-        $domainUrls = [];
-        foreach ($domains as $domain) {
-            $robotsTxt = @file_get_contents($domain->getConfiguration()['base'] . 'robots.txt');
-            $sitemapXml = @file_get_contents($domain->getConfiguration()['base'] . 'sitemap.xml');
-            $domainUrls[$domain->getRootPageId()] = [
-                'site' => $domain->getIdentifier(),
-                'baseUrl' => $domain->getConfiguration()['base'],
-                'isRobotsTxt' => $robotsTxt !== false,
-                'robotsTxt' => ($robotsTxt !== false) ? $robotsTxt : '',
-                'isSitemapXml' => $sitemapXml !== false,
-                'sitemapXml' => ($sitemapXml !== false) ? $sitemapXml : '',
-            ];
-        }
-        //\nn\t3::debug($domainUrls);
-        return $domainUrls;
-    }
-
-    /**
-     * @return void
-     */
-    public function pluginsAction()
-    {
-        /*
-        // Check permission to read config tables
-        if (!$GLOBALS['BE_USER']->check('tables_select', 'tx_tool_domain_model_config')) {
-            $this->addFlashMessage('Berechtigung für diese Seite fehlt.', '', AbstractMessage::ERROR);
-            return;
-        }
-        */
-        $arguments = $this->request->getArguments();
-        $type = (isset($arguments['type'])) ? $arguments['type'] : '';
-        //DebuggerUtility::var_dump(['$arguments'=>$arguments,'$type'=>$type], __class__.'->'.__function__.'()');
-
-        if ($type == '') {
-            $this->view->assign('type', '');
-            $this->view->assign('pluginTypes', $this->getAllPluginTypes());
-            $this->view->assign('contentTypes', $this->getAllContentTypes());
-        } else {
-            $this->view->assign('type', $type);
-            $this->view->assign('pages4PluginType', $this->getPages4PluginType($type));
-            $this->view->assign('pages4ContentType', $this->getPages4ContentType($type));
-        }
-    }
-
-    public function rootTemplatesAction()
-    {
-        /*
-        // Check permission to read config tables
-        if (!$GLOBALS['BE_USER']->check('tables_select', 'tx_tool_domain_model_config')) {
-            $this->addFlashMessage('Berechtigung für diese Seite fehlt.', '', AbstractMessage::ERROR);
-            return;
-        }
-        */
-        $arguments = $this->request->getArguments();
-        $showAll = (isset($arguments['showAll'])) ? $arguments['showAll'] : '';
-        //DebuggerUtility::var_dump(['$arguments'=>$arguments,'showAll'=>$showAll], __class__.'->'.__function__.'()');
-
-        $templates = $this->getAllTemplates();
-        foreach ($templates as $key => $t) {
-            $templates[$key]['pagetitle'] = $this->pageRepository->getPage($t['pid'], $disableGroupAccessCheck = true)['title'];
-            $templates[$key]['include_static_file'] = implode('<br>', explode(',', $t['include_static_file']));
-        }
-
-        $this->view->assign('templates', $templates);
     }
 
     public function allTemplatesAction()
@@ -403,17 +143,195 @@ class Mod1Controller extends ActionController
     }
 
     /**
-     * @param array $array
-     * @param string $key
-     * @return array
+     * from all domains gets all robots.txt and sitemap.xml via https:// (might take long!)
+     *
+     * @return void
      */
-    private static function sort($array, $key)
+    public function checkDomainsAction()
     {
-        usort($array, self::build_sorter($key));
-        return $array;
+        $allDomains = $this->getAllDomainsAndExtra();
+        //echo '<pre>'; echo serialize($allDomains);echo '</pre>'; die();
+        $this->view->assign('allDomains', $allDomains);
+    }
+
+    public function deleteFileAction(string $file = '') // v11: ResponseInterface and no param
+    {
+        //\nn\t3::debug($file);
+
+
+        $content = 'File could not be deleted';
+        if ($file != '') {
+            $content = (@unlink($file))
+                ? 'File successfully deleted'
+                : 'File could not be deleted';
+        }
+        clearstatcache();
+
+        $this->view->assign('file', $file);
+        $this->view->assign('content', $content);
+
+        // v11: return $this->htmlResponse();
     }
 
     /**
+     * @return void
+     */
+    public function pluginsAction()
+    {
+        /*
+        // Check permission to read config tables
+        if (!$GLOBALS['BE_USER']->check('tables_select', 'tx_tool_domain_model_config')) {
+            $this->addFlashMessage('Berechtigung für diese Seite fehlt.', '', AbstractMessage::ERROR);
+            return;
+        }
+        */
+        $arguments = $this->request->getArguments();
+        $type = (isset($arguments['type'])) ? $arguments['type'] : '';
+        //DebuggerUtility::var_dump(['$arguments'=>$arguments,'$type'=>$type], __class__.'->'.__function__.'()');
+
+        if ($type == '') {
+            $this->view->assign('type', '');
+            $this->view->assign('pluginTypes', $this->getAllPluginTypes());
+            $this->view->assign('contentTypes', $this->getAllContentTypes());
+        } else {
+            $this->view->assign('type', $type);
+            $this->view->assign('pages4PluginType', $this->getPages4PluginType($type));
+            $this->view->assign('pages4ContentType', $this->getPages4ContentType($type));
+        }
+    }
+
+    public function rootTemplatesAction()
+    {
+        /*
+        // Check permission to read config tables
+        if (!$GLOBALS['BE_USER']->check('tables_select', 'tx_tool_domain_model_config')) {
+            $this->addFlashMessage('Berechtigung für diese Seite fehlt.', '', AbstractMessage::ERROR);
+            return;
+        }
+        */
+        $arguments = $this->request->getArguments();
+        $showAll = (isset($arguments['showAll'])) ? $arguments['showAll'] : '';
+        //DebuggerUtility::var_dump(['$arguments'=>$arguments,'showAll'=>$showAll], __class__.'->'.__function__.'()');
+
+        $templates = $this->getAllTemplates();
+        foreach ($templates as $key => $t) {
+            $templates[$key]['pagetitle'] = $this->pageRepository->getPage($t['pid'], $disableGroupAccessCheck = true)['title'];
+            $templates[$key]['include_static_file'] = implode('<br>', explode(',', $t['include_static_file']));
+        }
+
+        $this->view->assign('templates', $templates);
+    }
+
+    public function securityCheckAction()
+    {
+        //const $xid =
+
+        // l10n contains directories len!=2
+        $localConfPath = $this->configPath . '/LocalConfiguration.php';
+
+        //$allDomains = $this->getAllDomains();
+
+        // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['allow']
+        // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['deny']
+        // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] original or altered?
+
+        // $this->publicPath/index.php should not be writable: is_writable(string $filename): bool
+
+        // php_errors.log on root
+        $isPhpErrorsLogOnRoot = @is_file($this->publicPath . '/php_errors.log.php');
+
+        // v9: index.php should be a symlink: is_link()
+
+        // v10: index.php.len should be 987bytes or is assumed altered
+        $indexSize = @filesize($this->publicPath . '/index.php');
+
+        // get all .php files on root
+        $directoryEntries = [];
+        $phpFiles = [];
+        $dir = dir($this->publicPath);
+        if ($dir !== false) {
+            while (false !== ($entry = $dir->read())) {
+                $directoryEntries[] = $entry;
+                if (substr($entry, -4) == '.php') {
+                    $phpFiles[] = $this->stat($this->publicPath . '/' . $entry);
+                }
+            }
+            $dir->close();
+        }
+        $notIndexPhpFiles = $phpFiles;
+        $indexKey = array_search('index.php', array_column($phpFiles, 'entry'));
+        array_splice($notIndexPhpFiles, $indexKey);
+
+        //\nn\t3::debug($directoryEntries);
+        //\nn\t3::debug($notIndexPhpFiles);
+        //die();
+
+        // composer: typo3temp should not contain any .php: find ./|grep .php
+        // redirect stderr to stdout using 2>&1 to see error messages as well
+        $typo3tempPhps = [];
+        $cmd = 'find "' . $this->publicPath . '/typo3temp/" -type "f" -name "*.php" 2>&1';
+        exec($cmd, $output, $status);
+        foreach ($output as $file) {
+            $typo3tempPhps[] = $this->stat($file);
+        }
+        //\nn\t3::debug($typo3tempPhps);
+
+        $this->view->assignMultiple([
+            'fileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'],
+            'fileDenyPattern_shouldBe' => '\.(php[3-8]?|phpsh|phtml|pht|phar|shtml|cgi)(\..*)?$|\.pl$|^\.htaccess$',
+            'webspace_allow' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['allow'],
+            'webspace_deny' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['deny'],
+            'publicPath' => $this->publicPath,
+            'unexpectedPhpOnPublicPath' => $notIndexPhpFiles,
+            'indexSize' => $indexSize,
+            'indexSize_shouldBe' => 987,
+            'isPhpErrorsLogOnRoot' => $isPhpErrorsLogOnRoot,
+            'phpErrorsPath' => $this->publicPath . '/php_errors.log',
+            'typo3tempPhps' => $typo3tempPhps,
+
+        ]);
+
+        // php files where no php files should be: uploads
+
+    }
+
+    /**
+     * @param string $file
+     * @return void
+     * @throws NoSuchArgumentException
+     */
+    public function viewFileAction(string $file = '') // v11: ResponseInterface and no param
+    {
+        //\nn\t3::debug($file);
+
+        /* v11
+        if ($this->request->hasArgument('file')) {
+            $file = $this->request->getArgument('file');
+            //\nn\t3::debug($file);die();
+        */
+        $content = 'Content could not be loaded';
+        if ($file != '') {
+            $content = @file_get_contents($file);
+        }
+
+        $this->view->assign('file', $file);
+        $this->view->assign('content', $content);
+
+        // v11: return $this->htmlResponse();
+    }
+
+    /* v11
+        protected function htmlResponse(string $html = null): ResponseInterface
+        {
+            return $this->responseFactory->createResponse()
+                ->withHeader('Content-Type', 'text/html; charset=utf-8')
+                ->withBody($this->streamFactory->createStream((string)($html ?? $this->view->render())));
+        }
+    */
+
+
+    /**
+     * sort arry by certain key
      * @param string $key
      * @return Closure
      */
@@ -422,6 +340,223 @@ class Mod1Controller extends ActionController
         return function ($a, $b) use ($key) {
             return strnatcmp($b[$key], $a[$key]);
         };
+    }
+
+    /**
+     * @return array
+     */
+    private function getAllContentTypes(): array
+    {
+        // 1st query: get contentTypes
+        $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
+        $res = $query->select('*')
+            ->from('tt_content')
+            ->groupBy('CType')
+            ->execute();
+        $pT = $res->fetchAll();
+
+        // 2nd query: get count()
+        $res = $query->select('*')
+            ->from('tt_content')
+            ->groupBy('CType')
+            ->count('CType')
+            ->execute();
+
+        // join the two results into one array
+        $i = 0;
+        foreach ($res->fetchAll() as $cnt) {
+            $pT[$i]['cnt'] = $cnt['COUNT(`CType`)'];
+            $i++;
+        }
+        $contentTypes = [];
+        foreach ($pT as $key => $p) {
+            if ($p['CType'] == '') continue;
+            $contentTypes[] = [
+                'CType' => $p['CType'],
+                'cnt' => $p['cnt'],
+            ];
+        }
+        //debug(['$query' =>$query, '$res'=>$res, 'pT'=>$pT, '$contentTypes'=>$contentTypes], __line__.':'.__class__.'->'.__function__.'()');
+        return $contentTypes;
+    }
+
+    /**
+     * returns array of rootPid => https://xxx/
+     *
+     * @return array
+     */
+    private function getAllDomains(): array
+    {
+        $domains = $this->siteConfiguration->getAllExistingSites($useCache = true);
+        //\nn\t3::debug($domains);
+        $domainUrls = [];
+        foreach ($domains as $domain) {
+            $robotsTxt = @file_get_contents($domain->getConfiguration()['base'] . '/robots.txt');
+            $sitemapXml = @file_get_contents($domain->getConfiguration()['base'] . '/sitemap.xml');
+            $domainUrls[$domain->getRootPageId()] = $domain->getConfiguration()['base'];
+        }
+        return $domainUrls;
+    }
+
+    /**
+     * returns array of rootPid => https://xxx/, isRobotTxt, robotTxt, isSitemapXml, sitemapXml
+     * Attention: takes a while in big installations with many domains!
+     *
+     * @return array
+     */
+    private function getAllDomainsAndExtra(): array
+    {
+        $domains = $this->siteConfiguration->getAllExistingSites($useCache = true);
+        $domainUrls = [];
+        foreach ($domains as $domain) {
+            $robotsTxt = @file_get_contents($domain->getConfiguration()['base'] . 'robots.txt');
+            $sitemapXml = @file_get_contents($domain->getConfiguration()['base'] . 'sitemap.xml');
+            $domainUrls[$domain->getRootPageId()] = [
+                'site' => $domain->getIdentifier(),
+                'baseUrl' => $domain->getConfiguration()['base'],
+                'isRobotsTxt' => $robotsTxt !== false,
+                'robotsTxt' => ($robotsTxt !== false) ? $robotsTxt : '',
+                'isSitemapXml' => $sitemapXml !== false,
+                'sitemapXml' => ($sitemapXml !== false) ? $sitemapXml : '',
+            ];
+        }
+        //\nn\t3::debug($domainUrls);
+        return $domainUrls;
+    }
+
+    /**
+     * @return array
+     */
+    private function getAllPluginTypes()
+    {
+        // 1st query: get pluginTypes
+        $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
+        $res = $query->select('*')
+            ->from('tt_content')
+            ->groupBy('list_type')
+            ->execute();
+        $pT = $res->fetchAll();
+
+        // 2nd query: get count()
+        $res = $query->select('*')
+            ->from('tt_content')
+            ->groupBy('list_type')
+            ->count('list_type')
+            ->execute();
+        $i = 0;
+
+        // join the two results into one array
+        foreach ($res->fetchAll() as $cnt) {
+            $pT[$i]['cnt'] = $cnt['COUNT(`list_type`)'];
+            $i++;
+        }
+        $pluginTypes = [];
+        foreach ($pT as $key => $p) {
+            if ($p['list_type'] == '') continue;
+            $pluginTypes[] = [
+                'list_type' => $p['list_type'],
+                'cnt' => $p['cnt'],
+            ];
+        }
+
+        //DebuggerUtility::var_dump(['$type'=>$type, '$query' =>$query, '$res'=>$res, 'pT'=>$pT, '$pluginTypes'=>$pluginTypes], __class__.'->'.__function__.'()');
+        return $pluginTypes;
+    }
+
+    /**
+     *
+     * @param string $showAll
+     * @return array
+     */
+    private function getAllTemplates($showAll = ''): array
+    {
+        $query = $this->connectionPool->getQueryBuilderForTable('sys_template');
+        if ($showAll == '1') {
+            $res = $query->select('*')
+                ->from('sys_template')
+                ->execute();
+        } else {
+            $res = $query->select('*')
+                ->from('sys_template')
+                ->where($query->expr()->eq('root', 1))
+                ->execute();
+        }
+        $templates = $res->fetchAll();
+        foreach ($templates as $template) {
+            $siteRoot = '- no siteroot -';
+            try {
+                $rootLineArray = GeneralUtility::makeInstance(RootlineUtility::class, $template['pid'])->get();
+                $siteRoot = $rootLineArray[0]['title'];
+                unset($rootLineArray[0]);
+            } catch (PageNotFoundException $e) {
+                // Usually when a page was hidden or disconnected
+                // This could be improved by handing in a Context object and decide whether hidden pages
+                // Should be linkeable too
+                $rootLineArray = [];
+            }
+            $rLTemp = [];
+            foreach ($rootLineArray as $rL) {
+                $rLTemp[] = $rL['title'];
+            }
+
+            $rootLine = implode('/', array_reverse($rLTemp));
+            $pagesOfTemplates[] = [
+                'uid' => $template['uid'],
+                'pid' => $template['pid'],
+                'siteroot' => $siteRoot,
+                'rootline' => $rootLine,
+                'include_static_file' => $template['include_static_file']
+            ];
+        }
+        //DebuggerUtility::var_dump(['$query' =>$query, '$res'=>$res, '$templates'=>$templates,'$pagesOfTemplates'=>$pagesOfTemplates], 'getAllTemplates()');
+        return $pagesOfTemplates;
+    }
+
+    /**
+     * @param string
+     * @return array
+     */
+    private function getPages4ContentType($type): array
+    {
+        $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
+        $res = $query->select('*')
+            ->from('tt_content')
+            ->where($query->expr()->eq('CType', $query->createNamedParameter($type)))
+            ->execute();
+        $plugins = $res->fetchAll();
+
+        // we need uid and pid and page rootpath
+        $pagesOfContentType = [];
+        $rootLineArray = [];
+        foreach ($plugins as $plugin) {
+            try {
+                $rootLineArray = GeneralUtility::makeInstance(RootlineUtility::class, $plugin['pid'])->get();
+            } catch (PageNotFoundException $e) {
+                // Usually when a page was hidden or disconnected
+                // This could be improved by handing in a Context object and decide whether hidden pages
+                // Should be linkeable too
+                $rootLine = [];
+            }
+            $siteRoot = $rootLineArray[0]['title'];
+            unset($rootLineArray[0]);
+
+            $rLTemp = [];
+            foreach ($rootLineArray as $rL) {
+                $rLTemp[] = $rL['title'];
+            }
+
+            $rootLine = implode('/', array_reverse($rLTemp));
+            $pagesOfContentType[] = [
+                'uid' => $plugin['uid'],
+                'pid' => $plugin['pid'],
+                'hidden' => $plugin['hidden'],
+                'deleted' => $plugin['deleted'],
+                'siteroot' => $siteRoot,
+                'rootline' => $rootLine,
+            ];
+        }
+        //DebuggerUtility::var_dump(['$type'=>$type, '$pagesOfContentType'=>$pagesOfContentType], __class__.'->'.__function__.'()');
+        return $pagesOfContentType;
     }
 
     /**
@@ -497,174 +632,54 @@ class Mod1Controller extends ActionController
     }
 
     /**
-     * @param string
+     * @param array $array
+     * @param string $key
      * @return array
      */
-    private function getPages4ContentType($type): array
+    private static function sort($array, $key)
     {
-        $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
-        $res = $query->select('*')
-            ->from('tt_content')
-            ->where($query->expr()->eq('CType', $query->createNamedParameter($type)))
-            ->execute();
-        $plugins = $res->fetchAll();
-
-        // we need uid and pid and page rootpath
-        $pagesOfContentType = [];
-        $rootLineArray = [];
-        foreach ($plugins as $plugin) {
-            try {
-                $rootLineArray = GeneralUtility::makeInstance(RootlineUtility::class, $plugin['pid'])->get();
-            } catch (PageNotFoundException $e) {
-                // Usually when a page was hidden or disconnected
-                // This could be improved by handing in a Context object and decide whether hidden pages
-                // Should be linkeable too
-                $rootLine = [];
-            }
-            $siteRoot = $rootLineArray[0]['title'];
-            unset($rootLineArray[0]);
-
-            $rLTemp = [];
-            foreach ($rootLineArray as $rL) {
-                $rLTemp[] = $rL['title'];
-            }
-
-            $rootLine = implode('/', array_reverse($rLTemp));
-            $pagesOfContentType[] = [
-                'uid' => $plugin['uid'],
-                'pid' => $plugin['pid'],
-                'hidden' => $plugin['hidden'],
-                'deleted' => $plugin['deleted'],
-                'siteroot' => $siteRoot,
-                'rootline' => $rootLine,
-            ];
-        }
-        //DebuggerUtility::var_dump(['$type'=>$type, '$pagesOfContentType'=>$pagesOfContentType], __class__.'->'.__function__.'()');
-        return $pagesOfContentType;
+        usort($array, self::build_sorter($key));
+        return $array;
     }
 
     /**
+     * @param string $fullpath
      * @return array
      */
-    private function getAllPluginTypes()
+    private function stat(string $fullpath): array
     {
-        // 1st query: get pluginTypes
-        $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
-        $res = $query->select('*')
-            ->from('tt_content')
-            ->groupBy('list_type')
-            ->execute();
-        $pT = $res->fetchAll();
+        clearstatcache();
+        $stat = @stat($fullpath);
 
-        // 2nd query: get count()
-        $res = $query->select('*')
-            ->from('tt_content')
-            ->groupBy('list_type')
-            ->count('list_type')
-            ->execute();
-        $i = 0;
-
-        // join the two results into one array
-        foreach ($res->fetchAll() as $cnt) {
-            $pT[$i]['cnt'] = $cnt['COUNT(`list_type`)'];
-            $i++;
-        }
-        $pluginTypes = [];
-        foreach ($pT as $key => $p) {
-            if ($p['list_type'] == '') continue;
-            $pluginTypes[] = [
-                'list_type' => $p['list_type'],
-                'cnt' => $p['cnt'],
+        if (!$stat) {
+            return [
+                'file' => '[cannot stat file]',
+                'stat' => [
+                    'uid' => '',
+                    'gid' => '',
+                    'mode' => '',
+                    'size' => '',
+                    'ctime' => '',
+                    'mtime' => '',
+                ],
             ];
-        }
-        //DebuggerUtility::var_dump(['$type'=>$type, '$query' =>$query, '$res'=>$res, 'pT'=>$pT, '$pluginTypes'=>$pluginTypes], __class__.'->'.__function__.'()');
-        return $pluginTypes;
-    }
-
-    /**
-     * @return array
-     */
-    private function getAllContentTypes(): array
-    {
-        // 1st query: get contentTypes
-        $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
-        $res = $query->select('*')
-            ->from('tt_content')
-            ->groupBy('CType')
-            ->execute();
-        $pT = $res->fetchAll();
-
-        // 2nd query: get count()
-        $res = $query->select('*')
-            ->from('tt_content')
-            ->groupBy('CType')
-            ->count('CType')
-            ->execute();
-
-        // join the two results into one array
-        $i = 0;
-        foreach ($res->fetchAll() as $cnt) {
-            $pT[$i]['cnt'] = $cnt['COUNT(`CType`)'];
-            $i++;
-        }
-        $contentTypes = [];
-        foreach ($pT as $key => $p) {
-            if ($p['CType'] == '') continue;
-            $contentTypes[] = [
-                'CType' => $p['CType'],
-                'cnt' => $p['cnt'],
-            ];
-        }
-        //debug(['$query' =>$query, '$res'=>$res, 'pT'=>$pT, '$contentTypes'=>$contentTypes], __line__.':'.__class__.'->'.__function__.'()');
-        return $contentTypes;
-    }
-
-    /**
-     *
-     * @param string $showAll
-     * @return array
-     */
-    private function getAllTemplates($showAll = ''): array
-    {
-        $query = $this->connectionPool->getQueryBuilderForTable('sys_template');
-        if ($showAll == '1') {
-            $res = $query->select('*')
-                ->from('sys_template')
-                ->execute();
         } else {
-            $res = $query->select('*')
-                ->from('sys_template')
-                ->where($query->expr()->eq('root', 1))
-                ->execute();
-        }
-        $templates = $res->fetchAll();
-        foreach ($templates as $template) {
-            $siteRoot = '- no siteroot -';
-            try {
-                $rootLineArray = GeneralUtility::makeInstance(RootlineUtility::class, $template['pid'])->get();
-                $siteRoot = $rootLineArray[0]['title'];
-                unset($rootLineArray[0]);
-            } catch (PageNotFoundException $e) {
-                // Usually when a page was hidden or disconnected
-                // This could be improved by handing in a Context object and decide whether hidden pages
-                // Should be linkeable too
-                $rootLineArray = [];
-            }
-            $rLTemp = [];
-            foreach ($rootLineArray as $rL) {
-                $rLTemp[] = $rL['title'];
-            }
-
-            $rootLine = implode('/', array_reverse($rLTemp));
-            $pagesOfTemplates[] = [
-                'uid' => $template['uid'],
-                'pid' => $template['pid'],
-                'siteroot' => $siteRoot,
-                'rootline' => $rootLine,
-                'include_static_file' => $template['include_static_file']
+            $posixUserInfo = @posix_getpwuid($stat['uid']);
+            $posixGroupInfo = @posix_getgrgid($stat['gid']);
+            //\nn\t3::debug($posixUserInfo);
+            //\nn\t3::debug($posixGroupInfo);
+            return [
+                'file' => $fullpath,
+                'stat' => [
+                    'owner' => $posixUserInfo['name'],
+                    'group' => $posixGroupInfo['name'],
+                    'mode' => substr(decoct($stat['mode']), -3, 3),
+                    'size' => $stat['size'],
+                    'ctime' => $stat['ctime'],
+                    'mtime' => $stat['mtime'],
+                ],
             ];
         }
-        //DebuggerUtility::var_dump(['$query' =>$query, '$res'=>$res, '$templates'=>$templates,'$pagesOfTemplates'=>$pagesOfTemplates], 'getAllTemplates()');
-        return $pagesOfTemplates;
     }
+
 }

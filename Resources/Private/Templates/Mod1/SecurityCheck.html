@@ -44,7 +44,7 @@
       </li>
     </f:if>
 
-    <f:if condition="{typo3tempPhps}->count() >0">
+    <f:if condition="{typo3tempPhps->f:count()} >0">
       <li>
         <span style="color:red;">The following illegal files have been found in /typo3temp/</span><br/>
         <f:spaceless>
@@ -57,10 +57,12 @@
 </f:section>
 
 <f:section name="list1File">
-  {file.stat.mode} {file.stat.owner}:{file.stat.group}
-  <f:format.printf arguments="{1: file.stat.size}">%9s</f:format.printf>
-  {file.stat.ctime->f:format.date(format:'M d Y')}
-  <f:link.action action="viewFile" arguments="{file:file.file}">{file.file}</f:link.action>
+  <f:spaceless>
+    {file.stat.mode} {file.stat.owner}:{file.stat.group}
+    <f:format.printf arguments="{1: file.stat.size}">%9s</f:format.printf>
+    {file.stat.ctime->f:format.date(format:'M d Y')}
+    <f:link.action action="viewFile" arguments="{file:file.file}">{file.file}</f:link.action>
+  </f:spaceless>
 </f:section>
 
 <f:debug>{_all}</f:debug>
