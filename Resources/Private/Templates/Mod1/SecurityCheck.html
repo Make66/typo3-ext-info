@@ -5,60 +5,104 @@
   <p>Items in red need your attention!</p>
 
   <ul>
-    <f:if condition="{fileDenyPattern} != {fileDenyPattern_shouldBe}">
-      <li style="color: red">
-        $TYPO3_CONF_VARS['BE']['fileDenyPattern']: {fileDenyPattern}
-      </li>
-    </f:if>
-    <li>$TYPO3_CONF_VARS['BE']['fileExtensions']['webspace']['allow']:
+    <li><h5>fileDenyPattern altered</h5>
+      <f:if condition="{isFileDenyPattern}">
+        <f:then>
+          <span style="color:red">$TYPO3_CONF_VARS['BE']['fileDenyPattern']: {fileDenyPattern}</span>
+        </f:then>
+        <f:else>
+          - Ok<br/>
+        </f:else>
+      </f:if>
+    </li>
+
+    <li><h5>$TYPO3_CONF_VARS['BE']['fileExtensions']['webspace']['allow']</h5>
       <f:if condition="!{webspace_allow}">
         <f:then>(empty)</f:then>
         <f:else>{webspace_allow}</f:else>
       </f:if>
     </li>
-    <li>$TYPO3_CONF_VARS['BE']['fileExtensions']['webspace']['deny']:
+
+    <li><h5>$TYPO3_CONF_VARS['BE']['fileExtensions']['webspace']['deny']</h5>
       <f:if condition="!{webspace_deny}">
         <f:then>(empty)</f:then>
         <f:else>{webspace_deny}</f:else>
       </f:if>
     </li>
 
-    <f:if condition="{unexpectedPhpOnPublicPath->f:count()}>0">
-      <li style="color: red">unexpected files on {publicPath}:
-        <pre><f:for each="{unexpectedPhpOnPublicPath}" as="file">
+    <li><h5>/index.php altered</h5>
+      <f:if condition="{indexSize} != {indexSize_shouldBe}">
+        <f:then>
+          {publicPath}/index.php altered: {indexSize} instead of {indexSize_shouldBe} bytes.
+        </f:then>
+        <f:else>
+          - Ok<br/>
+        </f:else>
+      </f:if>
+    </li>
+
+    <li><h5>unexpected php files on webroot {publicPath}</h5>
+      <f:if condition="{isIndexPhps}">
+        <f:then>
+        <pre><f:for each="{indexPhps}" as="file">
                 <f:render section="list1File" arguments="{file:file}"/>
-            </f:for></pre>
-      </li>
-    </f:if>
+            </f:for>
+        </pre>
+        </f:then>
+        <f:else>
+          - Ok<br/>
+        </f:else>
+      </f:if>
+    </li>
 
-    <f:if condition="{indexSize} != {indexSize_shouldBe}">
-      <li style="color: red">
-        {publicPath}/index.php altered: {indexSize} instead of {indexSize_shouldBe} bytes.
-      </li>
-    </f:if>
+    <li><h5>existing /php_errors.log</h5>
+      <f:if condition="{isPhpErrorsLogOnRoot}">
+        <f:then>
+          <li style="color: red">
+            This file should not be there &gt;
+            <f:link.action action="viewFile" arguments="{file:phpErrorsPath}">view content</f:link.action>
+        </f:then>
+        <f:else>
+          - Ok<br/>
+        </f:else>
+      </f:if>
+    </li>
 
-    <f:if condition="{isPhpErrorsLogOnRoot}">
-      <li style="color: red">
-        There is a file that should not be there. php_errors.log &gt;
-        <f:link.action action="viewFile" arguments="{file:phpErrorsPath}">view content</f:link.action>
-      </li>
-    </f:if>
+    <li><h5>illegal files in /typo3temp/</h5>
+      <f:if condition="{isTypo3tempPhps}">
+        <f:then>
+          <span style="color:red;">The following illegal files have been found in /typo3temp/</span><br/>
+          <f:spaceless>
+            <pre><f:for as="file" each="{typo3tempPhps}"><f:render section="list1File" arguments="{file:file}"/></f:for></pre>
+          </f:spaceless>
+        </f:then>
+        <f:else>
+          - Ok<br/>
+        </f:else>
+      </f:if>
+    </li>
 
-    <f:if condition="{typo3tempPhps->f:count()} >0">
-      <li>
-        <span style="color:red;">The following illegal files have been found in /typo3temp/</span><br/>
-        <f:spaceless>
-          <pre><f:for as="file" each="{typo3tempPhps}"><f:render section="list1File" arguments="{file:file}"/></f:for></pre>
-        </f:spaceless>
-      </li>
-    </f:if>
+    <li><h5>illegal files in /typo3conf/</h5>
+      <f:if condition="{isTypo3confPhps}">
+        <f:then>
+          <span style="color:red;">The following possible illegal files have been found in /typo3conf/</span><br/>
+          <f:spaceless>
+            <pre><f:for as="file" each="{typo3confPhps}"><f:render section="list1File" arguments="{file:file}"/></f:for></pre>
+          </f:spaceless>
+        </f:then>
+        <f:else>
+          - Ok<br/>
+        </f:else>
+      </f:if>
+    </li>
 
   </ul>
 </f:section>
 
 <f:section name="list1File">
   <f:spaceless>
-    {file.stat.mode} {file.stat.owner}:{file.stat.group}
+    {file.stat.mode}
+    <f:format.printf arguments="{1: file.stat.ow_gr}">%-16s</f:format.printf>
     <f:format.printf arguments="{1: file.stat.size}">%9s</f:format.printf>
     {file.stat.ctime->f:format.date(format:'M d Y')}
     <f:link.action action="viewFile" arguments="{file:file.file}">{file.file}</f:link.action>

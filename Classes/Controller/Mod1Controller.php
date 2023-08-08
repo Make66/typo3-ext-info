@@ -67,7 +67,6 @@ class Mod1Controller extends ActionController
     protected string $publicPath;
     protected string $configPath;
     protected array $packageStates;
-    /*
     protected array $hackfiles = [
         'index.php',
         'auto_seo.php',
@@ -151,7 +150,7 @@ class Mod1Controller extends ActionController
         'options-reading.php',
         'system_log.php'
     ];
-    */
+
     /**
      * @param PageRepository $pageRepository
      */
@@ -365,24 +364,37 @@ class Mod1Controller extends ActionController
         }
         //\nn\t3::debug($typo3tempPhps);
 
+        // php files where other php files are; use $this->hackfiles to check against
+        $typo3confPhps = [];
+        $cmd = 'find "' . $this->publicPath . '/typo3conf/" -type "f" -name "*.php" 2>&1';
+        exec($cmd, $output, $status);
+        foreach ($output as $file) {
+            if (in_array(basename($file), $this->hackfiles)) {
+                $typo3confPhps[] = $this->stat($file);
+            }
+        }
+        //\nn\t3::debug($typo3confPhps);
+
         $this->view->assignMultiple([
             'fileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'],
-            'fileDenyPattern_shouldBe' => '\.(php[3-8]?|phpsh|phtml|pht|phar|shtml|cgi)(\..*)?$|\.pl$|^\.htaccess$',
+            'isFileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] != '\.(php[3-8]?|phpsh|phtml|pht|phar|shtml|cgi)(\..*)?$|\.pl$|^\.htaccess$',
             'webspace_allow' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['allow'],
             'webspace_deny' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['deny'],
             'publicPath' => $this->publicPath,
-            'unexpectedPhpOnPublicPath' => $notIndexPhpFiles,
             'indexSize' => $indexSize,
             'indexSize_shouldBe' => 987,
-            'isPhpErrorsLogOnRoot' => $isPhpErrorsLogOnRoot,
             'phpErrorsPath' => $this->publicPath . '/php_errors.log',
+            'isPhpErrorsLogOnRoot' => $isPhpErrorsLogOnRoot,
+            'indexPhps' => $notIndexPhpFiles,
+            'isIndexPhps' => count($notIndexPhpFiles) > 0,
             'typo3tempPhps' => $typo3tempPhps,
-
+            'isTypo3tempPhps' => count($typo3tempPhps) > 0,
+            'typo3confPhps' => $typo3confPhps,
+            'isTypo3confPhps' => count($typo3confPhps) > 0,
         ]);
 
         // php files where no php files should be: uploads
 
-        // php files where other php files are; use $this->hackfiles to check against
 
     }
 
@@ -763,6 +775,7 @@ class Mod1Controller extends ActionController
                 'stat' => [
                     'owner' => $posixUserInfo['name'],
                     'group' => $posixGroupInfo['name'],
+                    'ow_gr' => $posixUserInfo['name'] . ':' . $posixGroupInfo['name'],
                     'mode' => substr(decoct($stat['mode']), -3, 3),
                     'size' => $stat['size'],
                     'ctime' => $stat['ctime'],
