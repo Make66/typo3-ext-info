@@ -53,7 +53,7 @@ use TYPO3\CMS\Core\Configuration\SiteConfiguration;
  *
  * @author      Martin Keller <martin.keller@taketool.de>
  * @package     Taketool
- * @subpackage  Tool
+ * @subpackage  Info
  */
 class Mod1Controller extends ActionController
 {
@@ -66,6 +66,89 @@ class Mod1Controller extends ActionController
     protected string $publicPath;
     protected string $configPath;
     protected array $packageStates;
+    protected $hackfiles = [
+        'index.php',
+        'auto_seo.php',
+        'wp-blog-header.php',
+        'wp-config-sample.php',
+        'wp-links-opml.php',
+        'wp-login.php',
+        'wp-settings.php',
+        'wp-trackback.php',
+        'wp-activate.php',
+        'wp-comments-post.php',
+        'wp-cron.php',
+        'wp-load.php',
+        'wp-mail.php',
+        'wp-signup.php',
+        'xmlrpc.php',
+        'edit-form-advanced.php',
+        'link-parse-opml.php',
+        'ms-sites.php',
+        'options-writing.php',
+        'themes.php',
+        'admin-ajax.php',
+        'edit-form-comment.php',
+        'link.php',
+        'ms-themes.php',
+        'plugin-editor.php',
+        'admin-footer.php',
+        'edit-link-form.php',
+        'load-scripts.php',
+        'ms-upgrade-network.php',
+        'admin-functions.php',
+        'edit.php',
+        'load-styles.php',
+        'ms-users.php',
+        'plugins.php',
+        'admin-header.php',
+        'edit-tag-form.php',
+        'media-new.php',
+        'my-sites.php',
+        'post-new.php',
+        'admin.php',
+        'edit-tags.php',
+        'media.php',
+        'nav-menus.php',
+        'post.php',
+        'admin-post.php',
+        'export.php',
+        'media-upload.php',
+        'network.php',
+        'press-this.php',
+        'upload.php',
+        'async-upload.php',
+        'menu-header.php',
+        'options-discussion.php',
+        'privacy.php',
+        'user-edit.php',
+        'menu.php',
+        'options-general.php',
+        'profile.php',
+        'user-new.php',
+        'moderation.php',
+        'options-head.php',
+        'revision.php',
+        'users.php',
+        'custom-background.php',
+        'ms-admin.php',
+        'options-media.php',
+        'setup-config.php',
+        'widgets.php',
+        'custom-header.php',
+        'ms-delete-site.php',
+        'options-permalink.php',
+        'term.php',
+        'customize.php',
+        'link-add.php',
+        'ms-edit.php',
+        'options.php',
+        'edit-comments.php',
+        'link-manager.php',
+        'ms-options.php',
+        'options-reading.php',
+        'system_log.php'
+    ];
 
     /**
      * @param PageRepository $pageRepository
@@ -292,6 +375,8 @@ class Mod1Controller extends ActionController
         ]);
 
         // php files where no php files should be: uploads
+
+        // php files where other php files are; use $this->hackfiles to check against
 
     }
 
