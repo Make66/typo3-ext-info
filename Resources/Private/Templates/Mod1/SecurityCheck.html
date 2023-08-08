@@ -4,7 +4,7 @@
   <h1>Security Check</h1>
   <p>Items in red need your attention!</p>
 
-  <ul>
+  <ol>
     <li><h5>fileDenyPattern altered</h5>
       <f:if condition="{isFileDenyPattern}">
         <f:then>
@@ -13,6 +13,13 @@
         <f:else>
           - Ok<br/>
         </f:else>
+      </f:if>
+    </li>
+
+    <li><h5>$TYPO3_CONF_VARS['SYS']['trustedHostsPattern']</h5>
+      <f:if condition="!{trustedHostsPattern}">
+        <f:then>(empty)</f:then>
+        <f:else>{trustedHostsPattern}</f:else>
       </f:if>
     </li>
 
@@ -41,13 +48,12 @@
       </f:if>
     </li>
 
-    <li><h5>unexpected php files on webroot {publicPath}</h5>
-      <f:if condition="{isIndexPhps}">
+    <li><h5>existing /php_errors.log</h5>
+      <f:if condition="{isPhpErrors}">
         <f:then>
-        <pre><f:for each="{indexPhps}" as="file">
-                <f:render section="list1File" arguments="{file:file}"/>
-            </f:for>
-        </pre>
+          <li style="color: red">
+            This file should not be there &gt;
+            <pre><f:render section="list1File" arguments="{file:phpErrorsPath}"/></pre>
         </f:then>
         <f:else>
           - Ok<br/>
@@ -55,12 +61,13 @@
       </f:if>
     </li>
 
-    <li><h5>existing /php_errors.log</h5>
-      <f:if condition="{isPhpErrorsLogOnRoot}">
+    <li><h5>illegal php files on webroot {publicPath}</h5>
+      <f:if condition="{isWebrootPhps}">
         <f:then>
-          <li style="color: red">
-            This file should not be there &gt;
-            <f:link.action action="viewFile" arguments="{file:phpErrorsPath}">view content</f:link.action>
+        <pre><f:for each="{webrootPhps}" as="file">
+                <f:render section="list1File" arguments="{file:file}"/>
+            </f:for>
+        </pre>
         </f:then>
         <f:else>
           - Ok<br/>
@@ -96,17 +103,15 @@
       </f:if>
     </li>
 
-  </ul>
+  </ol>
 </f:section>
 
 <f:section name="list1File">
-  <f:spaceless>
-    {file.stat.mode}
-    <f:format.printf arguments="{1: file.stat.ow_gr}">%-16s</f:format.printf>
-    <f:format.printf arguments="{1: file.stat.size}">%9s</f:format.printf>
-    {file.stat.ctime->f:format.date(format:'M d Y')}
-    <f:link.action action="viewFile" arguments="{file:file.file}">{file.file}</f:link.action>
-  </f:spaceless>
+  {file.stat.mode}
+  <f:format.printf arguments="{1: file.stat.ow_gr}">%-16s</f:format.printf>
+  <f:format.printf arguments="{1: file.stat.size}">%9s</f:format.printf>
+  {file.stat.ctime->f:format.date(format:'M d Y')}
+  <f:link.action action="viewFile" arguments="{file:file.file}">{file.file}</f:link.action>
 </f:section>
 
 <f:debug>{_all}</f:debug>

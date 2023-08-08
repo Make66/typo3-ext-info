@@ -1,9 +1,0 @@
-tt_content: 4469,
-pid: 1444,
-CType: gridelements_pi1
-
-tx_gridelements_backend_layout = 2cols
-tx_gridelements_children = 2
-tx_gridelements_container = 0
-tx_gridelements_columns = 0
-
