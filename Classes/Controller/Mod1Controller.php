@@ -3,24 +3,28 @@
 namespace Taketool\Info\Controller;
 
 use Closure;
+use Doctrine\DBAL\Exception\TableNotFoundException;
 use PDO;
-use Psr\Http\Message\ResponseInterface;
+
+//use Psr\Http\Message\ResponseInterface; // v11
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 
-//use TYPO3\CMS\Core\Domain\Repository\PageRepository; // T3v10
+//use TYPO3\CMS\Core\Database\Query\QueryBuilder;
+//use TYPO3\CMS\Frontend\Page\PageRepository;  // T3v9
+use TYPO3\CMS\Core\Domain\Repository\PageRepository;
+
+// T3v10
 use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
-use TYPO3\CMS\Core\Messaging\AbstractMessage;
-use TYPO3\CMS\Core\Site\SiteFinder;
+
+//use TYPO3\CMS\Core\Messaging\AbstractMessage;
+//use TYPO3\CMS\Core\Site\SiteFinder;
+use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
-use TYPO3\CMS\Extbase\Mvc\Exception\NoSuchArgumentException;
-use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
 
-//use TYPO3\CMS\Frontend\Page\PageRepository;  // T3v9
-use TYPO3\CMS\Core\Domain\Repository\PageRepository;
+//use TYPO3\CMS\Extbase\Mvc\Exception\NoSuchArgumentException;
 
 // T3v10
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
@@ -57,16 +61,14 @@ use TYPO3\CMS\Core\Configuration\SiteConfiguration;
  */
 class Mod1Controller extends ActionController
 {
-    /**
-     * @var QueryBuilder
-     */
     protected ConnectionPool $connectionPool;
     protected PageRepository $pageRepository;
     protected SiteConfiguration $siteConfiguration;
     protected string $publicPath;
     protected string $configPath;
     protected array $packageStates;
-    protected $hackfiles = [
+    /*
+    protected array $hackfiles = [
         'index.php',
         'auto_seo.php',
         'wp-blog-header.php',
@@ -149,7 +151,7 @@ class Mod1Controller extends ActionController
         'options-reading.php',
         'system_log.php'
     ];
-
+    */
     /**
      * @param PageRepository $pageRepository
      */
@@ -160,6 +162,7 @@ class Mod1Controller extends ActionController
 
     /**
      * initialize action
+     * @throws PackageStatesUnavailableException
      */
     public function initializeAction()
     {
@@ -180,49 +183,57 @@ class Mod1Controller extends ActionController
     public function allTemplatesAction()
     {
         $templates = $this->getAllTemplates('1');
-        foreach ($templates as $key => $t) {
-            $templates[$key]['pagetitle'] = $this->pageRepository->getPage($t['pid'], $disableGroupAccessCheck = true)['title'];
-            $templates[$key]['include_static_file'] = implode('<br>', explode(',', $t['include_static_file']));
-        }
-        $this->view->assign('templates', $templates);
+        $this->templatesToView($templates);
     }
 
+    /**
+     * @return void
+     */
     public function configSizesAction()
     {
-        //$sortBy = ($this->arguments['sortBy'] ==='') ? 'length' : $sortBy;
         $arguments = $this->request->getArguments();
-        //debug($arguments);
-        if (is_array($arguments)) $sortBy = ($arguments['sortBy']);
+        $isTableNotFoundException = false;
+        if (is_array($arguments)) $sortBy = $arguments['sortBy'] ?? '';
         else $sortBy = 'length';
         $query = $this->connectionPool->getQueryBuilderForTable('tx_tool_domain_model_config');
-        $res = $query->select('uid', 'pid', 'mandant', 'data')
-            ->from('tx_tool_domain_model_config')
-            ->where(
-                $query->expr()->eq('hidden', 0),
-                $query->expr()->eq('deleted', 0)
-            )
-            ->execute();
-        $configs = $res->fetchAll();
-        debug(['$configs' => $configs], __line__ . ':' . __function__);
-        if (is_array($configs)) foreach ($configs as $key => $conf) {
-            $configs[$key]['length'] = strlen($conf['data']);
-            $kurse = unserialize($conf['data']);
-            $configs[$key]['cntCourses'] = (is_array($kurse)) ? count($kurse) : 0;
-            $cntTermine = 0;
-            $maxTermine = 0;
-            if (is_array($kurse)) foreach ($kurse as $k) {
-                if (is_array($k['termine'])) {
-                    $cntTermine += count($k['termine']);
-                    $maxTermine = max($maxTermine, count($k['termine']));
-                }
-            }
-            $configs[$key]['cntTermine'] = $cntTermine;
-            $configs[$key]['termineAvgProKurs'] = ($configs[$key]['cntCourses'] > 0) ? intval($cntTermine / $configs[$key]['cntCourses']) : 0;
-            $configs[$key]['termineMaxProKurs'] = $maxTermine;
+        try {
+            $res = $query->select('uid', 'pid', 'mandant', 'data')
+                ->from('tx_tool_domain_model_config')
+                ->where(
+                    $query->expr()->eq('hidden', 0),
+                    $query->expr()->eq('deleted', 0)
+                )
+                ->execute();
+        } catch (TableNotFoundException $e) {
+            //$this->addErrorFlashMessage('<p>Die Tabelle &quot;tx_tool_domain_model_config&quot; wurde nicht gefunden.</p>' . $e->getMessage());
+            $this->addFlashMessage($e->getMessage(), 'Die Tabelle "tx_tool_domain_model_config" wurde nicht gefunden.', 2);
+            $isTableNotFoundException = true;
         }
-        $configs = self::sort($configs, $sortBy);
-        $this->view->assign('configs', $configs);
-        $this->view->assign('sortBy', $sortBy);
+
+        if (!$isTableNotFoundException) {
+            $configs = $res->fetchAll();
+            //debug(['$configs' => $configs], __line__ . ':' . __function__);
+            if (is_array($configs)) foreach ($configs as $key => $conf) {
+                $configs[$key]['length'] = strlen($conf['data']);
+                $kurse = unserialize($conf['data']);
+                $configs[$key]['cntCourses'] = (is_array($kurse)) ? count($kurse) : 0;
+                $cntTermine = 0;
+                $maxTermine = 0;
+                if (is_array($kurse)) foreach ($kurse as $k) {
+                    if (is_array($k['termine'])) {
+                        $cntTermine += count($k['termine']);
+                        $maxTermine = max($maxTermine, count($k['termine']));
+                    }
+                }
+                $configs[$key]['cntTermine'] = $cntTermine;
+                $configs[$key]['termineAvgProKurs'] = ($configs[$key]['cntCourses'] > 0) ? intval($cntTermine / $configs[$key]['cntCourses']) : 0;
+                $configs[$key]['termineMaxProKurs'] = $maxTermine;
+            }
+            $configs = self::sort($configs, $sortBy);
+            $this->view->assign('configs', $configs);
+            $this->view->assign('sortBy', $sortBy);
+        }
+
     }
 
     /**
@@ -297,12 +308,7 @@ class Mod1Controller extends ActionController
         //DebuggerUtility::var_dump(['$arguments'=>$arguments,'showAll'=>$showAll], __class__.'->'.__function__.'()');
 
         $templates = $this->getAllTemplates();
-        foreach ($templates as $key => $t) {
-            $templates[$key]['pagetitle'] = $this->pageRepository->getPage($t['pid'], $disableGroupAccessCheck = true)['title'];
-            $templates[$key]['include_static_file'] = implode('<br>', explode(',', $t['include_static_file']));
-        }
-
-        $this->view->assign('templates', $templates);
+        $this->templatesToView($templates);
     }
 
     public function securityCheckAction()
@@ -329,12 +335,12 @@ class Mod1Controller extends ActionController
         $indexSize = @filesize($this->publicPath . '/index.php');
 
         // get all .php files on root
-        $directoryEntries = [];
+        //$directoryEntries = [];
         $phpFiles = [];
         $dir = dir($this->publicPath);
         if ($dir !== false) {
             while (false !== ($entry = $dir->read())) {
-                $directoryEntries[] = $entry;
+                //$directoryEntries[] = $entry;
                 if (substr($entry, -4) == '.php') {
                     $phpFiles[] = $this->stat($this->publicPath . '/' . $entry);
                 }
@@ -453,7 +459,7 @@ class Mod1Controller extends ActionController
             $i++;
         }
         $contentTypes = [];
-        foreach ($pT as $key => $p) {
+        foreach ($pT as $p) {
             if ($p['CType'] == '') continue;
             $contentTypes[] = [
                 'CType' => $p['CType'],
@@ -471,12 +477,12 @@ class Mod1Controller extends ActionController
      */
     private function getAllDomains(): array
     {
-        $domains = $this->siteConfiguration->getAllExistingSites($useCache = true);
+        $domains = $this->siteConfiguration->getAllExistingSites(true);
         //\nn\t3::debug($domains);
         $domainUrls = [];
         foreach ($domains as $domain) {
-            $robotsTxt = @file_get_contents($domain->getConfiguration()['base'] . '/robots.txt');
-            $sitemapXml = @file_get_contents($domain->getConfiguration()['base'] . '/sitemap.xml');
+            //$robotsTxt = @file_get_contents($domain->getConfiguration()['base'] . '/robots.txt');
+            //$sitemapXml = @file_get_contents($domain->getConfiguration()['base'] . '/sitemap.xml');
             $domainUrls[$domain->getRootPageId()] = $domain->getConfiguration()['base'];
         }
         return $domainUrls;
@@ -535,7 +541,7 @@ class Mod1Controller extends ActionController
             $i++;
         }
         $pluginTypes = [];
-        foreach ($pT as $key => $p) {
+        foreach ($pT as $p) {
             if ($p['list_type'] == '') continue;
             $pluginTypes[] = [
                 'list_type' => $p['list_type'],
@@ -566,6 +572,7 @@ class Mod1Controller extends ActionController
                 ->execute();
         }
         $templates = $res->fetchAll();
+        $pagesOfTemplates = [];
         foreach ($templates as $template) {
             $siteRoot = '- no siteroot -';
             try {
@@ -623,7 +630,6 @@ class Mod1Controller extends ActionController
             }
             $siteRoot = $rootLineArray[0]['title'];
             unset($rootLineArray[0]);
-
             $rLTemp = [];
             foreach ($rootLineArray as $rL) {
                 $rLTemp[] = $rL['title'];
@@ -764,6 +770,19 @@ class Mod1Controller extends ActionController
                 ],
             ];
         }
+    }
+
+    /**
+     * @param array $templates
+     * @return void
+     */
+    private function templatesToView(array $templates): void
+    {
+        foreach ($templates as $key => $t) {
+            $templates[$key]['pagetitle'] = $this->pageRepository->getPage($t['pid'], $disableGroupAccessCheck = true)['title'];
+            $templates[$key]['include_static_file'] = implode('<br>', explode(',', $t['include_static_file']));
+        }
+        $this->view->assign('templates', $templates);
     }
 
 }
