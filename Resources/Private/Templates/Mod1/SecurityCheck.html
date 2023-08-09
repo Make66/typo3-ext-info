@@ -107,11 +107,7 @@
 </f:section>
 
 <f:section name="list1File">
-  {file.stat.mode}
-  <f:format.printf arguments="{1: file.stat.ow_gr}">%-16s</f:format.printf>
-  <f:format.printf arguments="{1: file.stat.size}">%9s</f:format.printf>
-  {file.stat.ctime->f:format.date(format:'M d Y')}
-  <f:link.action action="viewFile" arguments="{file:file.file}">{file.file}</f:link.action>
+  {file.stat.mode} <f:format.printf arguments="{1: file.stat.ow_gr}">%-16s</f:format.printf> <f:format.printf arguments="{1: file.stat.size}">%9s</f:format.printf> {file.stat.ctime->f:format.date(format:'M d Y')} <f:link.action action="viewFile" arguments="{file:file.file}">{file.file}</f:link.action>
 </f:section>
 
 <f:debug>{_all}</f:debug>
