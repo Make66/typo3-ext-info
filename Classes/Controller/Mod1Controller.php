@@ -67,6 +67,7 @@ class Mod1Controller extends ActionController
     protected string $publicPath;
     protected string $configPath;
     protected array $packageStates;
+
     protected array $hackfiles = [
         'index.php',
         'auto_seo.php',
