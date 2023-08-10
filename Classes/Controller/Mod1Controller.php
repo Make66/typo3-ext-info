@@ -71,6 +71,7 @@ class Mod1Controller extends ActionController
     protected array $hackfiles = [
         'index.php',
         'auto_seo.php',
+        'cache.php',
         'wp-blog-header.php',
         'wp-config-sample.php',
         'wp-links-opml.php',
@@ -374,15 +375,48 @@ class Mod1Controller extends ActionController
                 $typo3confPhps[] = $this->stat($file);
             }
         }
-        //\nn\t3::debug($typo3confPhps);
+
+        /*
+         * php files which contain suspicious code using basic regular expression
+         */
+        $searchFor = '';
+        $output = '';
+        foreach ([
+            'error_reporting(0)',
+            // too many false-positives'base64_decode(',
+            'eval(',
+            'gzinflate(',
+            'str_rot13(',
+        ] as $search) $searchFor .= $search . '\|';
+        $searchFor = substr($searchFor, 0, -2);
+        $suspiciousPhps = [];
+        $cmd = "grep '$searchFor' -rn $this->publicPath --include=*.php  2>&1";
+
+        // status 2 = ERROR
+        exec($cmd, $output, $status);
+        //\nn\t3::debug([$searchFor,$cmd,$output,$status]);
+
+        foreach ($output as $line) {
+            $lineArray= explode(':', $line);
+            //\nn\t3::debug($lineArray);
+            $file = $lineArray[0];
+            if (true) {
+                $suspiciousPhps[] = [
+                    'file' => $this->stat($file),
+                    'lnr' => $lineArray[1],
+                    'code' => trim($lineArray[2]),
+                ];
+            }
+        }
+        //\nn\t3::debug($suspiciousPhps);
 
         $this->view->assignMultiple([
+            'publicPath' => $this->publicPath,
             'fileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'],
             'isFileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] != '\.(php[3-8]?|phpsh|phtml|pht|phar|shtml|cgi)(\..*)?$|\.pl$|^\.htaccess$',
             'trustedHostsPattern' => $GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'],
             'webspace_allow' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['allow'],
             'webspace_deny' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['deny'],
-            'publicPath' => $this->publicPath,
             'indexSize' => $indexSize,
             'indexSize_shouldBe' => 987,
             'phpErrorsPath' => $this->publicPath . '/php_errors.log',
@@ -393,6 +427,8 @@ class Mod1Controller extends ActionController
             'isTypo3tempPhps' => count($typo3tempPhps) > 0,
             'typo3confPhps' => $typo3confPhps,
             'isTypo3confPhps' => count($typo3confPhps) > 0,
+            'suspiciousPhps' => $suspiciousPhps,
+            'isSuspiciousPhps' => count($suspiciousPhps) > 0,
         ]);
 
         // php files where no php files should be: uploads
@@ -747,6 +783,8 @@ class Mod1Controller extends ActionController
     }
 
     /**
+     * returns an array of file=>fullpath,stat=stat(fullpath)[uid,gid,mode,size,ctime,mtime]
+     *
      * @param string $fullpath
      * @return array
      */
@@ -774,6 +812,7 @@ class Mod1Controller extends ActionController
             //\nn\t3::debug($posixGroupInfo);
             return [
                 'file' => $fullpath,
+                'short' => substr($fullpath, strlen($this->publicPath)),
                 'stat' => [
                     'owner' => $posixUserInfo['name'],
                     'group' => $posixGroupInfo['name'],

@@ -1,11 +1,13 @@
 {namespace tt=Taketool\Info\ViewHelpers}
+{namespace core=TYPO3\CMS\Core\ViewHelpers}
+
 <f:layout name="Default"/>
 <f:section name="content">
   <h1>Security Check</h1>
   <p>Items in red need your attention!</p>
 
   <ol>
-    <li><h5>fileDenyPattern altered</h5>
+    <li><h4>fileDenyPattern altered</h4>
       <f:if condition="{isFileDenyPattern}">
         <f:then>
           <span style="color:red">$TYPO3_CONF_VARS['BE']['fileDenyPattern']: {fileDenyPattern}</span>
@@ -16,28 +18,28 @@
       </f:if>
     </li>
 
-    <li><h5>$TYPO3_CONF_VARS['SYS']['trustedHostsPattern']</h5>
+    <li><h4>$TYPO3_CONF_VARS['SYS']['trustedHostsPattern']</h4>
       <f:if condition="!{trustedHostsPattern}">
         <f:then>(empty)</f:then>
         <f:else>{trustedHostsPattern}</f:else>
       </f:if>
     </li>
 
-    <li><h5>$TYPO3_CONF_VARS['BE']['fileExtensions']['webspace']['allow']</h5>
+    <li><h4>$TYPO3_CONF_VARS['BE']['fileExtensions']['webspace']['allow']</h4>
       <f:if condition="!{webspace_allow}">
         <f:then>(empty)</f:then>
         <f:else>{webspace_allow}</f:else>
       </f:if>
     </li>
 
-    <li><h5>$TYPO3_CONF_VARS['BE']['fileExtensions']['webspace']['deny']</h5>
+    <li><h4>$TYPO3_CONF_VARS['BE']['fileExtensions']['webspace']['deny']</h4>
       <f:if condition="!{webspace_deny}">
         <f:then>(empty)</f:then>
         <f:else>{webspace_deny}</f:else>
       </f:if>
     </li>
 
-    <li><h5>/index.php altered</h5>
+    <li><h4>/index.php altered</h4>
       <f:if condition="{indexSize} != {indexSize_shouldBe}">
         <f:then>
           {publicPath}/index.php altered: {indexSize} instead of {indexSize_shouldBe} bytes.
@@ -48,7 +50,7 @@
       </f:if>
     </li>
 
-    <li><h5>existing /php_errors.log</h5>
+    <li><h4>existing /php_errors.log</h4>
       <f:if condition="{isPhpErrors}">
         <f:then>
           <li style="color: red">
@@ -61,7 +63,7 @@
       </f:if>
     </li>
 
-    <li><h5>illegal php files on webroot {publicPath}</h5>
+    <li><h4>illegal php files on webroot {publicPath}</h4>
       <f:if condition="{isWebrootPhps}">
         <f:then>
         <pre><f:for each="{webrootPhps}" as="file">
@@ -75,7 +77,7 @@
       </f:if>
     </li>
 
-    <li><h5>illegal files in /typo3temp/</h5>
+    <li><h4>illegal files in /typo3temp/</h4>
       <f:if condition="{isTypo3tempPhps}">
         <f:then>
           <span style="color:red;">The following illegal files have been found in /typo3temp/</span><br/>
@@ -89,12 +91,26 @@
       </f:if>
     </li>
 
-    <li><h5>illegal files in /typo3conf/</h5>
+    <li><h4>illegal files in /typo3conf/</h4>
       <f:if condition="{isTypo3confPhps}">
         <f:then>
-          <span style="color:red;">The following possible illegal files have been found in /typo3conf/</span><br/>
+          <span style="color:red;">The following possible illegal files have been found in /typo3conf/  (<f:count subject="{typo3confPhps}" />)</span><br/>
           <f:spaceless>
-            <pre><f:for as="file" each="{typo3confPhps}"><f:render section="list1File" arguments="{file:file}"/></f:for></pre>
+            <pre><f:for as="file" each="{typo3confPhps}"><f:render section="list1File" arguments="{file:file,short:file.short}"/></f:for></pre>
+          </f:spaceless>
+        </f:then>
+        <f:else>
+          - Ok<br/>
+        </f:else>
+      </f:if>
+    </li>
+
+    <li><h4>suspicious files</h4>
+      <f:if condition="{isSuspiciousPhps}">
+        <f:then>
+          <span style="color:red;">The following files contain suspicious code (<f:count subject="{suspiciousPhps}" />)</span><br/>
+          <f:spaceless>
+            <pre><f:for as="line" each="{suspiciousPhps}"><f:render section="list1File" arguments="{file:line.file,lnr:line.lnr,code:line.code,short:line.short}"/></f:for></pre>
           </f:spaceless>
         </f:then>
         <f:else>
@@ -107,7 +123,7 @@
 </f:section>
 
 <f:section name="list1File">
-  {file.stat.mode} <f:format.printf arguments="{1: file.stat.ow_gr}">%-16s</f:format.printf> <f:format.printf arguments="{1: file.stat.size}">%9s</f:format.printf> {file.stat.ctime->f:format.date(format:'M d Y')} <f:link.action action="viewFile" arguments="{file:file.file}">{file.file}</f:link.action>
+  {file.stat.mode} <f:format.printf arguments="{1: file.stat.ow_gr}">%-16s</f:format.printf> <f:format.printf arguments="{1: file.stat.size}">%9s</f:format.printf> {file.stat.ctime->f:format.date(format:'M d Y')} <f:link.action title="{lnr}:{code}" action="viewFile" arguments="{file:file.file}">{file.short}</f:link.action>
 </f:section>
 
 <f:debug>{_all}</f:debug>
