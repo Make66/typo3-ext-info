@@ -1,6 +1,6 @@
 <?php
 
-namespace Taketool\Info\ViewHelpers;
+namespace Taketool\Sysinfo\ViewHelpers;
 
 use Closure;
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
@@ -11,7 +11,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 /**
  * Class FALViewHelper
- * @package Taketool\Info\ViewHelpers
+ * @package Taketool\Sysinfo\ViewHelpers
  */
 class FileViewHelper extends AbstractViewHelper
 {

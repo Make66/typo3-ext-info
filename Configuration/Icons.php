@@ -10,18 +10,18 @@ return [
         // Icon provider class
         'provider' => SvgIconProvider::class,
         // The source SVG for the SvgIconProvider
-        'source' => 'EXT:my_extension/Resources/Public/Icons/mysvg.svg',
+        'source' => 'EXT:tx_sysinfo/Resources/Public/Icons/mysvg.svg',
     ],
     'mybitmapicon' => [
         'provider' => BitmapIconProvider::class,
         // The source bitmap file
-        'source' => 'EXT:my_extension/Resources/Public/Icons/mybitmap.png',
+        'source' => 'EXT:tx_sysinfo/Resources/Public/Icons/mybitmap.png',
         // All icon providers provide the possibility to register an icon that spins
         'spinning' => true,
     ],
     'anothersvgicon' => [
         'provider' => SvgIconProvider::class,
-        'source' => 'EXT:my_extension/Resources/Public/Icons/anothersvg.svg',
+        'source' => 'EXT:tx_sysinfo/Resources/Public/Icons/anothersvg.svg',
         // Since TYPO3 v12.0 an extension that provides icons for broader
         // use can mark such icons as deprecated with logging to the TYPO3
         // deprecation log. All keys (since, until, replacement) are optional.

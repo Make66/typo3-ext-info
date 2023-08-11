@@ -1,5 +1,5 @@
 {
-  "name": "taketool/info",
+  "name": "taketool/sysinfo",
   "type": "typo3-cms-extension",
   "description": "Migration support, maintenance and security: Provides a backend module for showing which plugins / templates included where and some security related topics. Check configured sitemap.xml and robots.txt",
   "authors": [
@@ -10,15 +10,16 @@
   ],
   "license": "GPL-2.0-or-later",
   "require": {
-    "typo3/cms-core": "^10.4"
+    "typo3/cms-core": " ^10.4 || ^11.5",
+    "ext-PDO": "*"
   },
   "autoload": {
     "psr-4": {
-      "Taketool\\Info\\": "Classes"
+      "Taketool\\Sysinfo\\": "Classes"
     }
   },
   "replace": {
-    "typo3-ter/info": "self.version"
+    "typo3-ter/sysinfo": "self.version"
   },
   "config": {
     "vendor-dir": ".Build/vendor",
@@ -33,7 +34,7 @@
     "typo3/cms": {
       "cms-package-dir": "{$vendor-dir}/typo3/cms",
       "web-dir": ".Build/public",
-      "extension-key": "info"
+      "extension-key": "sysinfo"
     }
   }
 }

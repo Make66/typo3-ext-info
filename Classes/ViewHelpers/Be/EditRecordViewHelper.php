@@ -5,7 +5,7 @@
  */
 declare(strict_types=1);
 
-namespace Taketool\Info\ViewHelpers\Be;
+namespace Taketool\Sysinfo\ViewHelpers\Be;
 
 use TYPO3\CMS\Backend\Routing\Exception\RouteNotFoundException;
 use TYPO3\CMS\Backend\Routing\UriBuilder;

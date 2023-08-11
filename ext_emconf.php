@@ -1,7 +1,7 @@
 <?php
 
 $EM_CONF[$_EXTKEY] = [
-    'title' => 'Template Info',
+    'title' => 'Template Sysinfo',
     'description' => 'Provides a backend module for showing which templates included where. This supports Typo3 migration.',
     'category' => 'module',
     'author' => 'Martin Keller',
@@ -11,7 +11,7 @@ $EM_CONF[$_EXTKEY] = [
     'version' => '10.4.0',
     'constraints' => [
         'depends' => [
-            'typo3' => '10.4.0-10.4.99',
+            'typo3' => '10.4.0-11.5.99',
         ],
         'conflicts' => [],
         'suggests' => [],

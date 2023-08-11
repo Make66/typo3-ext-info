@@ -1,10 +1,10 @@
-{namespace tt=Taketool\Info\ViewHelpers}
+{namespace tt=Taketool\Sysinfo\ViewHelpers}
 {namespace core=TYPO3\CMS\Core\ViewHelpers}
 
 <f:layout name="Default"/>
 <f:section name="content">
   <h1>Security Check</h1>
-  <p>Items in red need your attention!</p>
+  <p>Items in red need your attention!<br/>Typo3 version {t3version}</p>
 
   <ol>
     <li><h4>fileDenyPattern altered</h4>
@@ -42,7 +42,9 @@
     <li><h4>/index.php altered</h4>
       <f:if condition="{indexSize} != {indexSize_shouldBe}">
         <f:then>
-          {publicPath}/index.php altered: {indexSize} instead of {indexSize_shouldBe} bytes.
+          <span  style="color: red">/index.php seems to be altered</span><br/>
+          {publicPath}/index.php {indexSize} instead of {indexSize_shouldBe} bytes.
+          <pre><f:render section="list1File" arguments="{file:indexPhp}"/></pre>
         </f:then>
         <f:else>
           - Ok<br/>

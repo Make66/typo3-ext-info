@@ -8,6 +8,6 @@ Installation
 
 - How is the extension installed?
 
-composer req taketool/info @dev
+composer req taketool/sysinfo @dev
 
 (no TER version yet)

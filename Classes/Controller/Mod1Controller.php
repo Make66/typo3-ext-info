@@ -1,6 +1,6 @@
 <?php
 
-namespace Taketool\Info\Controller;
+namespace Taketool\Sysinfo\Controller;
 
 use Closure;
 use Doctrine\DBAL\Exception\TableNotFoundException;
@@ -22,6 +22,7 @@ use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
+use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 //use TYPO3\CMS\Extbase\Mvc\Exception\NoSuchArgumentException;
@@ -57,7 +58,7 @@ use TYPO3\CMS\Core\Configuration\SiteConfiguration;
  *
  * @author      Martin Keller <martin.keller@taketool.de>
  * @package     Taketool
- * @subpackage  Info
+ * @subpackage  Sysinfo
  */
 class Mod1Controller extends ActionController
 {
@@ -66,7 +67,8 @@ class Mod1Controller extends ActionController
     protected SiteConfiguration $siteConfiguration;
     protected string $publicPath;
     protected string $configPath;
-    protected array $packageStates;
+    protected string $t3version;
+    protected $packageStates;
 
     protected array $hackfiles = [
         'index.php',
@@ -156,6 +158,12 @@ class Mod1Controller extends ActionController
     protected array $falsePositives = [
         '/typo3conf/ext/info/Classes/Controller/Mod1Controller.php',
     ];
+    protected array $fileinfo = [
+        '/index.php' => [
+            '10004037' => ['size' => 987],
+            '11005030' => ['size' => 815],
+            ]
+    ];
 
     /**
      * @param PageRepository $pageRepository
@@ -176,13 +184,15 @@ class Mod1Controller extends ActionController
         $environment = GeneralUtility::makeInstance(Environment::class);
         $this->publicPath = $environment->getPublicPath();
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
-
+        $this->t3version = VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
+        /* why do we need extension pathes? T3 v11 composer has no PackageStates.php anymore
         // get loaded extensions
         //\nn\t3::debug($this->configPath );
         $this->packageStates = @include $this->configPath . '/PackageStates.php' ?: [];
         if (!isset($this->packageStates['version']) || $this->packageStates['version'] < 5) {
             throw new PackageStatesUnavailableException('The PackageStates.php file is either corrupt or unavailable.', 1381507733);
         }
+        */
     }
 
     public function allTemplatesAction()
@@ -415,6 +425,7 @@ class Mod1Controller extends ActionController
         //\nn\t3::debug($suspiciousPhps);
 
         $this->view->assignMultiple([
+            't3version' => $this->t3version,
             'publicPath' => $this->publicPath,
             'fileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'],
             'isFileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] != '\.(php[3-8]?|phpsh|phtml|pht|phar|shtml|cgi)(\..*)?$|\.pl$|^\.htaccess$',
@@ -422,7 +433,8 @@ class Mod1Controller extends ActionController
             'webspace_allow' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['allow'],
             'webspace_deny' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['deny'],
             'indexSize' => $indexSize,
-            'indexSize_shouldBe' => 987,
+            'indexSize_shouldBe' => $this->fileinfo['/index.php'][$this->t3version]['size'],
+            'indexPhp' => $this->stat($this->publicPath . '/index.php'),
             'phpErrorsPath' => $this->publicPath . '/php_errors.log',
             'isPhpErrors' => $isPhpErrorsLogOnRoot,
             'webrootPhps' => $notIndexPhpFiles,
