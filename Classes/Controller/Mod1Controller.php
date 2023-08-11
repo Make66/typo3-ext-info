@@ -156,7 +156,7 @@ class Mod1Controller extends ActionController
     ];
 
     protected array $falsePositives = [
-        '/typo3conf/ext/info/Classes/Controller/Mod1Controller.php',
+        '/typo3conf/ext/sysinfo/Classes/Controller/Mod1Controller.php',
     ];
     protected array $fileinfo = [
         '/index.php' => [
