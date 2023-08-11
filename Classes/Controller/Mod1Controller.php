@@ -153,6 +153,10 @@ class Mod1Controller extends ActionController
         'system_log.php'
     ];
 
+    protected array $falsePositives = [
+        '/typo3conf/ext/info/Classes/Controller/Mod1Controller.php',
+    ];
+
     /**
      * @param PageRepository $pageRepository
      */
@@ -391,21 +395,21 @@ class Mod1Controller extends ActionController
         $searchFor = substr($searchFor, 0, -2);
         $suspiciousPhps = [];
         $cmd = "grep '$searchFor' -rn $this->publicPath --include=*.php  2>&1";
-
         // status 2 = ERROR
         exec($cmd, $output, $status);
         //\nn\t3::debug([$searchFor,$cmd,$output,$status]);
-
         foreach ($output as $line) {
             $lineArray= explode(':', $line);
             //\nn\t3::debug($lineArray);
             $file = $lineArray[0];
             if (true) {
-                $suspiciousPhps[] = [
+                $tmp = [
                     'file' => $this->stat($file),
                     'lnr' => $lineArray[1],
                     'code' => trim($lineArray[2]),
                 ];
+                // remove from output if false positive
+                if (!in_array($tmp['file']['short'], $this->falsePositives)) $suspiciousPhps[] = $tmp;
             }
         }
         //\nn\t3::debug($suspiciousPhps);
