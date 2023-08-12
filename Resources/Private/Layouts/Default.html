@@ -1,16 +1,29 @@
+<html
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
+    xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+    data-namespace-typo3-fluid="true">
+
 <f:be.container>
   <div class="typo3-fullDoc">
     <div id="typo3-docheader">
-      <div class="typo3-docheader-functions">
+      <div class="typo3-docheader-functions" style="height: 4em;background-color: #d0d0d0; border-bottom: 1px solid #666666; padding: 1em;">
         <div class="left">
+          <f:comment>
           <f:be.menus.actionMenu>
-            <f:be.menus.actionMenuItem action="securityCheck" controller="" label="Security Info"/>
+            <f:be.menus.actionMenuItem action="securityCheck" controller="" label="Security Check"/>
             <f:be.menus.actionMenuItem action="plugins" controller="" label="Find Plugins"/>
             <f:be.menus.actionMenuItem action="rootTemplates" controller="" label="Find root TS-templates"/>
             <f:be.menus.actionMenuItem action="allTemplates" controller="" label="Find all TS-templates"/>
-            <f:be.menus.actionMenuItem action="configSizes" controller="" label="List biggest Config records"/>
             <f:be.menus.actionMenuItem action="checkDomains" controller="" label="See robots.txt and sitemap.xml (pls wait a minute)"/>
-          </f:be.menus.actionMenu>
+            <f:be.menus.actionMenuItem action="configSizes" controller="" label="List biggest Config records"/>
+          </f:be.menus.actionMenu></f:comment>
+          <span class="btn btn-default"><f:link.action action="securityCheck">Security Check</f:link.action></span>
+          <span class="btn btn-default"><f:link.action action="plugins">Plugins</f:link.action></span>
+          <span class="btn btn-default"><f:link.action action="rootTemplates">Root Templates</f:link.action></span>
+          <span class="btn btn-default"><f:link.action action="allTemplates">All Templates</f:link.action></span>
+          <span class="btn btn-default"><f:link.action action="checkDomains">robots.txt &amp; sitemap.xml (pls wait)</f:link.action></span>
+          <span class="btn btn-default"><f:link.action action="configSizes">Config records</f:link.action></span>
         </div>
         <div class="right">
           <f:comment>
@@ -34,10 +47,12 @@
 
     </div>
     <div id="typo3-docbody">
-      <div id="typo3-inner-docbody">
+      <div id="typo3-inner-docbody" style="margin: 2em;">
         <f:flashMessages/>
         <f:render section="content"/>
       </div>
     </div>
   </div>
 </f:be.container>
+
+</html>
