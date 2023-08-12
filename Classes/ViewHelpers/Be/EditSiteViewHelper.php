@@ -43,7 +43,7 @@ class EditSiteViewHelper extends AbstractViewHelper
     {
         $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
 
-        $returnUrl = $uriBuilder->buildUriFromRoute('tools_InfoM1',
+        $returnUrl = $uriBuilder->buildUriFromRoute('tools_SysinfoM1',
             [
                 'action' => 'edit',
                 'site' => $this->arguments['site'],

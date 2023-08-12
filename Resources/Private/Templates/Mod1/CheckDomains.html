@@ -21,33 +21,33 @@
     <f:for each="{allDomains}" as="domain" key="id" iteration="i">
       <tr>
         <td>{i.cycle}</td>
-        <td>
+        <td nowrap="true">
           <a title="Edit" class="btn btn-default" href="{tt:be.editSite(site: '{domain.site}')}">
             <core:icon identifier="actions-file-edit" size="small"/>
             {domain.site}
           </a>
         </td>
-        <td>{domain.baseUrl}</td>
+        <td nowrap="true">{domain.baseUrl}</td>
         <f:if condition="{domain.isRobotTxt}">
           <f:then>
-            <td style="color:green">
+            <td style="color:green; text-align: center;">
               <core:icon identifier="status-status-permission-granted" size="small"/>
             </td>
           </f:then>
           <f:else>
-            <td style="color:red">
+            <td style="color:red; text-align: center;">
               <core:icon identifier="status-status-permission-denied" size="small"/>
             </td>
           </f:else>
         </f:if>
         <f:if condition="{domain.isSitemapXml}">
           <f:then>
-            <td style="color:green">
+            <td style="color:green; text-align: center;">
               <core:icon identifier="status-status-permission-granted" size="small"/>
             </td>
           </f:then>
           <f:else>
-            <td style="color:red">
+            <td style="color:red; text-align: center;">
               <core:icon identifier="status-status-permission-denied" size="small"/>
             </td>
           </f:else>
