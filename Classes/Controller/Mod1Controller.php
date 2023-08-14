@@ -399,7 +399,7 @@ class Mod1Controller extends ActionController
         /*
          * test /typo3temp for *.php which should not be there
          */
-        // composer: typo3temp should not contain any .php: find ./|grep .php
+        // composer: /typo3temp should not contain any .php: find ./|grep .php
         // redirect stderr to stdout using 2>&1 to see error messages as well
         $typo3tempPhps = [];
         $cmd = 'find "' . $this->publicPath . '/typo3temp/" -type "f" -name "*.php" 2>&1';

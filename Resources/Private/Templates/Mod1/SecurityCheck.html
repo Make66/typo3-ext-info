@@ -57,8 +57,12 @@
             </f:else>
           </f:if>
         </f:then>
+        <f:comment>legacy mode</f:comment>
         <f:else>
-          <f:debug>{_all}</f:debug>
+          <f:if condition="{isIndexSymlink}">
+            <f:then>- Ok</f:then>
+            <f:else><span  style="color: red">/index.php is not a symlink</span></f:else>
+          </f:if>
         </f:else>
       </f:if>
     </li>
