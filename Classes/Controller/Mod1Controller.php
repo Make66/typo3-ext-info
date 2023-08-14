@@ -591,12 +591,13 @@ class Mod1Controller extends ActionController
     {
         $domains = $this->siteConfiguration->getAllExistingSites($useCache = true);
         $domainUrls = [];
+        $cnt = 0;
         foreach ($domains as $domain) {
 
             // we do not need the content, just if the page is readable or not
-            $isRobots  = (bool)@fopen($domain->getConfiguration()['base'] . 'robots.txt', 'r');
-            $isSitemap = (bool)@fopen($domain->getConfiguration()['base'] . 'sitemap.xml', 'r');
-            $is404     = (bool)@fopen($domain->getConfiguration()['base'] . '404', 'r');
+            $isRobots  = $this->remoteFileExists($domain->getConfiguration()['base'] . 'robots.txt');
+            $isSitemap = $this->remoteFileExists($domain->getConfiguration()['base'] . 'sitemap.xml');
+            $is404     = $this->remoteFileExists($domain->getConfiguration()['base'] . '404', 'r');
 
             $domainUrls[$domain->getRootPageId()] = [
                 'site' => $domain->getIdentifier(),
@@ -606,10 +607,7 @@ class Mod1Controller extends ActionController
                 'isPage404'    => $is404,
             ];
 
-            if ($isRobots)  @fclose($domain->getConfiguration()['base'] . 'robots.txt', 'r');
-            if ($isSitemap) @fclose($domain->getConfiguration()['base'] . 'sitemap.xml', 'r');
-            if ($is404)     @fclose($domain->getConfiguration()['base'] . '404');
-
+            //if ($cnt++ >10) break;
         }
         return $domainUrls;
     }
@@ -819,6 +817,37 @@ class Mod1Controller extends ActionController
 
         //DebuggerUtility::var_dump(['$type'=>$type, '$pagesOfPluginType'=>$pagesOfPluginType], __class__.'->'.__function__.'()');
         return $pagesOfPluginType;
+    }
+
+    /**
+     * returns true or false
+     *
+     * @param $url
+     * @return bool
+     */
+    private function remoteFileExists($url)
+    {
+        $curl = curl_init($url);
+
+        //don't fetch the actual page, you only want to check the connection is ok
+        curl_setopt($curl, CURLOPT_NOBODY, true);
+
+        //do request
+        $result = curl_exec($curl);
+
+        $ret = false;
+
+        //if request did not fail
+        if ($result !== false) {
+            //if request was ok, check response code
+            if (curl_getinfo($curl, CURLINFO_HTTP_CODE) === 200) {
+                $ret = true;
+            }
+        }
+
+        curl_close($curl);
+
+        return $ret;
     }
 
     /**
