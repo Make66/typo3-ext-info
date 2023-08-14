@@ -20,9 +20,11 @@
 
     <li><h4>$TYPO3_CONF_VARS['SYS']['trustedHostsPattern']</h4>
       <f:if condition="!{trustedHostsPattern}">
-        <f:then>(empty)</f:then>
+        <f:then><span style="color:red">Warning: no value set!</span></f:then>
         <f:else>{trustedHostsPattern}</f:else>
       </f:if>
+      <f:if condition="{trustedHostsPattern_disabled}"><span style="color:red">Warning: hosts pattern check disabled!</span></f:if>
+      <f:if condition="{trustedHostsPattern_isDefault}">(Default: SERVER_NAME)</f:if>
     </li>
 
     <li><h4>$TYPO3_CONF_VARS['BE']['fileExtensions']['webspace']['allow']</h4>

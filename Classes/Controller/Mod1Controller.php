@@ -344,6 +344,14 @@ class Mod1Controller extends ActionController
         // php_errors.log on root
         $isPhpErrorsLogOnRoot = @is_file($this->publicPath . '/php_errors.log.php');
 
+        /*
+         * tests trustedHostsPattern for default/disabled/something
+         * $GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern']
+         */
+        $trustedHostsPattern = $GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'];
+        $trustedHostsPattern_disabled = $trustedHostsPattern == '.*';
+        $trustedHostsPattern_isDefault = $trustedHostsPattern == 'SERVER_NAME';
+
         // non composer v9: index.php should be a symlink: is_link()
         // $this->>isComposerMode
 
@@ -456,7 +464,9 @@ class Mod1Controller extends ActionController
         $this->view->assignMultiple([
             'fileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'],
             'isFileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] != '\.(php[3-8]?|phpsh|phtml|pht|phar|shtml|cgi)(\..*)?$|\.pl$|^\.htaccess$',
-            'trustedHostsPattern' => $GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'],
+            'trustedHostsPattern' => $trustedHostsPattern,
+            'trustedHostsPattern_disabled' => $trustedHostsPattern_disabled,
+            'trustedHostsPattern_isDefault' => $trustedHostsPattern_isDefault,
             'webspace_allow' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['allow'],
             'webspace_deny' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['deny'],
             'indexSize' => $indexSize,
