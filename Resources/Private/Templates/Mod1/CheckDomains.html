@@ -15,6 +15,7 @@
       <th>base URL</th>
       <th>robot.txt</th>
       <th>sitemap.xml</th>
+      <th>404</th>
       <th>&nbsp;</th>
       <th>&nbsp;</th>
     </tr>
@@ -52,6 +53,20 @@
             </td>
           </f:else>
         </f:if>
+
+        <f:if condition="{domain.isPage404}">
+          <f:then>
+            <td style="color:green; text-align: center;">
+              <core:icon identifier="status-status-permission-granted" size="small"/>
+            </td>
+          </f:then>
+          <f:else>
+            <td style="color:red; text-align: center;">
+              <core:icon identifier="status-status-permission-denied" size="small"/>
+            </td>
+          </f:else>
+        </f:if>
+
         <f:comment>
           <f:if condition="{domain.isRobotTxt}">
             <f:then>

@@ -594,6 +594,7 @@ class Mod1Controller extends ActionController
         foreach ($domains as $domain) {
             $robotsTxt = @file_get_contents($domain->getConfiguration()['base'] . 'robots.txt');
             $sitemapXml = @file_get_contents($domain->getConfiguration()['base'] . 'sitemap.xml');
+            $page404 = @file_get_contents($domain->getConfiguration()['base'] . '404');
             $domainUrls[$domain->getRootPageId()] = [
                 'site' => $domain->getIdentifier(),
                 'baseUrl' => $domain->getConfiguration()['base'],
@@ -601,6 +602,8 @@ class Mod1Controller extends ActionController
                 'robotsTxt' => ($robotsTxt !== false) ? $robotsTxt : '',
                 'isSitemapXml' => $sitemapXml !== false,
                 'sitemapXml' => ($sitemapXml !== false) ? $sitemapXml : '',
+                'isPage404' => $page404 !== false,
+                'page404' => ($page404 !== false) ? $page404 : '',
             ];
         }
         //\nn\t3::debug($domainUrls);
