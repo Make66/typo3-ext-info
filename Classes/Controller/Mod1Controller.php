@@ -592,21 +592,25 @@ class Mod1Controller extends ActionController
         $domains = $this->siteConfiguration->getAllExistingSites($useCache = true);
         $domainUrls = [];
         foreach ($domains as $domain) {
-            $robotsTxt = @file_get_contents($domain->getConfiguration()['base'] . 'robots.txt');
-            $sitemapXml = @file_get_contents($domain->getConfiguration()['base'] . 'sitemap.xml');
-            $page404 = @file_get_contents($domain->getConfiguration()['base'] . '404');
+
+            // we do not need the content, just if the page is readable or not
+            $isRobots  = (bool)@fopen($domain->getConfiguration()['base'] . 'robots.txt', 'r');
+            $isSitemap = (bool)@fopen($domain->getConfiguration()['base'] . 'sitemap.xml', 'r');
+            $is404     = (bool)@fopen($domain->getConfiguration()['base'] . '404', 'r');
+
             $domainUrls[$domain->getRootPageId()] = [
                 'site' => $domain->getIdentifier(),
                 'baseUrl' => $domain->getConfiguration()['base'],
-                'isRobotsTxt' => $robotsTxt !== false,
-                'robotsTxt' => ($robotsTxt !== false) ? $robotsTxt : '',
-                'isSitemapXml' => $sitemapXml !== false,
-                'sitemapXml' => ($sitemapXml !== false) ? $sitemapXml : '',
-                'isPage404' => $page404 !== false,
-                'page404' => ($page404 !== false) ? $page404 : '',
+                'isRobotsTxt'  => $isRobots,
+                'isSitemapXml' => $isSitemap,
+                'isPage404'    => $is404,
             ];
+
+            if ($isRobots)  @fclose($domain->getConfiguration()['base'] . 'robots.txt', 'r');
+            if ($isSitemap) @fclose($domain->getConfiguration()['base'] . 'sitemap.xml', 'r');
+            if ($is404)     @fclose($domain->getConfiguration()['base'] . '404');
+
         }
-        //\nn\t3::debug($domainUrls);
         return $domainUrls;
     }
 
