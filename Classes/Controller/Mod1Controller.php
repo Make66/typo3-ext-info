@@ -820,7 +820,7 @@ class Mod1Controller extends ActionController
     }
 
     /**
-     * waits 1 sec for the url to answer (instead of 13)
+     * waits 2 sec for the url to answer
      * and accepts everything HTTP < 400 as success
      *
      * @param $url
@@ -828,27 +828,19 @@ class Mod1Controller extends ActionController
      */
     private function remoteFileExists($url)
     {
-        $curl = curl_init($url);
-
         //don't fetch the actual page, you only want to check the connection is ok
+        $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_NOBODY, true);
-        curl_setopt($curl, CURLOPT_TIMEOUT, 1);
-
-        //do request
+        curl_setopt($curl, CURLOPT_TIMEOUT, 2);
         $result = curl_exec($curl);
-
         $ret = false;
-
-        //if request did not fail
         if ($result !== false) {
             //if request was ok, check response code
-            if (curl_getinfo($curl, CURLINFO_HTTP_CODE) < 400) {
+            if (curl_getinfo($curl, CURLINFO_RESPONSE_CODE) < 400) {
                 $ret = true;
             }
         }
-
         curl_close($curl);
-
         return $ret;
     }
 
