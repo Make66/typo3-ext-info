@@ -20,6 +20,7 @@ use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
 //use TYPO3\CMS\Core\Messaging\AbstractMessage;
 //use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
 use TYPO3\CMS\Core\Utility\VersionNumberUtility;
@@ -68,7 +69,8 @@ class Mod1Controller extends ActionController
     protected string $publicPath;
     protected string $configPath;
     protected string $t3version;
-    protected $packageStates;
+    protected bool $isComposerMode;
+    protected array $globalTemplateVars;
 
     protected array $hackfiles = [
         'index.php',
@@ -182,9 +184,15 @@ class Mod1Controller extends ActionController
         $this->connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
         $this->siteConfiguration = GeneralUtility::makeInstance(SiteConfiguration::class);
         $environment = GeneralUtility::makeInstance(Environment::class);
+        $this->isComposerMode = $environment->isComposerMode();
         $this->publicPath = $environment->getPublicPath();
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
+        $extensionManagementUtility = GeneralUtility::makeInstance(ExtensionManagementUtility::class);
+
+        // global template information
+        $this->globalTemplateVars['isExtTool'] = $extensionManagementUtility::isLoaded('tool');
+
         /* why do we need extension pathes? T3 v11 composer has no PackageStates.php anymore
         // get loaded extensions
         //\nn\t3::debug($this->configPath );
@@ -194,11 +202,17 @@ class Mod1Controller extends ActionController
         }
         */
     }
+    public function postAction()
+    {
+        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->view->assignMultiple($this->globalTemplateVars);
+    }
 
     public function allTemplatesAction()
     {
         $templates = $this->getAllTemplates('1');
         $this->templatesToView($templates);
+        $this->view->assignMultiple($this->globalTemplateVars);
     }
 
     /**
@@ -247,6 +261,7 @@ class Mod1Controller extends ActionController
             $configs = self::sort($configs, $sortBy);
             $this->view->assign('configs', $configs);
             $this->view->assign('sortBy', $sortBy);
+            $this->view->assignMultiple($this->globalTemplateVars);
         }
 
     }
@@ -261,6 +276,7 @@ class Mod1Controller extends ActionController
         $allDomains = $this->getAllDomainsAndExtra();
         //echo '<pre>'; echo serialize($allDomains);echo '</pre>'; die();
         $this->view->assign('allDomains', $allDomains);
+        $this->view->assignMultiple($this->globalTemplateVars);
     }
 
     public function deleteFileAction(string $file = '') // v11: ResponseInterface and no param
@@ -278,7 +294,7 @@ class Mod1Controller extends ActionController
 
         $this->view->assign('file', $file);
         $this->view->assign('content', $content);
-
+        $this->view->assignMultiple($this->globalTemplateVars);
         // v11: return $this->htmlResponse();
     }
 
@@ -307,6 +323,7 @@ class Mod1Controller extends ActionController
             $this->view->assign('pages4PluginType', $this->getPages4PluginType($type));
             $this->view->assign('pages4ContentType', $this->getPages4ContentType($type));
         }
+        $this->view->assignMultiple($this->globalTemplateVars);
     }
 
     public function rootTemplatesAction()
@@ -324,6 +341,7 @@ class Mod1Controller extends ActionController
 
         $templates = $this->getAllTemplates();
         $this->templatesToView($templates);
+        $this->view->assignMultiple($this->globalTemplateVars);
     }
 
     public function securityCheckAction()
@@ -344,18 +362,27 @@ class Mod1Controller extends ActionController
         // php_errors.log on root
         $isPhpErrorsLogOnRoot = @is_file($this->publicPath . '/php_errors.log.php');
 
-        // v9: index.php should be a symlink: is_link()
+        // non composer v9: index.php should be a symlink: is_link()
+        // $this->>isComposerMode
 
-        // v10: index.php.len should be 987bytes or is assumed altered
+        /*
+         * test index on siteroot
+         * needs $this->>isComposerMode in template
+         * composer: v10: index.php.len should be 987bytes or is assumed altered
+         */
         $indexSize = @filesize($this->publicPath . '/index.php');
+        $indexSize_shouldBe = $this->fileinfo['/index.php'][$this->t3version]['size'];
+        $indexStat = $this->stat($this->publicPath . '/index.php');
+        $isIndexSymlink = $indexStat['stat']['nlink'];
 
+        /*
+         * test all php on siteroot
+         */
         // get all .php files on root
-        //$directoryEntries = [];
         $phpFiles = [];
         $dir = dir($this->publicPath);
         if ($dir !== false) {
             while (false !== ($entry = $dir->read())) {
-                //$directoryEntries[] = $entry;
                 if (substr($entry, -4) == '.php') {
                     $phpFiles[] = $this->stat($this->publicPath . '/' . $entry);
                 }
@@ -365,11 +392,13 @@ class Mod1Controller extends ActionController
         $notIndexPhpFiles = $phpFiles;
         $indexKey = array_search('index.php', array_column($phpFiles, 'entry'));
         array_splice($notIndexPhpFiles, $indexKey);
-
         //\nn\t3::debug($directoryEntries);
         //\nn\t3::debug($notIndexPhpFiles);
         //die();
 
+        /*
+         * test /typo3temp for *.php which should not be there
+         */
         // composer: typo3temp should not contain any .php: find ./|grep .php
         // redirect stderr to stdout using 2>&1 to see error messages as well
         $typo3tempPhps = [];
@@ -380,7 +409,10 @@ class Mod1Controller extends ActionController
         }
         //\nn\t3::debug($typo3tempPhps);
 
-        // php files where other php files are; use $this->hackfiles to check against
+        /*
+         * test /typo3conf, which may contain *.php, for *.php which should not be there
+         * use $this->hackfiles to check against
+         */
         $typo3confPhps = [];
         $cmd = 'find "' . $this->publicPath . '/typo3conf/" -type "f" -name "*.php" 2>&1';
         exec($cmd, $output, $status);
@@ -391,7 +423,22 @@ class Mod1Controller extends ActionController
         }
 
         /*
-         * php files which contain suspicious code using basic regular expression
+         * test /uploads for php files where no php files should be: uploads (only non composer mode)
+         */
+        $uploadsPhps = [];
+        if (!$this->isComposerMode)
+        {
+            $cmd = 'find "' . $this->publicPath . '/uploads/" -type "f" -name "*.php" 2>&1';
+            exec($cmd, $output, $status);
+            foreach ($output as $file) {
+                $uploadsPhps[] = $this->stat($file);
+            }
+            //\nn\t3::debug($uploadsPhps);
+        }
+
+        /*
+         * test /*.php files and all subdirs which contain suspicious code
+         * using basic regular expression
          */
         $searchFor = '';
         $output = '';
@@ -426,6 +473,7 @@ class Mod1Controller extends ActionController
 
         $this->view->assignMultiple([
             't3version' => $this->t3version,
+            'isComposerMode' => $this->isComposerMode,
             'publicPath' => $this->publicPath,
             'fileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'],
             'isFileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] != '\.(php[3-8]?|phpsh|phtml|pht|phar|shtml|cgi)(\..*)?$|\.pl$|^\.htaccess$',
@@ -433,8 +481,9 @@ class Mod1Controller extends ActionController
             'webspace_allow' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['allow'],
             'webspace_deny' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['deny'],
             'indexSize' => $indexSize,
-            'indexSize_shouldBe' => $this->fileinfo['/index.php'][$this->t3version]['size'],
-            'indexPhp' => $this->stat($this->publicPath . '/index.php'),
+            'indexSize_shouldBe' => $indexSize_shouldBe,
+            'isIndexSymlink' => $isIndexSymlink,
+            'indexPhp' => $indexStat,
             'phpErrorsPath' => $this->publicPath . '/php_errors.log',
             'isPhpErrors' => $isPhpErrorsLogOnRoot,
             'webrootPhps' => $notIndexPhpFiles,
@@ -443,13 +492,13 @@ class Mod1Controller extends ActionController
             'isTypo3tempPhps' => count($typo3tempPhps) > 0,
             'typo3confPhps' => $typo3confPhps,
             'isTypo3confPhps' => count($typo3confPhps) > 0,
+            'uploadsPhps' => $uploadsPhps,
+            'isUploadsPhps' => count($uploadsPhps) > 0,
+
             'suspiciousPhps' => $suspiciousPhps,
             'isSuspiciousPhps' => count($suspiciousPhps) > 0,
         ]);
-
-        // php files where no php files should be: uploads
-
-
+        $this->view->assignMultiple($this->globalTemplateVars);
     }
 
     /**
@@ -472,7 +521,7 @@ class Mod1Controller extends ActionController
 
         $this->view->assign('file', $file);
         $this->view->assign('content', $content);
-
+        $this->view->assignMultiple($this->globalTemplateVars);
         // v11: return $this->htmlResponse();
     }
 
@@ -816,6 +865,7 @@ class Mod1Controller extends ActionController
                     'uid' => '',
                     'gid' => '',
                     'mode' => '',
+                    'nlink' => false,
                     'size' => '',
                     'ctime' => '',
                     'mtime' => '',
@@ -834,6 +884,7 @@ class Mod1Controller extends ActionController
                     'group' => $posixGroupInfo['name'],
                     'ow_gr' => $posixUserInfo['name'] . ':' . $posixGroupInfo['name'],
                     'mode' => substr(decoct($stat['mode']), -3, 3),
+                    'nlink' => $stat['nlink'] >0,
                     'size' => $stat['size'],
                     'ctime' => $stat['ctime'],
                     'mtime' => $stat['mtime'],

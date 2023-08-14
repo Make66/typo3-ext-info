@@ -40,14 +40,25 @@
     </li>
 
     <li><h4>/index.php altered</h4>
-      <f:if condition="{indexSize} != {indexSize_shouldBe}">
+      <f:comment>
+        In composer mode: index.php is a file w/ a len of x bytes (todo: should not be apache-writable)
+        In classic mode: index.php must be a symlink (todo: to typo3_src/index.php)
+      </f:comment>
+      <f:if condition="{isComposerMode}">
         <f:then>
-          <span  style="color: red">/index.php seems to be altered</span><br/>
-          {publicPath}/index.php {indexSize} instead of {indexSize_shouldBe} bytes.
-          <pre><f:render section="list1File" arguments="{file:indexPhp}"/></pre>
+          <f:if condition="{indexSize} != {indexSize_shouldBe}">
+            <f:then>
+              <span  style="color: red">/index.php seems to be altered</span><br/>
+              {publicPath}/index.php {indexSize} instead of {indexSize_shouldBe} bytes.
+              <pre><f:render section="list1File" arguments="{file:indexPhp}"/></pre>
+            </f:then>
+            <f:else>
+              - Ok<br/>
+            </f:else>
+          </f:if>
         </f:then>
         <f:else>
-          - Ok<br/>
+          <f:debug>{_all}</f:debug>
         </f:else>
       </f:if>
     </li>
@@ -106,6 +117,21 @@
         </f:else>
       </f:if>
     </li>
+
+    <f:if condition="!{isComposerMode}">
+    <li><h4>illegal files in /uploads/</h4>
+      <f:if condition="{isTypo3uploadsPhps}">
+        <f:then>
+          <span style="color:red;">The following possible illegal files have been found in /uploads/  (<f:count subject="{uploadsPhps}" />)</span><br/>
+          <f:spaceless>
+            <pre><f:for as="file" each="{uploadsPhps}"><f:render section="list1File" arguments="{file:file,short:file.short}"/></f:for></pre>
+          </f:spaceless>
+        </f:then>
+        <f:else>
+          - Ok<br/>
+        </f:else>
+      </f:if>
+    </li></f:if>
 
     <li><h4>suspicious files</h4>
       <f:if condition="{isSuspiciousPhps}">
