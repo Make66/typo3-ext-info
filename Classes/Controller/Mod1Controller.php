@@ -820,7 +820,8 @@ class Mod1Controller extends ActionController
     }
 
     /**
-     * returns true or false
+     * waits 1 sec for the url to answer (instead of 13)
+     * and accepts everything HTTP < 400 as success
      *
      * @param $url
      * @return bool
@@ -831,6 +832,7 @@ class Mod1Controller extends ActionController
 
         //don't fetch the actual page, you only want to check the connection is ok
         curl_setopt($curl, CURLOPT_NOBODY, true);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 1);
 
         //do request
         $result = curl_exec($curl);
@@ -840,7 +842,7 @@ class Mod1Controller extends ActionController
         //if request did not fail
         if ($result !== false) {
             //if request was ok, check response code
-            if (curl_getinfo($curl, CURLINFO_HTTP_CODE) === 200) {
+            if (curl_getinfo($curl, CURLINFO_HTTP_CODE) < 400) {
                 $ret = true;
             }
         }
