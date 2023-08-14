@@ -191,21 +191,12 @@ class Mod1Controller extends ActionController
         $extensionManagementUtility = GeneralUtility::makeInstance(ExtensionManagementUtility::class);
 
         // global template information
-        $this->globalTemplateVars['isExtTool'] = $extensionManagementUtility::isLoaded('tool');
-
-        /* why do we need extension pathes? T3 v11 composer has no PackageStates.php anymore
-        // get loaded extensions
-        //\nn\t3::debug($this->configPath );
-        $this->packageStates = @include $this->configPath . '/PackageStates.php' ?: [];
-        if (!isset($this->packageStates['version']) || $this->packageStates['version'] < 5) {
-            throw new PackageStatesUnavailableException('The PackageStates.php file is either corrupt or unavailable.', 1381507733);
-        }
-        */
-    }
-    public function postAction()
-    {
-        $this->view->assignMultiple($this->globalTemplateVars);
-        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->globalTemplateVars = [
+            't3version' => $this->t3version,
+            'publicPath' => $this->publicPath,
+            'isComposerMode' => $this->isComposerMode,
+            'isExtTool' => $extensionManagementUtility::isLoaded('tool'),
+        ];
     }
 
     public function allTemplatesAction()
@@ -216,6 +207,7 @@ class Mod1Controller extends ActionController
     }
 
     /**
+     * only available for private EXT:tool
      * @return void
      */
     public function configSizesAction()
@@ -281,9 +273,6 @@ class Mod1Controller extends ActionController
 
     public function deleteFileAction(string $file = '') // v11: ResponseInterface and no param
     {
-        //\nn\t3::debug($file);
-
-
         $content = 'File could not be deleted';
         if ($file != '') {
             $content = (@unlink($file))
@@ -303,13 +292,6 @@ class Mod1Controller extends ActionController
      */
     public function pluginsAction()
     {
-        /*
-        // Check permission to read config tables
-        if (!$GLOBALS['BE_USER']->check('tables_select', 'tx_tool_domain_model_config')) {
-            $this->addFlashMessage('Berechtigung für diese Seite fehlt.', '', AbstractMessage::ERROR);
-            return;
-        }
-        */
         $arguments = $this->request->getArguments();
         $type = (isset($arguments['type'])) ? $arguments['type'] : '';
         //DebuggerUtility::var_dump(['$arguments'=>$arguments,'$type'=>$type], __class__.'->'.__function__.'()');
@@ -323,6 +305,11 @@ class Mod1Controller extends ActionController
             $this->view->assign('pages4PluginType', $this->getPages4PluginType($type));
             $this->view->assign('pages4ContentType', $this->getPages4ContentType($type));
         }
+        $this->view->assignMultiple($this->globalTemplateVars);
+    }
+
+    public function postAction()
+    {
         $this->view->assignMultiple($this->globalTemplateVars);
     }
 
@@ -346,12 +333,7 @@ class Mod1Controller extends ActionController
 
     public function securityCheckAction()
     {
-        //const $xid =
-
-        // l10n contains directories len!=2
         $localConfPath = $this->configPath . '/LocalConfiguration.php';
-
-        //$allDomains = $this->getAllDomains();
 
         // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['allow']
         // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['deny']
@@ -472,9 +454,6 @@ class Mod1Controller extends ActionController
         //\nn\t3::debug($suspiciousPhps);
 
         $this->view->assignMultiple([
-            't3version' => $this->t3version,
-            'isComposerMode' => $this->isComposerMode,
-            'publicPath' => $this->publicPath,
             'fileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'],
             'isFileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] != '\.(php[3-8]?|phpsh|phtml|pht|phar|shtml|cgi)(\..*)?$|\.pl$|^\.htaccess$',
             'trustedHostsPattern' => $GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern'],
@@ -494,7 +473,6 @@ class Mod1Controller extends ActionController
             'isTypo3confPhps' => count($typo3confPhps) > 0,
             'uploadsPhps' => $uploadsPhps,
             'isUploadsPhps' => count($uploadsPhps) > 0,
-
             'suspiciousPhps' => $suspiciousPhps,
             'isSuspiciousPhps' => count($suspiciousPhps) > 0,
         ]);
