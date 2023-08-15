@@ -29,78 +29,17 @@
           </a>
         </td>
         <td nowrap="true">{domain.baseUrl}</td>
-        <f:if condition="{domain.isRobotTxt}">
-          <f:then>
-            <td style="color:green; text-align: center;">
-              <core:icon identifier="status-status-permission-granted" size="small"/>
-            </td>
-          </f:then>
-          <f:else>
-            <td style="color:red; text-align: center;">
-              <core:icon identifier="status-status-permission-denied" size="small"/>
-            </td>
-          </f:else>
-        </f:if>
-        <f:if condition="{domain.isSitemapXml}">
-          <f:then>
-            <td style="color:green; text-align: center;">
-              <core:icon identifier="status-status-permission-granted" size="small"/>
-            </td>
-          </f:then>
-          <f:else>
-            <td style="color:red; text-align: center;">
-              <core:icon identifier="status-status-permission-denied" size="small"/>
-            </td>
-          </f:else>
-        </f:if>
-
-        <f:if condition="{domain.isPage404}">
-          <f:then>
-            <td style="color:green; text-align: center;">
-              <core:icon identifier="status-status-permission-granted" size="small"/>
-            </td>
-          </f:then>
-          <f:else>
-            <td style="color:red; text-align: center;">
-              <core:icon identifier="status-status-permission-denied" size="small"/>
-            </td>
-          </f:else>
-        </f:if>
-
-        <f:comment>
-          <f:if condition="{domain.isRobotTxt}">
-            <f:then>
-              <td style="color:green"><a href="#robot_{domain.id}">view robot.txt</a></td>
-            </f:then>
-            <f:else>
-              <td style="color:red"><a href="#robot_{domain.id}">create robot.txt</a></td>
-            </f:else>
-          </f:if>
-          <f:if condition="{domain.isSitemapXml}">
-            <f:then>
-              <td style="color:green"><a href="#sitemap_{domain.id}">view sitemap.xml</a></td>
-            </f:then>
-            <f:else>
-              <td style="color:red"><a href="#sitemap_{domain.id}">create sitemap.xml</a></td>
-            </f:else>
-          </f:if>
-        </f:comment>
+        <td id="robots-{domain.site}" style="color:gray; text-align: center;">
+          <core:icon identifier="actions-question" size="small"/>
+        </td>
+        <td id="sitemap-{domain.site}" style="color:gray; text-align: center;">
+          <core:icon identifier="actions-question" size="small"/>
+        </td>
+        <td id="404-{domain.site}" style="color:gray; text-align: center;">
+          <core:icon identifier="actions-question" size="small"/>
+        </td>
       </tr>
     </f:for>
   </table>
 
-  <f:comment>
-    <f:for each="{allDomains}" key="id" as="domain">
-      <f:if condition="{domain.isRobotTxt}">
-        <div style="display:none" id="robot_{domain.id}">{domain.robotTxt}</div>
-      </f:if>
-      <f:if condition="{domain.isSitemapXml}">
-        <div style="display:none" id="sitemap_{domain.id}">{domain.sitemapXml}</div>
-      </f:if>
-    </f:for>
-  </f:comment>
-
 </f:section>
-<f:comment>
-  {f:if(condition: '{domain.isRobotTxt}' then: 'green', else: 'red')}
-</f:comment>

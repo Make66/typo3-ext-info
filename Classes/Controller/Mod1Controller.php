@@ -20,8 +20,10 @@ use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
 //use TYPO3\CMS\Core\Messaging\AbstractMessage;
 //use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
+use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
 use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
@@ -63,6 +65,7 @@ use TYPO3\CMS\Core\Configuration\SiteConfiguration;
  */
 class Mod1Controller extends ActionController
 {
+    const EXTKEY = 'sysinfo';
     protected ConnectionPool $connectionPool;
     protected PageRepository $pageRepository;
     protected SiteConfiguration $siteConfiguration;
@@ -265,10 +268,22 @@ class Mod1Controller extends ActionController
      */
     public function checkDomainsAction()
     {
-        $allDomains = $this->getAllDomainsAndExtra();
-        //echo '<pre>'; echo serialize($allDomains);echo '</pre>'; die();
+        $allDomains = $this->getAllDomains();
+        $jsFooterInlineCode = 'var checkFiles = [' . "\n";
+        foreach ($allDomains as $domain)
+        {
+            $jsFooterInlineCode .= '  { site:"' . $domain['site'] . '", url:"' . $domain['baseUrl'] . '"},' . "\n";
+        }
+        $jsFooterInlineCode .= '];';
+
         $this->view->assign('allDomains', $allDomains);
         $this->view->assignMultiple($this->globalTemplateVars);
+
+        // add JS
+        $pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
+        $pageRenderer->addJsInlineCode('tx_' . SELF::EXTKEY . '_m1', $jsFooterInlineCode);
+        $pageRenderer->addJsFooterFile(PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath(SELF::EXTKEY)
+            . 'Resources/Public/JavaScript/checkPages.js'));
     }
 
     public function deleteFileAction(string $file = '') // v11: ResponseInterface and no param
@@ -578,7 +593,7 @@ class Mod1Controller extends ActionController
      *
      * @return array
      */
-    private function getAllDomains(): array
+    private function getAllDomains($limit = 1000): array
     {
         $domains = $this->siteConfiguration->getAllExistingSites(true);
         //\nn\t3::debug($domains);
@@ -586,7 +601,11 @@ class Mod1Controller extends ActionController
         foreach ($domains as $domain) {
             //$robotsTxt = @file_get_contents($domain->getConfiguration()['base'] . '/robots.txt');
             //$sitemapXml = @file_get_contents($domain->getConfiguration()['base'] . '/sitemap.xml');
-            $domainUrls[$domain->getRootPageId()] = $domain->getConfiguration()['base'];
+            $domainUrls[$domain->getRootPageId()] = [
+                'site' => $domain->getIdentifier(),
+                'baseUrl' => $domain->getConfiguration()['base'],
+            ];
+            if ($limit-- <1) break;
         }
         return $domainUrls;
     }
