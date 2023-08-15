@@ -86,7 +86,7 @@ class CheckRemotePageController extends ActionController
      * @param $url
      * @return bool
      */
-    private function remoteFileExists($url)
+    private function remoteFileExists($url): bool
     {
         //don't fetch the actual page, you only want to check the connection is ok
         $curl = curl_init($url);

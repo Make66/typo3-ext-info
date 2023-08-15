@@ -282,8 +282,22 @@ class Mod1Controller extends ActionController
         // add JS
         $pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
         $pageRenderer->addJsInlineCode('tx_' . SELF::EXTKEY . '_m1', $jsFooterInlineCode);
+
+        /*
+        $extPath = ExtensionManagementUtility::extPath(SELF::EXTKEY);
+        $absWebPath = PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath(SELF::EXTKEY)
+            . 'Resources/Public/JavaScript/checkPages.js');
+        $jsFooterFile = PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath(SELF::EXTKEY)
+            . 'Resources/Public/JavaScript/checkPages.js');
+        \nn\t3::debug([
+            '$extPath'=>$extPath,
+            '$absWebPath'=>$absWebPath,
+            '$jsFooterFile' => $jsFooterFile,
+            ]);
+
         $pageRenderer->addJsFooterFile(PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath(SELF::EXTKEY)
             . 'Resources/Public/JavaScript/checkPages.js'));
+        */
     }
 
     public function deleteFileAction(string $file = '') // v11: ResponseInterface and no param
