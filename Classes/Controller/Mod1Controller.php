@@ -366,7 +366,11 @@ class Mod1Controller extends ActionController
 
         // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['allow']
         // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['deny']
-        // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] original or altered?
+        // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] original or altered or empty?
+        $fileDenyPattern = $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'];
+        $fileDenyPatternDefault = '\.(php[3-8]?|phpsh|phtml|pht|phar|shtml|cgi)(\..*)?$|\.pl$|^\.htaccess$';
+        $isFileDenyPatternAltered = $fileDenyPattern != $fileDenyPatternDefault;
+        $isFileDenyPatternEmpty = trim($fileDenyPattern) == '';
 
         // $this->publicPath/index.php should not be writable: is_writable(string $filename): bool
 
@@ -415,8 +419,7 @@ class Mod1Controller extends ActionController
         $indexKey = array_search('/index.php', array_column($phpFiles, 'short'));
         array_splice($notIndexPhpFiles, $indexKey);
         //\nn\t3::debug($phpFiles);
-        //\nn\t3::debug($notIndexPhpFiles);
-        //die();
+        //\nn\t3::debug($notIndexPhpFiles); die();
 
         /*
          * test /typo3temp for *.php which should not be there
@@ -494,8 +497,10 @@ class Mod1Controller extends ActionController
         //\nn\t3::debug($suspiciousPhps);
 
         $this->view->assignMultiple([
-            'fileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'],
-            'isFileDenyPattern' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] != '\.(php[3-8]?|phpsh|phtml|pht|phar|shtml|cgi)(\..*)?$|\.pl$|^\.htaccess$',
+            'fileDenyPattern' => $fileDenyPattern,
+            'fileDenyPatternDefault' => $fileDenyPatternDefault,
+            'isFileDenyPatternEmpty' => $isFileDenyPatternEmpty,
+            'isFileDenyPatternAltered' => $isFileDenyPatternAltered,
             'trustedHostsPattern' => $trustedHostsPattern,
             'trustedHostsPattern_disabled' => $trustedHostsPattern_disabled,
             'trustedHostsPattern_isDefault' => $trustedHostsPattern_isDefault,
