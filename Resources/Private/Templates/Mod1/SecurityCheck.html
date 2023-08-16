@@ -72,9 +72,8 @@
     <li><h4>existing /php_errors.log</h4>
       <f:if condition="{isPhpErrors}">
         <f:then>
-          <li style="color: red">
-            This file should not be there &gt;
-            <pre><f:render section="list1File" arguments="{file:phpErrorsPath}"/></pre>
+          <span style="color: red">This file should not be there, check content for illegal activities and delete</span>
+          <pre><f:render section="list1File" arguments="{file:phpErrors,short:phpErrors.short}"/></pre>
         </f:then>
         <f:else>
           - Ok<br/>
@@ -82,11 +81,11 @@
       </f:if>
     </li>
 
-    <li><h4>illegal php files on webroot {publicPath}</h4>
+    <li><h4>illegal php files on webroot</h4>
       <f:if condition="{isWebrootPhps}">
         <f:then>
         <pre><f:for each="{webrootPhps}" as="file">
-                <f:render section="list1File" arguments="{file:file}"/>
+                <f:render section="list1File" arguments="{file:file,short:file.short}"/>
             </f:for>
         </pre>
         </f:then>
@@ -101,7 +100,7 @@
         <f:then>
           <span style="color:red;">The following illegal files have been found in /typo3temp/</span><br/>
           <f:spaceless>
-            <pre><f:for as="file" each="{typo3tempPhps}"><f:render section="list1File" arguments="{file:file}"/></f:for></pre>
+            <pre><f:for as="file" each="{typo3tempPhps}"><f:render section="list1File" arguments="{file:file,short:file.short}"/></f:for></pre>
           </f:spaceless>
         </f:then>
         <f:else>

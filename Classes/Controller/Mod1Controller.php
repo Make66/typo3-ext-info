@@ -371,7 +371,10 @@ class Mod1Controller extends ActionController
         // $this->publicPath/index.php should not be writable: is_writable(string $filename): bool
 
         // php_errors.log on root
-        $isPhpErrorsLogOnRoot = @is_file($this->publicPath . '/php_errors.log.php');
+        $phpErrors = $this->publicPath . '/php_errors.log';
+        $isPhpErrorsLogOnRoot = @is_file($phpErrors);
+        $phpErrorsLogOnRoot = $this->stat($phpErrors);
+
 
         /*
          * tests trustedHostsPattern for default/disabled/something
@@ -502,7 +505,7 @@ class Mod1Controller extends ActionController
             'indexSize_shouldBe' => $indexSize_shouldBe,
             'isIndexSymlink' => $isIndexSymlink,
             'indexPhp' => $indexStat,
-            'phpErrorsPath' => $this->publicPath . '/php_errors.log',
+            'phpErrors' => $phpErrorsLogOnRoot,
             'isPhpErrors' => $isPhpErrorsLogOnRoot,
             'webrootPhps' => $notIndexPhpFiles,
             'isWebrootPhps' => count($notIndexPhpFiles) > 0,
