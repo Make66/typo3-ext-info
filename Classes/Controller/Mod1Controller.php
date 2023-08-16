@@ -412,9 +412,9 @@ class Mod1Controller extends ActionController
             $dir->close();
         }
         $notIndexPhpFiles = $phpFiles;
-        $indexKey = array_search('index.php', array_column($phpFiles, 'entry'));
+        $indexKey = array_search('/index.php', array_column($phpFiles, 'short'));
         array_splice($notIndexPhpFiles, $indexKey);
-        //\nn\t3::debug($directoryEntries);
+        //\nn\t3::debug($phpFiles);
         //\nn\t3::debug($notIndexPhpFiles);
         //die();
 

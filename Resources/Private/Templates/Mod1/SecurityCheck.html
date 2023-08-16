@@ -84,10 +84,8 @@
     <li><h4>illegal php files on webroot</h4>
       <f:if condition="{isWebrootPhps}">
         <f:then>
-        <pre><f:for each="{webrootPhps}" as="file">
-                <f:render section="list1File" arguments="{file:file,short:file.short}"/>
-            </f:for>
-        </pre>
+          <span style="color: red">These files should not be there, check content for illegal activities and delete</span>
+          <pre><f:for each="{webrootPhps}" as="file"><f:render section="list1File" arguments="{file:file,short:file.short}"/></f:for></pre>
         </f:then>
         <f:else>
           - Ok<br/>
