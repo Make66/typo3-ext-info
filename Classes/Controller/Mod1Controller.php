@@ -5,20 +5,12 @@ namespace Taketool\Sysinfo\Controller;
 use Closure;
 use Doctrine\DBAL\Exception\TableNotFoundException;
 use PDO;
-
-//use Psr\Http\Message\ResponseInterface; // v11
+use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-
-//use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 //use TYPO3\CMS\Frontend\Page\PageRepository;  // T3v9
-use TYPO3\CMS\Core\Domain\Repository\PageRepository;
-
-// T3v10
+use TYPO3\CMS\Core\Domain\Repository\PageRepository; // T3v10
 use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
-
-//use TYPO3\CMS\Core\Messaging\AbstractMessage;
-//use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -27,11 +19,6 @@ use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
 use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
-
-//use TYPO3\CMS\Extbase\Mvc\Exception\NoSuchArgumentException;
-
-// T3v10
-use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 
 /***************************************************************
  *  Copyright notice
