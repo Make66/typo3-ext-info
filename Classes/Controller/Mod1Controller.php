@@ -5,20 +5,12 @@ namespace Taketool\Sysinfo\Controller;
 use Closure;
 use Doctrine\DBAL\Exception\TableNotFoundException;
 use PDO;
-
-//use Psr\Http\Message\ResponseInterface; // v11
+use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-
-//use TYPO3\CMS\Core\Database\Query\QueryBuilder;
 //use TYPO3\CMS\Frontend\Page\PageRepository;  // T3v9
-use TYPO3\CMS\Core\Domain\Repository\PageRepository;
-
-// T3v10
+use TYPO3\CMS\Core\Domain\Repository\PageRepository; // T3v10
 use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
-
-//use TYPO3\CMS\Core\Messaging\AbstractMessage;
-//use TYPO3\CMS\Core\Site\SiteFinder;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
@@ -27,11 +19,6 @@ use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
 use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
-
-//use TYPO3\CMS\Extbase\Mvc\Exception\NoSuchArgumentException;
-
-// T3v10
-use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 
 /***************************************************************
  *  Copyright notice
@@ -192,13 +179,17 @@ class Mod1Controller extends ActionController
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
         $extensionManagementUtility = GeneralUtility::makeInstance(ExtensionManagementUtility::class);
-
+        $sysinfoWebPath = PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath(SELF::EXTKEY));
+        $jsCheckPages = $sysinfoWebPath . 'Resources/Public/JavaScript/checkPages.js';
+        
         // global template information
         $this->globalTemplateVars = [
             't3version' => $this->t3version,
             'publicPath' => $this->publicPath,
             'isComposerMode' => $this->isComposerMode,
             'isExtTool' => $extensionManagementUtility::isLoaded('tool'),
+            'sysinfoWebPath' => $sysinfoWebPath,
+            'jsCheckPages' => $jsCheckPages,
         ];
     }
 
@@ -269,35 +260,20 @@ class Mod1Controller extends ActionController
     public function checkDomainsAction()
     {
         $allDomains = $this->getAllDomains();
-        $jsFooterInlineCode = 'var checkFiles = [' . "\n";
+        $jsInlineCode = 'var checkFiles = [' . "\n";
         foreach ($allDomains as $domain)
         {
-            $jsFooterInlineCode .= '  { site:"' . $domain['site'] . '", url:"' . $domain['baseUrl'] . '"},' . "\n";
+            $jsInlineCode .= '  { site:"' . $domain['site'] . '", url:"' . $domain['baseUrl'] . '"},' . "\n";
         }
-        $jsFooterInlineCode .= '];';
+        $jsInlineCode .= '];';
 
         $this->view->assign('allDomains', $allDomains);
         $this->view->assignMultiple($this->globalTemplateVars);
 
         // add JS
         $pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
-        $pageRenderer->addJsInlineCode('tx_' . SELF::EXTKEY . '_m1', $jsFooterInlineCode);
-
-        /*
-        $extPath = ExtensionManagementUtility::extPath(SELF::EXTKEY);
-        $absWebPath = PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath(SELF::EXTKEY)
-            . 'Resources/Public/JavaScript/checkPages.js');
-        $jsFooterFile = PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath(SELF::EXTKEY)
-            . 'Resources/Public/JavaScript/checkPages.js');
-        \nn\t3::debug([
-            '$extPath'=>$extPath,
-            '$absWebPath'=>$absWebPath,
-            '$jsFooterFile' => $jsFooterFile,
-            ]);
-
-        $pageRenderer->addJsFooterFile(PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath(SELF::EXTKEY)
-            . 'Resources/Public/JavaScript/checkPages.js'));
-        */
+        $pageRenderer->addJsInlineCode('tx_' . SELF::EXTKEY . '_m1', $jsInlineCode);
+        // add checkPages.js is done in template
     }
 
     public function deleteFileAction(string $file = '') // v11: ResponseInterface and no param
@@ -366,7 +342,10 @@ class Mod1Controller extends ActionController
 
         // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['allow']
         // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['deny']
-        // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] original or altered or empty?
+
+        /*
+         * test if $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] original or altered or empty?
+         */
         $fileDenyPattern = $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'];
         $fileDenyPatternDefault = '\.(php[3-8]?|phpsh|phtml|pht|phar|shtml|cgi)(\..*)?$|\.pl$|^\.htaccess$';
         $isFileDenyPatternAltered = $fileDenyPattern != $fileDenyPatternDefault;
@@ -379,7 +358,6 @@ class Mod1Controller extends ActionController
         $isPhpErrorsLogOnRoot = @is_file($phpErrors);
         $phpErrorsLogOnRoot = $this->stat($phpErrors);
 
-
         /*
          * tests trustedHostsPattern for default/disabled/something
          * $GLOBALS['TYPO3_CONF_VARS']['SYS']['trustedHostsPattern']
@@ -389,7 +367,7 @@ class Mod1Controller extends ActionController
         $trustedHostsPattern_isDefault = $trustedHostsPattern == 'SERVER_NAME';
 
         // non composer v9: index.php should be a symlink: is_link()
-        // $this->>isComposerMode
+        // $this->isComposerMode
 
         /*
          * test index on siteroot
@@ -415,12 +393,11 @@ class Mod1Controller extends ActionController
             }
             $dir->close();
         }
+        // remove index.php from result set
         $notIndexPhpFiles = $phpFiles;
         $indexKey = array_search('/index.php', array_column($phpFiles, 'short'));
-        array_splice($notIndexPhpFiles, $indexKey);
-        //\nn\t3::debug($phpFiles);
-        //\nn\t3::debug($notIndexPhpFiles); die();
-
+        unset($notIndexPhpFiles[$indexKey]);
+        
         /*
          * test /typo3temp for *.php which should not be there
          */
