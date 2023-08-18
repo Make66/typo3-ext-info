@@ -953,6 +953,7 @@ class Mod1Controller extends ActionController
     }
 
     /**
+     * @todo sort by siteroot and rootline
      * @param array $templates
      * @return void
      */
@@ -962,6 +963,8 @@ class Mod1Controller extends ActionController
             $templates[$key]['pagetitle'] = $this->pageRepository->getPage($t['pid'], $disableGroupAccessCheck = true)['title'];
             $templates[$key]['include_static_file'] = implode('<br>', explode(',', $t['include_static_file']));
         }
+        // order by siteroot
+        $templates = self::sort($templates, 'siteroot');
         $this->view->assign('templates', $templates);
     }
 
