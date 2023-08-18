@@ -72,8 +72,41 @@
 
         <f:for as="plugin" each="{pages4ContentType}">
           <tr id="">
-            <td>{plugin.uid}</td>
-            <td>{plugin.pid}</td>
+            <td>
+              <f:if condition="{plugin.cDeleted}">
+                <f:then>
+                  <core:icon identifier="apps-pagetree-drag-place-denied" size="small"/>
+                </f:then>
+                <f:else>
+                  <core:icon identifier="apps-pagetree-page-default" size="small"/>
+                </f:else>
+              </f:if>
+              <f:if condition="{plugin.cHidden}">
+                <f:then>
+                  <core:icon identifier="apps-pagetree-drag-place-denied" size="small"/>
+                </f:then>
+                <f:else>
+                  <core:icon identifier="apps-pagetree-page-default" size="small"/>
+                </f:else>
+              </f:if>
+              {plugin.uid}</td>
+            <td>
+              <f:if condition="{plugin.pDeleted}">
+                <f:then>
+                  <core:icon identifier="apps-pagetree-drag-place-denied" size="small"/>
+                </f:then>
+                <f:else>
+                  <core:icon identifier="apps-pagetree-page-default" size="small"/>
+                </f:else>
+              </f:if>
+              <f:if condition="{plugin.pHidden}">
+                <f:then>
+                  <core:icon identifier="apps-pagetree-drag-place-denied" size="small"/>
+                </f:then>
+                <f:else>
+                  <core:icon identifier="apps-pagetree-page-default" size="small"/>
+                </f:else>
+              </f:if>{plugin.pid}</td>
             <td>{plugin.siteroot}</td>
             <td>
               <f:be.link parameters="{id: plugin.pid}" route="web_layout">{plugin.rootline}</f:be.link>
