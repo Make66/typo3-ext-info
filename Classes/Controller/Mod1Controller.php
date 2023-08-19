@@ -13,7 +13,7 @@ use TYPO3\CMS\Core\Domain\Repository\PageRepository; // T3v10
 use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
 use TYPO3\CMS\Core\Page\PageRenderer;
-//use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
@@ -178,18 +178,20 @@ class Mod1Controller extends ActionController
         $this->publicPath = $environment->getPublicPath();
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
-        //$extensionManagementUtility = GeneralUtility::makeInstance(ExtensionManagementUtility::class);
+        $extensionManagementUtility = GeneralUtility::makeInstance(ExtensionManagementUtility::class);
         //$isExtTool = $extensionManagementUtility::isLoaded('tool');
-        $sysinfoWebPath = PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath(SELF::EXTKEY));
-        $jsCheckPages = $sysinfoWebPath . 'Resources/Public/JavaScript/checkPages.js';
+
+        // this does not work on v11 - why?
+        //$sysinfoWebPath = PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath(SELF::EXTKEY));
+        //$jsCheckPages = $sysinfoWebPath . 'Resources/Public/JavaScript/checkPages.js';
         
         // global template information
         $this->globalTemplateVars = [
             't3version' => $this->t3version,
             'publicPath' => $this->publicPath,
             'isComposerMode' => $this->isComposerMode,
-            'sysinfoWebPath' => $sysinfoWebPath,
-            'jsCheckPages' => $jsCheckPages,
+            //'sysinfoWebPath' => $sysinfoWebPath,
+            //'jsCheckPages' => $jsCheckPages,
         ];
     }
 
@@ -447,6 +449,83 @@ class Mod1Controller extends ActionController
             'isUploadsPhps' => count($uploadsPhps) > 0,
             'suspiciousPhps' => $suspiciousPhps,
             'isSuspiciousPhps' => count($suspiciousPhps) > 0,
+        ]);
+        $this->view->assignMultiple($this->globalTemplateVars);
+    }
+
+    /**
+     * compare all files in public/typo3 against precompiled SHA1 in Resources/Private/SHA1/ (~450kB each)
+     * precompiled file generated gzip(find ./typo3 -type f -exec sha1sum {} \;)
+     * a line looks like this: 5964dd3a9fcc9d3141415b1b8511b8938e1aabf0  ./typo3/index.php%
+     *
+     * @return void
+     */
+    public function shaOneAction()
+    {
+        $fileExtensionsToLookFor = [
+            '.php',
+            '.js',
+            'html'
+        ];
+
+        $typo3_path = $this->publicPath;
+        // file to open is like typo3_11005030_files.txt
+        //\nn\t3::debug($this->t3version);
+        $cnt = 0;
+        $msg = [];
+        $shaMsg = [];
+        $baseLineFiles = [];
+        $filesNotMatch = [];
+        $gzfile = $this->publicPath .'/../dev/sysinfo/Resources/Private/SHA1/'.'typo3_' . $this->t3version .'_files.txt.gz';
+        //\nn\t3::debug($gzfile);
+        $isFile = @file_exists($gzfile);
+        //\nn\t3::debug($isFile);
+        if (!$isFile)
+        {
+            $msg[] = 'The file for version ' . $this->t3version . 'is not available: ' . $gzfile;
+        } else {
+            // ~450KB, unset after needed
+            $gz = @file_get_contents($gzfile);
+            //\nn\t3::debug($gz);
+            if ($gz === false)
+            {
+                $msg[] = 'Error reading file ' . $gzfile;
+            } else {
+                // ~1.5MB, unset after needed -> data error exception!
+                $gunzip = gzdecode($gz);
+                //\nn\t3::debug($gunzip);
+                if ($gunzip === false)
+                {
+                    $msg[] = 'The input file could not be decoded. Is it a gzip file?';
+                } else {
+                    unset($gz);
+                    // get the lines
+                    $gzarray = explode("\n", $gunzip);
+                    //\nn\t3::debug($gzarray);
+
+                    if ($gzarray === false)
+                    {
+                        $msg[] = 'read gzfile failed!';
+                    } else {
+                        unset($gunzip);
+
+                        // create final array fName => sha1
+                        foreach($gzarray as $line)
+                        {
+                            $l = explode('  ', $line);
+                            $baseLineFiles[$l[1]] = $l[0];
+                        }
+                        unset($gzarray);
+
+                        $shaMsg = $this->sha1compareFiles( $typo3_path,$baseLineFiles, $fileExtensionsToLookFor);
+                    }
+                }
+            }
+        }
+
+        $this->view->assignMultiple([
+            'msg' => $msg,
+            'shaMsg' => $shaMsg,
         ]);
         $this->view->assignMultiple($this->globalTemplateVars);
     }
@@ -802,7 +881,7 @@ class Mod1Controller extends ActionController
      * @param $url
      * @return bool
      */
-    private function remoteFileExists($url)
+    private function remoteFileExists($url): bool
     {
         //don't fetch the actual page, you only want to check the connection is ok
         $curl = curl_init($url);
@@ -818,6 +897,56 @@ class Mod1Controller extends ActionController
         }
         curl_close($curl);
         return $ret;
+    }
+
+    /**
+     * returns array of messages[$filepath] => message
+     *
+     * @param $typo3_path
+     * @param $baseLineFiles
+     * @param $fileExtensionsToLookFor
+     * @return array
+     */
+    private function sha1compareFiles($typo3_path, &$baseLineFiles, $fileExtensionsToLookFor): array
+    {
+        // redirect stderr to stdout using 2>&1 to see error messages as well
+        $cmd = 'find "' . $this->publicPath . '/typo3" -type "f" -name "*.php" 2>&1'; //
+        $msg = [];
+
+        // the following line returns ca. 12.000 filenames and 1.5MB
+        exec($cmd, $output, $status);
+        //\nn\t3::debug($typo3_path .'/'. './typo3/install.php');die();
+
+        foreach ($output as $file) {
+            // does sha1 match?
+            //\nn\t3::debug($file);
+            //\nn\t3::debug(sha1(file_get_contents($file)));
+            $index = '.' . substr($file, strlen($typo3_path));
+            //\nn\t3::debug($index, 'index');
+            //\nn\t3::debug($baseLineFiles[$index]);
+            //die();
+            if (array_key_exists($index, $baseLineFiles))
+            {
+                $shaFile = sha1(file_get_contents($file));
+                $isSha1match = $shaFile == $baseLineFiles[$index];
+                //$typo3results[$index] = $isSha1match;
+                if (!$isSha1match) {
+                    $msg[$index] = 'File altered: '. $shaFile . ':' . $baseLineFiles[$index] . ' ' . $index;
+                }
+            } else {
+                //$typo3results[$index] = false;
+                $msg[$index] = 'File should not be here -';
+                /*
+                \nn\t3::debug([
+                    'index' => $index,
+                    //'baseLine' => $baseLineFiles[$index]
+                ]);
+                */
+            }
+
+        }
+        //\nn\t3::debug($typo3results);
+        return $msg;
     }
 
     /**
