@@ -13,7 +13,7 @@ use TYPO3\CMS\Core\Domain\Repository\PageRepository; // T3v10
 use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
 use TYPO3\CMS\Core\Page\PageRenderer;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
+//use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
@@ -178,7 +178,8 @@ class Mod1Controller extends ActionController
         $this->publicPath = $environment->getPublicPath();
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
-        $extensionManagementUtility = GeneralUtility::makeInstance(ExtensionManagementUtility::class);
+        //$extensionManagementUtility = GeneralUtility::makeInstance(ExtensionManagementUtility::class);
+        //$isExtTool = $extensionManagementUtility::isLoaded('tool');
         $sysinfoWebPath = PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath(SELF::EXTKEY));
         $jsCheckPages = $sysinfoWebPath . 'Resources/Public/JavaScript/checkPages.js';
         
@@ -187,7 +188,6 @@ class Mod1Controller extends ActionController
             't3version' => $this->t3version,
             'publicPath' => $this->publicPath,
             'isComposerMode' => $this->isComposerMode,
-            'isExtTool' => $extensionManagementUtility::isLoaded('tool'),
             'sysinfoWebPath' => $sysinfoWebPath,
             'jsCheckPages' => $jsCheckPages,
         ];
@@ -198,58 +198,6 @@ class Mod1Controller extends ActionController
         $templates = $this->getAllTemplates('1');
         $this->templatesToView($templates);
         $this->view->assignMultiple($this->globalTemplateVars);
-    }
-
-    /**
-     * only available for private EXT:tool
-     * @return void
-     */
-    public function configSizesAction()
-    {
-        $arguments = $this->request->getArguments();
-        $isTableNotFoundException = false;
-        if (is_array($arguments)) $sortBy = $arguments['sortBy'] ?? '';
-        else $sortBy = 'length';
-        $query = $this->connectionPool->getQueryBuilderForTable('tx_tool_domain_model_config');
-        try {
-            $res = $query->select('uid', 'pid', 'mandant', 'data')
-                ->from('tx_tool_domain_model_config')
-                ->where(
-                    $query->expr()->eq('hidden', 0),
-                    $query->expr()->eq('deleted', 0)
-                )
-                ->execute();
-        } catch (TableNotFoundException $e) {
-            //$this->addErrorFlashMessage('<p>Die Tabelle &quot;tx_tool_domain_model_config&quot; wurde nicht gefunden.</p>' . $e->getMessage());
-            $this->addFlashMessage($e->getMessage(), 'Die Tabelle "tx_tool_domain_model_config" wurde nicht gefunden.', 2);
-            $isTableNotFoundException = true;
-        }
-
-        if (!$isTableNotFoundException) {
-            $configs = $res->fetchAll();
-            //debug(['$configs' => $configs], __line__ . ':' . __function__);
-            if (is_array($configs)) foreach ($configs as $key => $conf) {
-                $configs[$key]['length'] = strlen($conf['data']);
-                $kurse = unserialize($conf['data']);
-                $configs[$key]['cntCourses'] = (is_array($kurse)) ? count($kurse) : 0;
-                $cntTermine = 0;
-                $maxTermine = 0;
-                if (is_array($kurse)) foreach ($kurse as $k) {
-                    if (is_array($k['termine'])) {
-                        $cntTermine += count($k['termine']);
-                        $maxTermine = max($maxTermine, count($k['termine']));
-                    }
-                }
-                $configs[$key]['cntTermine'] = $cntTermine;
-                $configs[$key]['termineAvgProKurs'] = ($configs[$key]['cntCourses'] > 0) ? intval($cntTermine / $configs[$key]['cntCourses']) : 0;
-                $configs[$key]['termineMaxProKurs'] = $maxTermine;
-            }
-            $configs = self::sort($configs, $sortBy);
-            $this->view->assign('configs', $configs);
-            $this->view->assign('sortBy', $sortBy);
-            $this->view->assignMultiple($this->globalTemplateVars);
-        }
-
     }
 
     /**
@@ -538,7 +486,7 @@ class Mod1Controller extends ActionController
 
 
     /**
-     * sort arry by certain key
+     * sort array by certain key, works together with self::sort()
      * @param string $key
      * @return Closure
      */
