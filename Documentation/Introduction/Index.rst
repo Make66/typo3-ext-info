@@ -6,50 +6,72 @@
 Introduction
 ============
 
-.. tip::
+Extension for Typo3 v10 + v11. Helpful for preparing migration or maintaining security of an installation.
+Information on plugins used in pages, robots.txt, sitemap.xml and security checks.
 
-   New to reStructuredText and Sphinx?
+"sysinfo" is meant as a start to think about easy security checks and migration support and is far from complete.
 
-   Get an introduction:
-   https://docs.typo3.org/m/typo3/docs-how-to-document/master/en-us/WritingReST/Index.html
-
-   Use this cheat sheet as reference:
-   https://docs.typo3.org/m/typo3/docs-how-to-document/master/en-us/WritingReST/CheatSheet.html
-
-.. _what-it-does:
+Other extensions that have me inspired (and I recommend to try):
+- sypets/migrate2composer
+- apen/additional_reports
 
 What does it do?
 ================
+In detail:
+- security: check some settings and files that should not be there or are altered. The extension needs the shell commands "find" and "grep" to function.
+- plugins: find content usng specific PluginType or ContentType and links directly to edit content
+- root templates: find all and show what they include statically
+- all template: as above + find alltemplates
+- walk over all domains from site configuration and see f we can access robots.txt, sitemap.xml
 
-The aim of this chapter is to provide a general overview of your extension.
+What problems does it solve?
+============================
+- have I been hacked?
+- does somebody uses my site to sell illegal drugs?
+- where are all the plugins hidden, that I want to replace?
+- which TS templates do I need to address for a rebuild of my site?
 
-* What does it do?
-* What problems does it solve?
-* Who is the target audience?
-
-This chapter should provide information that will help inform 
-potential users and assist them in deciding if they should 
-install and use this extension.
-
-.. important::
-
-   Don't forget to set extension's version number in :file:`Settings.cfg` file,
-   in the :code:`release` property.
-   It will be automatically picked up on the cover page by the :code:`|release|` substitution.
+Who is the target audience?
+============================
+admins, system maintainers, migration consultants, security consultants
 
 .. _screenshots:
 
 Screenshots
 ===========
 
-This chapter should help people understand how the extension works.
-Remove it if it is not relevant.
-
-.. figure:: ../Images/IntroductionPackage.png
+.. figure:: ../Images/security_check.png
    :class: with-shadow
-   :alt: Introduction Package
+   :alt: Security Check
    :width: 300px
 
-   Introduction Package after installation (caption of the image).
+   Security Check
 
-How the Frontend of the Introduction Package looks like after installation (legend of the image).
+Some of the checks the extension processes
+
+.. figure:: ../Images/plugins.png
+   :class: with-shadow
+   :alt: find plugins
+   :width: 300px
+
+   Plugins
+
+Find pages where plugins are used
+
+.. figure:: ../Images/templates.png
+   :class: with-shadow
+   :alt: find templates
+   :width: 300px
+
+   Templates
+
+Find pages where templates are used
+
+.. figure:: ../Images/plugins.png
+   :class: with-shadow
+   :alt: Check domains
+   :width: 300px
+
+   Check domains
+
+See if robots.txt, sitemap.xml and 404 are configured

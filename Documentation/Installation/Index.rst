@@ -6,8 +6,8 @@
 Installation
 ============
 
-- How is the extension installed?
+How is the extension installed?
 
-composer req taketool/sysinfo @dev
+- composer req taketool/sysinfo @dev
 
-(no TER version yet)
+- legacy TER get extension "sysinfo"

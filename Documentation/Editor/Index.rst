@@ -3,7 +3,7 @@
 .. _configuration:
 
 =============
-Configuration
+Editor
 =============
 
-No configuration is currently available for this extension.
+Extension "sysinfo" is for system maintainers only.

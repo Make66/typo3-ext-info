@@ -5,10 +5,23 @@
   "authors": [
     {
       "name": "Martin Keller",
+      "email": "martin.keller@taketool.de",
       "role": "Developer"
     }
   ],
   "license": "GPL-2.0-or-later",
+  "keywords": [
+    "TYPO3",
+    "TYPO3 extension",
+    "security",
+    "hacked",
+    "migration",
+    "template",
+    "plugin",
+    "robots.txt",
+    "sitemap.xml",
+    "404"
+  ],
   "require": {
     "typo3/cms-core": " ^10.4 || ^11.5",
     "ext-PDO": "*"
