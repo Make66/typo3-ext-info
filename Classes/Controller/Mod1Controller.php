@@ -58,6 +58,7 @@ class Mod1Controller extends ActionController
     protected SiteConfiguration $siteConfiguration;
     protected string $publicPath;
     protected string $configPath;
+    protected string $extPath;
     protected string $t3version;
     protected bool $isComposerMode;
     protected array $globalTemplateVars;
@@ -176,6 +177,7 @@ class Mod1Controller extends ActionController
         $environment = GeneralUtility::makeInstance(Environment::class);
         $this->isComposerMode = $environment->isComposerMode();
         $this->publicPath = $environment->getPublicPath();
+        $this->extPath = $environment->getExtensionsPath() . '/' . self::EXTKEY;
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
         $extensionManagementUtility = GeneralUtility::makeInstance(ExtensionManagementUtility::class);
@@ -476,7 +478,7 @@ class Mod1Controller extends ActionController
         $shaMsg = [];
         $baseLineFiles = [];
         $filesNotMatch = [];
-        $gzfile = $this->publicPath .'/../dev/sysinfo/Resources/Private/SHA1/'.'typo3_' . $this->t3version .'_files.txt.gz';
+        $gzfile = $this->extPath . '/Resources/Private/SHA1/typo3_' . $this->t3version .'_files.txt.gz';
         //\nn\t3::debug($gzfile);
         $isFile = @file_exists($gzfile);
         //\nn\t3::debug($isFile);
