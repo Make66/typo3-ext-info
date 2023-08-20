@@ -500,6 +500,7 @@ class Mod1Controller extends ActionController
                 {
                     $msg[] = 'The input file could not be decoded. Is it a gzip file?';
                 } else {
+                    $gz = null;
                     unset($gz);
                     // get the lines
                     $gzarray = explode("\n", $gunzip);
@@ -509,6 +510,7 @@ class Mod1Controller extends ActionController
                     {
                         $msg[] = 'read gzfile failed!';
                     } else {
+                        $gunzip = null;
                         unset($gunzip);
 
                         // create final array fName => sha1
@@ -517,6 +519,7 @@ class Mod1Controller extends ActionController
                             $l = explode('  ', $line);
                             $baseLineFiles[$l[1]] = $l[0];
                         }
+                        $gzarray = null;
                         unset($gzarray);
 
                         $shaMsg = $this->sha1compareFiles( $typo3_path,$baseLineFiles, $fileExtensionsToLookFor);
