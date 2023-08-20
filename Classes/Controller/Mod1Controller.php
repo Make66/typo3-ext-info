@@ -155,6 +155,7 @@ class Mod1Controller extends ActionController
         '/index.php' => [
             '10004037' => ['size' => 987],
             '11005030' => ['size' => 815],
+            '12004005' => ['size' => 815],
             ]
     ];
 
@@ -192,6 +193,7 @@ class Mod1Controller extends ActionController
             't3version' => $this->t3version,
             'publicPath' => $this->publicPath,
             'isComposerMode' => $this->isComposerMode,
+            'memoryLimit' => $memoryLimit = ini_get('memory_limit'),
             //'sysinfoWebPath' => $sysinfoWebPath,
             //'jsCheckPages' => $jsCheckPages,
         ];
@@ -464,68 +466,32 @@ class Mod1Controller extends ActionController
      */
     public function shaOneAction()
     {
-        $fileExtensionsToLookFor = [
-            '.php',
-            '.js',
-            'html'
-        ];
+        $this->view->assignMultiple($this->globalTemplateVars);
+    }
 
-        $typo3_path = $this->publicPath;
-        // file to open is like typo3_11005030_files.txt
-        //\nn\t3::debug($this->t3version);
-        $cnt = 0;
-        $msg = [];
+    public function shaOneJsAction()
+    {
         $shaMsg = [];
-        $baseLineFiles = [];
-        $filesNotMatch = [];
-        $gzfile = $this->extPath . '/Resources/Private/SHA1/typo3_' . $this->t3version .'_files.txt.gz';
-        //\nn\t3::debug($gzfile);
-        $isFile = @file_exists($gzfile);
-        //\nn\t3::debug($isFile);
-        if (!$isFile)
+        $msg = $this->sha1getBaselineFile($baseLineFiles,'js');
+        if (count($msg)== 0)
         {
-            $msg[] = 'The file for version ' . $this->t3version . 'is not available: ' . $gzfile;
-        } else {
-            // ~450KB, unset after needed
-            $gz = @file_get_contents($gzfile);
-            //\nn\t3::debug($gz);
-            if ($gz === false)
-            {
-                $msg[] = 'Error reading file ' . $gzfile;
-            } else {
-                // ~1.5MB, unset after needed -> data error exception!
-                $gunzip = gzdecode($gz);
-                //\nn\t3::debug($gunzip);
-                if ($gunzip === false)
-                {
-                    $msg[] = 'The input file could not be decoded. Is it a gzip file?';
-                } else {
-                    $gz = null;
-                    unset($gz);
-                    // get the lines
-                    $gzarray = explode("\n", $gunzip);
-                    //\nn\t3::debug($gzarray);
+            $shaMsg = $this->sha1compareFiles( $baseLineFiles);
+        }
 
-                    if ($gzarray === false)
-                    {
-                        $msg[] = 'read gzfile failed!';
-                    } else {
-                        $gunzip = null;
-                        unset($gunzip);
+        $this->view->assignMultiple([
+            'msg' => $msg,
+            'shaMsg' => $shaMsg,
+        ]);
+        $this->view->assignMultiple($this->globalTemplateVars);
+    }
 
-                        // create final array fName => sha1
-                        foreach($gzarray as $line)
-                        {
-                            $l = explode('  ', $line);
-                            $baseLineFiles[$l[1]] = $l[0];
-                        }
-                        $gzarray = null;
-                        unset($gzarray);
-
-                        $shaMsg = $this->sha1compareFiles( $typo3_path,$baseLineFiles, $fileExtensionsToLookFor);
-                    }
-                }
-            }
+    public function shaOnePhpAction()
+    {
+        $shaMsg = [];
+        $msg = $this->sha1getBaselineFile($baseLineFiles,'php');
+        if (count($msg)== 0)
+        {
+            $shaMsg = $this->sha1compareFiles( $baseLineFiles);
         }
 
         $this->view->assignMultiple([
@@ -907,12 +873,10 @@ class Mod1Controller extends ActionController
     /**
      * returns array of messages[$filepath] => message
      *
-     * @param $typo3_path
      * @param $baseLineFiles
-     * @param $fileExtensionsToLookFor
      * @return array
      */
-    private function sha1compareFiles($typo3_path, &$baseLineFiles, $fileExtensionsToLookFor): array
+    private function sha1compareFiles(&$baseLineFiles): array
     {
         // redirect stderr to stdout using 2>&1 to see error messages as well
         $cmd = 'find "' . $this->publicPath . '/typo3" -type "f" -name "*.php" 2>&1'; //
@@ -920,13 +884,13 @@ class Mod1Controller extends ActionController
 
         // the following line returns ca. 12.000 filenames and 1.5MB
         exec($cmd, $output, $status);
-        //\nn\t3::debug($typo3_path .'/'. './typo3/install.php');die();
+        //\nn\t3::debug($this->publicPath .'/./typo3/install.php');die();
 
         foreach ($output as $file) {
             // does sha1 match?
             //\nn\t3::debug($file);
             //\nn\t3::debug(sha1(file_get_contents($file)));
-            $index = '.' . substr($file, strlen($typo3_path));
+            $index = '.' . substr($file, strlen($this->publicPath));
             //\nn\t3::debug($index, 'index');
             //\nn\t3::debug($baseLineFiles[$index]);
             //die();
@@ -951,6 +915,66 @@ class Mod1Controller extends ActionController
 
         }
         //\nn\t3::debug($typo3results);
+        return $msg;
+    }
+
+    /**
+     * @param $baseLineFiles
+     * @param $fileType
+     * @return array
+     */
+    private function sha1getBaselineFile(&$baseLineFiles, $fileType): array
+    {
+        // file to open is like /Resources/Private/SHA1/11005030/typo3_files_js.txt
+        $msg = [];
+        $baseLineFiles = [];
+        $gzFile = $this->extPath . '/Resources/Private/SHA1/' . $this->t3version . '/typo3_files_' . $fileType . '.txt.gz';
+        //\nn\t3::debug($gzFile);
+        $isFile = @file_exists($gzFile);
+        //\nn\t3::debug($isFile);
+        if (!$isFile)
+        {
+            $msg[] = 'The file for version ' . $this->t3version . ' is not available: ' . $gzFile;
+        } else {
+            // ~450KB, unset after needed
+            $gz = @file_get_contents($gzFile);
+            //\nn\t3::debug($gz);
+            if ($gz === false)
+            {
+                $msg[] = 'Error reading file ' . $gzFile;
+            } else {
+                // ~1.5MB, unset after needed -> data error exception!
+                $gunzip = gzdecode($gz);
+                //\nn\t3::debug($gunzip);
+                if ($gunzip === false)
+                {
+                    $msg[] = 'The input file could not be decoded. Is it a gzip file?';
+                } else {
+                    $gz = null;
+                    unset($gz);
+                    // get the lines
+                    $gzArray = explode("\n", $gunzip);
+                    //\nn\t3::debug($gzarray);
+
+                    if ($gzArray === false)
+                    {
+                        $msg[] = 'gzArray failed to explode!';
+                    } else {
+                        $gunzip = null;
+                        unset($gunzip);
+
+                        // create final array fName => sha1
+                        foreach($gzArray as $line)
+                        {
+                            $l = explode('  ', $line);
+                            $baseLineFiles[$l[1]] = $l[0];
+                        }
+                        $gzArray = null;
+                        unset($gzArray);
+                    }
+                }
+            }
+        }
         return $msg;
     }
 
