@@ -10,16 +10,21 @@
   <p>Using baseline from file "typo3_{t3version}_files.txt.gz" (ca. 5.500 files to check)</p>
 
   <f:if condition="{msg->f:count()}">
-    <p><span style="color:red;"><core:icon identifier="actions-message-ok-close"/></span> Error message: <f:for as="ms" each="{msg}">{ms}<br/></f:for></p>
-  </f:if>
-  <f:if condition="{shaMsg->f:count()}">
     <f:then>
-      <p><span style="color:red;"><core:icon identifier="actions-message-ok-close"/></span> Files that do not match ({shaMsg->f:count()}):
-        <pre><f:for as="msg" each="{shaMsg}" key="file">{msg} {file}<br/></f:for></pre>
-      </p>
+      <p><span style="color:red;"><core:icon identifier="actions-message-ok-close"/></span>
+        Error: <f:for as="ms" each="{msg}">{ms}<br/></f:for></p>
     </f:then>
     <f:else>
-      <span style="color:green;"><core:icon identifier="actions-check-circle-alt"/></span> All checked files match.
+      <f:if condition="{shaMsg->f:count()}">
+        <f:then>
+          <p><span style="color:red;"><core:icon identifier="actions-message-ok-close"/></span> Files that do not match ({shaMsg->f:count()}):
+          <pre><f:for as="msg" each="{shaMsg}" key="file">{msg} {file}<br/></f:for></pre>
+          </p>
+        </f:then>
+        <f:else>
+          <span style="color:green;"><core:icon identifier="actions-check-circle-alt"/></span> All checked files match.
+        </f:else>
+      </f:if>
     </f:else>
   </f:if>
 
