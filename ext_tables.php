@@ -1,7 +1,5 @@
 <?php
 
-use Taketool\Sysinfo\Controller\CheckRemotePageController;
-use Taketool\Sysinfo\Controller\Mod1Controller;
 use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
 
@@ -38,9 +36,9 @@ defined('TYPO3_MODE') || die();
             'm1',
             'top',
             [
-                Mod1Controller::class => 'securityCheck,allTemplates,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
-                Sha1Controller::class => 'shaOne,shaOneJs,shaOnePhp',
-                CheckRemotePageController::class => 'checkPage',
+                Taketool\Sysinfo\Controller\Mod1Controller::class => 'securityCheck,allTemplates,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
+                Taketool\Sysinfo\Controller\Sha1Controller::class => 'shaOne,shaOneJs,shaOnePhp',
+                Taketool\Sysinfo\Controller\CheckRemotePageController::class => 'checkPage',
             ],
             [
                 'access' => 'user,group',
