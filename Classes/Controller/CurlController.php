@@ -7,7 +7,7 @@ use InvalidArgumentException;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
+//use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 /***************************************************************
  *  Copyright notice
@@ -39,8 +39,9 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
  * @package     Taketool
  * @subpackage  Sysinfo
  */
-class CheckRemotePageController //extends ActionController
+class CurlController //extends ActionController
 {
+    /** @var ResponseFactoryInterface */
     private $responseFactory;
 
     public function __construct(ResponseFactoryInterface $responseFactory)
@@ -55,13 +56,13 @@ class CheckRemotePageController //extends ActionController
      * @param ServerRequestInterface $request
      * @return ResponseInterface
      */
-    public function checkPageAction(ServerRequestInterface $request): ResponseInterface
+    public function indexAction(ServerRequestInterface $request): ResponseInterface
     {
         $file = $request->getQueryParams()['file'] ?? null;
         $site = $request->getQueryParams()['site'] ?? null;
         $type = $request->getQueryParams()['type'] ?? null;
         if ($file === null) {
-            throw new InvalidArgumentException('Please provide a complete URL', 1580585108);}
+            throw new InvalidArgumentException('Please provide a complete domain', 1580585108);}
         if ($site === null) {
             throw new InvalidArgumentException('Please provide a site identifier', 1580585109);}
         if ($type=== null) {
@@ -109,7 +110,7 @@ class CheckRemotePageController //extends ActionController
     private function log($url, $str)
     {
         fwrite(
-            fopen($_SERVER['DOCUMENT_ROOT'] . '/checkRemotePage.log', 'a'),
+            fopen($_SERVER['DOCUMENT_ROOT'] . '/curl.log', 'a'),
             date('Y-m-d H:i:s') . ' ' . $url .' '.$str . "\r\n\r\n"
         );
     }

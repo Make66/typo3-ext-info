@@ -4,6 +4,10 @@ services:
     autoconfigure: true
     public: false
 
-  Taketool\Sysinfo\Controller\CheckRemotePageController:
+  Taketool\Sysinfo\:
+    resource: '../Classes/*'
+
+  Taketool\Sysinfo\Controller\CurlController:
+    public: true
     arguments:
       - '@Psr\Http\Message\ResponseFactoryInterface'

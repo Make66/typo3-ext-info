@@ -1,10 +1,10 @@
 <?php
 
-use Taketool\Sysinfo\Controller\CheckRemotePageController;
+use Taketool\Sysinfo\Controller\CurlController;
 
 return [
-    'checkRemotePage_checkPage' => [
-        'path' => '/sysinfo/checkRemotePage',
-        'target' => CheckRemotePageController::class . '::checkPageAction',
+    'sysinfo_checkpage' => [
+        'path' => '/sysinfo/checkpage',
+        'target' => CurlController::class . '::indexAction',
     ],
 ];

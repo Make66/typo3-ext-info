@@ -6,7 +6,7 @@ checkFiles.forEach((el) => {
 
 function checkRemoteFile(site, remoteUrl, type, file) {
     require(['TYPO3/CMS/Core/Ajax/AjaxRequest'], function (AjaxRequest) {
-        new AjaxRequest(TYPO3.settings.ajaxUrls.checkRemotePage_checkPage)
+        new AjaxRequest(TYPO3.settings.ajaxUrls.sysinfo_checkpage)
             .withQueryArguments({
                 file: remoteUrl + file,
                 site: site,

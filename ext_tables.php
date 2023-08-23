@@ -20,7 +20,7 @@ defined('TYPO3_MODE') || die();
             'top',
             [
                 'Mod1' => 'securityCheck,allTemplates,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
-                'CheckRemotePage'=> 'checkPage',
+                'Curl'=> 'index',
                 'Sha1' => 'shaOne,shaOneJs,shaOnePhp',
             ],
             [
@@ -38,7 +38,7 @@ defined('TYPO3_MODE') || die();
             [
                 Taketool\Sysinfo\Controller\Mod1Controller::class => 'securityCheck,allTemplates,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
                 Taketool\Sysinfo\Controller\Sha1Controller::class => 'shaOne,shaOneJs,shaOnePhp',
-                Taketool\Sysinfo\Controller\CheckRemotePageController::class => 'checkPage',
+                Taketool\Sysinfo\Controller\CurlController::class => 'index',
             ],
             [
                 'access' => 'user,group',
