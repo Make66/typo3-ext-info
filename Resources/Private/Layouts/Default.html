@@ -18,14 +18,12 @@
             <f:be.menus.actionMenuItem action="allTemplates" controller="Mod1" label="Find all TS-templates"/>
             <f:be.menus.actionMenuItem action="checkDomains" controller="CheckRemotePage" label="robots.txt, sitemap.xml & 404"/>
           </f:be.menus.actionMenu></f:comment>
-          <f:comment>
           <span class="btn btn-default"><f:link.action action="securityCheck" controller="Mod1">Security Check</f:link.action></span>
           <span class="btn btn-default"><f:link.action action="shaOne" controller="Sha1">Typo3 SHA1</f:link.action></span>
           <span class="btn btn-default"><f:link.action action="plugins" controller="Mod1">Plugins</f:link.action></span>
           <span class="btn btn-default"><f:link.action action="rootTemplates" controller="Mod1">Root Templates</f:link.action></span>
           <span class="btn btn-default"><f:link.action action="allTemplates" controller="Mod1">All Templates</f:link.action></span>
-          <span class="btn btn-default"><f:link.action action="checkDomains" controller="CheckRemotePage">robots.txt, sitemap.xml & 404</f:link.action></span>
-          </f:comment>
+          <span class="btn btn-default"><f:link.action action="checkDomains" controller="Mod1">robots.txt, sitemap.xml & 404</f:link.action></span>
         </div>
         <div class="right">
           <f:if condition="{isComposerMode}">
