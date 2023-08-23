@@ -12,18 +12,18 @@
 
   <f:if condition="{msg->f:count()}">
     <f:then>
-      <p><span style="color:red;"><core:icon identifier="actions-message-ok-close"/></span>
+      <p><span style="color:red;"><core:icon identifier="actions-close"/></span>
         Error: <f:for as="ms" each="{msg}">{ms}<br/></f:for></p>
     </f:then>
     <f:else>
       <f:if condition="{shaMsg->f:count()}">
         <f:then>
-          <p><span style="color:red;"><core:icon identifier="actions-message-ok-close"/></span> Files that do not match ({shaMsg->f:count()}):
+          <p><span style="color:red;"><core:icon identifier="actions-close"/></span> Files that do not match ({shaMsg->f:count()}):
           <pre><f:for as="msg" each="{shaMsg}" key="file">{msg} {file}<br/></f:for></pre>
           </p>
         </f:then>
         <f:else>
-          <span style="color:green;"><core:icon identifier="actions-check-circle-alt"/></span> All checked files match.
+          <span style="color:green;"><core:icon identifier="actions-check"/></span> All checked files match.
         </f:else>
       </f:if>
     </f:else>
