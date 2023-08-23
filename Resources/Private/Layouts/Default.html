@@ -11,19 +11,21 @@
         <div class="left">
           <f:comment>
           <f:be.menus.actionMenu>
-            <f:be.menus.actionMenuItem action="securityCheck" controller="" label="Security Check"/>
-            <f:be.menus.actionMenuItem action="shaOne" controller="" label="Typo3 SHA-1"/>
-            <f:be.menus.actionMenuItem action="plugins" controller="" label="Find Plugins"/>
-            <f:be.menus.actionMenuItem action="rootTemplates" controller="" label="Find root TS-templates"/>
-            <f:be.menus.actionMenuItem action="allTemplates" controller="" label="Find all TS-templates"/>
-            <f:be.menus.actionMenuItem action="checkDomains" controller="" label="robots.txt, sitemap.xml & 404"/>
+            <f:be.menus.actionMenuItem action="securityCheck" controller="Mod1" label="Security Check"/>
+            <f:be.menus.actionMenuItem action="shaOne" controller="Sha1" label="Typo3 SHA-1"/>
+            <f:be.menus.actionMenuItem action="plugins" controller="Mod1" label="Find Plugins"/>
+            <f:be.menus.actionMenuItem action="rootTemplates" controller="Mod1" label="Find root TS-templates"/>
+            <f:be.menus.actionMenuItem action="allTemplates" controller="Mod1" label="Find all TS-templates"/>
+            <f:be.menus.actionMenuItem action="checkDomains" controller="CheckRemotePage" label="robots.txt, sitemap.xml & 404"/>
           </f:be.menus.actionMenu></f:comment>
-          <span class="btn btn-default"><f:link.action action="securityCheck">Security Check</f:link.action></span>
-          <span class="btn btn-default"><f:link.action action="shaOne">Typo3 SHA1</f:link.action></span>
-          <span class="btn btn-default"><f:link.action action="plugins">Plugins</f:link.action></span>
-          <span class="btn btn-default"><f:link.action action="rootTemplates">Root Templates</f:link.action></span>
-          <span class="btn btn-default"><f:link.action action="allTemplates">All Templates</f:link.action></span>
-          <span class="btn btn-default"><f:link.action action="checkDomains">robots.txt, sitemap.xml & 404</f:link.action></span>
+          <f:comment>
+          <span class="btn btn-default"><f:link.action action="securityCheck" controller="Mod1">Security Check</f:link.action></span>
+          <span class="btn btn-default"><f:link.action action="shaOne" controller="Sha1">Typo3 SHA1</f:link.action></span>
+          <span class="btn btn-default"><f:link.action action="plugins" controller="Mod1">Plugins</f:link.action></span>
+          <span class="btn btn-default"><f:link.action action="rootTemplates" controller="Mod1">Root Templates</f:link.action></span>
+          <span class="btn btn-default"><f:link.action action="allTemplates" controller="Mod1">All Templates</f:link.action></span>
+          <span class="btn btn-default"><f:link.action action="checkDomains" controller="CheckRemotePage">robots.txt, sitemap.xml & 404</f:link.action></span>
+          </f:comment>
         </div>
         <div class="right">
           <f:if condition="{isComposerMode}">

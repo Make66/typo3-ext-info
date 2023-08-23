@@ -21,8 +21,9 @@ defined('TYPO3_MODE') || die();
             'm1',
             'top',
             [
-                'Mod1' => 'securityCheck,allTemplates,checkDomains,deleteFile,plugins,rootTemplates,shaOne,shaOneJs,shaOnePhp,viewFile',
+                'Mod1' => 'securityCheck,allTemplates,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
                 'CheckRemotePage'=> 'index',
+                'Sha1' => 'shaOne,shaOneJs,shaOnePhp',
             ],
             [
                 'access' => 'user,group',
@@ -37,8 +38,9 @@ defined('TYPO3_MODE') || die();
             'm1',
             'top',
             [
-                Mod1Controller::class => 'securityCheck,allTemplates,checkDomains,deleteFile,plugins,rootTemplates,shaOne,shaOneJs,shaOnePhp,viewFile',
                 CheckRemotePageController::class => 'index',
+                Mod1Controller::class => 'securityCheck,allTemplates,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
+                Sha1Controller::class => 'shaOne,shaOneJs,shaOnePhp',
             ],
             [
                 'access' => 'user,group',

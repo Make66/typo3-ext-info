@@ -458,50 +458,6 @@ class Mod1Controller extends ActionController
     }
 
     /**
-     * compare all files in public/typo3 against precompiled SHA1 in Resources/Private/SHA1/ (~450kB each)
-     * precompiled file generated gzip(find ./typo3 -type f -exec sha1sum {} \;)
-     * a line looks like this: 5964dd3a9fcc9d3141415b1b8511b8938e1aabf0  ./typo3/index.php%
-     *
-     * @return void
-     */
-    public function shaOneAction()
-    {
-        $this->view->assignMultiple($this->globalTemplateVars);
-    }
-
-    public function shaOneJsAction()
-    {
-        $shaMsg = [];
-        $msg = $this->sha1getBaselineFile($baseLineFiles,'js');
-        if (count($msg)== 0)
-        {
-            $shaMsg = $this->sha1compareFiles( $baseLineFiles);
-        }
-
-        $this->view->assignMultiple([
-            'msg' => $msg,
-            'shaMsg' => $shaMsg,
-        ]);
-        $this->view->assignMultiple($this->globalTemplateVars);
-    }
-
-    public function shaOnePhpAction()
-    {
-        $shaMsg = [];
-        $msg = $this->sha1getBaselineFile($baseLineFiles,'php');
-        if (count($msg)== 0)
-        {
-            $shaMsg = $this->sha1compareFiles( $baseLineFiles);
-        }
-
-        $this->view->assignMultiple([
-            'msg' => $msg,
-            'shaMsg' => $shaMsg,
-        ]);
-        $this->view->assignMultiple($this->globalTemplateVars);
-    }
-
-    /**
      * @param string $file
      * @return void
      */
@@ -524,16 +480,6 @@ class Mod1Controller extends ActionController
         $this->view->assignMultiple($this->globalTemplateVars);
         // v11: return $this->htmlResponse();
     }
-
-    /* v11
-        protected function htmlResponse(string $html = null): ResponseInterface
-        {
-            return $this->responseFactory->createResponse()
-                ->withHeader('Content-Type', 'text/html; charset=utf-8')
-                ->withBody($this->streamFactory->createStream((string)($html ?? $this->view->render())));
-        }
-    */
-
 
     /**
      * sort array by certain key, works together with self::sort()
@@ -868,114 +814,6 @@ class Mod1Controller extends ActionController
         }
         curl_close($curl);
         return $ret;
-    }
-
-    /**
-     * returns array of messages[$filepath] => message
-     *
-     * @param $baseLineFiles
-     * @return array
-     */
-    private function sha1compareFiles(&$baseLineFiles): array
-    {
-        // redirect stderr to stdout using 2>&1 to see error messages as well
-        $cmd = 'find "' . $this->publicPath . '/typo3" -type "f" -name "*.php" 2>&1'; //
-        $msg = [];
-
-        // the following line returns ca. 12.000 filenames and 1.5MB
-        exec($cmd, $output, $status);
-        //\nn\t3::debug($this->publicPath .'/./typo3/install.php');die();
-
-        foreach ($output as $file) {
-            // does sha1 match?
-            //\nn\t3::debug($file);
-            //\nn\t3::debug(sha1(file_get_contents($file)));
-            $index = '.' . substr($file, strlen($this->publicPath));
-            //\nn\t3::debug($index, 'index');
-            //\nn\t3::debug($baseLineFiles[$index]);
-            //die();
-            if (array_key_exists($index, $baseLineFiles))
-            {
-                $shaFile = sha1(file_get_contents($file));
-                $isSha1match = $shaFile == $baseLineFiles[$index];
-                //$typo3results[$index] = $isSha1match;
-                if (!$isSha1match) {
-                    $msg[$index] = 'File altered: '. $shaFile . ':' . $baseLineFiles[$index] . ' ' . $index;
-                }
-            } else {
-                //$typo3results[$index] = false;
-                $msg[$index] = 'File should not be here -';
-                /*
-                \nn\t3::debug([
-                    'index' => $index,
-                    //'baseLine' => $baseLineFiles[$index]
-                ]);
-                */
-            }
-
-        }
-        //\nn\t3::debug($typo3results);
-        return $msg;
-    }
-
-    /**
-     * @param $baseLineFiles
-     * @param $fileType
-     * @return array
-     */
-    private function sha1getBaselineFile(&$baseLineFiles, $fileType): array
-    {
-        // file to open is like /Resources/Private/SHA1/11005030/typo3_files_js.txt
-        $msg = [];
-        $baseLineFiles = [];
-        $gzFile = $this->extPath . '/Resources/Private/SHA1/' . $this->t3version . '/typo3_files_' . $fileType . '.txt.gz';
-        //\nn\t3::debug($gzFile);
-        $isFile = @file_exists($gzFile);
-        //\nn\t3::debug($isFile);
-        if (!$isFile)
-        {
-            $msg[] = 'The file for version ' . $this->t3version . ' is not available: ' . $gzFile;
-        } else {
-            // ~450KB, unset after needed
-            $gz = @file_get_contents($gzFile);
-            //\nn\t3::debug($gz);
-            if ($gz === false)
-            {
-                $msg[] = 'Error reading file ' . $gzFile;
-            } else {
-                // ~1.5MB, unset after needed -> data error exception!
-                $gunzip = gzdecode($gz);
-                //\nn\t3::debug($gunzip);
-                if ($gunzip === false)
-                {
-                    $msg[] = 'The input file could not be decoded. Is it a gzip file?';
-                } else {
-                    $gz = null;
-                    unset($gz);
-                    // get the lines
-                    $gzArray = explode("\n", $gunzip);
-                    //\nn\t3::debug($gzarray);
-
-                    if ($gzArray === false)
-                    {
-                        $msg[] = 'gzArray failed to explode!';
-                    } else {
-                        $gunzip = null;
-                        unset($gunzip);
-
-                        // create final array fName => sha1
-                        foreach($gzArray as $line)
-                        {
-                            $l = explode('  ', $line);
-                            $baseLineFiles[$l[1]] = $l[0];
-                        }
-                        $gzArray = null;
-                        unset($gzArray);
-                    }
-                }
-            }
-        }
-        return $msg;
     }
 
     /**
