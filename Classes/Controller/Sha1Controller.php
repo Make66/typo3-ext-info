@@ -2,14 +2,12 @@
 
 namespace Taketool\Sysinfo\Controller;
 
-use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
-use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
-class Sha1Controller  extends ActionController
+class Sha1Controller extends ActionController
 {
     const EXTKEY = 'sysinfo';
     protected string $publicPath;

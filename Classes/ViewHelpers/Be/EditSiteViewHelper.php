@@ -42,22 +42,11 @@ class EditSiteViewHelper extends AbstractViewHelper
     public function render(): Uri
     {
         $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
-
         $returnUrl = $uriBuilder->buildUriFromRoute('tools_SysinfoM1',
             [
                 'action' => 'edit',
                 'site' => $this->arguments['site'],
             ]);
-        /*
-           $returnUrl =
-           TYPO3\CMS\Core\Http\Uri [prototype, object]
-               path => protected: '/typo3/index.php' (16 chars)
-               query => protected: 'route=%2Fmodule%2Ftools%2FInfoM1&token=e5a7d1d3a45229de1aafc4162ca
-                  c22dbe656e8e8&site=vintage' (102 chars)
-         */
-        //\nn\t3::debug($returnUrl);
-
-        // /module/tools/InfoM1
         $parameters = GeneralUtility::explodeUrl2Array('&returnUrl=' . urldecode($returnUrl->getQuery()));
         /*
             $parameters =
@@ -67,33 +56,8 @@ class EditSiteViewHelper extends AbstractViewHelper
                site => 'vintage' (7 chars)
          */
         //\nn\t3::debug($parameters);
-
-        /*
-         * the following routes are incorrect:
-         * module/site/configuration
-         * module/site/Configuration
-         * module/site/siteConfiguration
-         * module/site/SiteConfiguration
-         * module_site_configuration
-         * module_siteConfiguration
-         * module_site_siteConfiguration
-         * module_site_siteConfiguration
-         */
-        $uriFromRoute = $uriBuilder->buildUriFromRoute('site_configuration', $parameters);
-
-        /*
-           TYPO3\CMS\Core\Http\Uri [prototype, object]
-               path => protected: '/typo3/index.php' (16 chars)
-               query => protected: 'route=%2Fmodule%2Fsite%2Fconfiguration&token=5fd7a07b3eb738d853495707ee7605b
-                  68df113fd&returnUrl=route%3D%2Fmodule%2Ftools%2FInfoM1&site=vintage' (153 chars)
-            route=/module/site/configuration&
-            token=5fd7a07b3eb738d853495707ee7605b68df113fd&
-            returnUrl=route=/module/tools/InfoM1&
-            site=vintage
-         */
-        //\nn\t3::debug($uriFromRoute);
-
+        $uriFromRoute = $uriBuilder
+            ->buildUriFromRoute('site_configuration', $parameters);
         return $uriFromRoute;
-
     }
 }

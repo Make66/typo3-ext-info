@@ -1,4 +1,5 @@
 <?php
+declare(strict_types = 1);
 
 namespace Taketool\Sysinfo\Controller;
 
@@ -7,7 +8,6 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
-
 
 /***************************************************************
  *  Copyright notice
@@ -33,15 +33,15 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
  * ************************************************************* */
 
 /**
- * Module for the 'tool' extension.
+ * Module for the 'sysinfo' extension.
  *
  * @author      Martin Keller <martin.keller@taketool.de>
  * @package     Taketool
  * @subpackage  Sysinfo
  */
-class CheckRemotePageController extends ActionController
+class CheckRemotePageController //extends ActionController
 {
-    protected $responseFactory;
+    private $responseFactory;
 
     public function __construct(ResponseFactoryInterface $responseFactory)
     {
@@ -55,7 +55,7 @@ class CheckRemotePageController extends ActionController
      * @param ServerRequestInterface $request
      * @return ResponseInterface
      */
-    public function indexAction(ServerRequestInterface $request): ResponseInterface
+    public function checkPageAction(ServerRequestInterface $request): ResponseInterface
     {
         $file = $request->getQueryParams()['file'] ?? null;
         $site = $request->getQueryParams()['site'] ?? null;
@@ -79,6 +79,7 @@ class CheckRemotePageController extends ActionController
         $response->getBody()->write(json_encode($data));
         return $response;
     }
+
     /**
      * waits 2 sec for the url to answer
      * and accepts everything HTTP < 400 as success
