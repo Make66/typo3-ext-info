@@ -18,11 +18,16 @@ use TYPO3Fluid\Fluid\Core\ViewHelper\AbstractViewHelper;
  *
  * @internal
  */
-class EditSiteViewHelper extends AbstractViewHelper
+class LinkViewHelper extends AbstractViewHelper
 {
     /**
      * Init arguments.
-     *
+     * <option value="/typo3/index.php?
+     * route=%2Fmodule%2Fsystem%2Freports&amp;
+     * token=35ea518cb371cacacdc9ca9f6b855a1051d948c4&amp;
+     * action=detail&amp;
+     * extension=tx_reports&amp;
+     * report=status" selected="selected">Status Report</option>
      */
     public function initializeArguments()
     {
