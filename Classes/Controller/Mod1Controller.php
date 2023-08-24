@@ -294,6 +294,7 @@ class Mod1Controller extends ActionController
     {
         $localConfPath = $this->configPath . '/LocalConfiguration.php';
 
+        // removed in v9
         // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['allow']
         // $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['deny']
 
@@ -435,8 +436,6 @@ class Mod1Controller extends ActionController
             'trustedHostsPattern' => $trustedHostsPattern,
             'trustedHostsPattern_disabled' => $trustedHostsPattern_disabled,
             'trustedHostsPattern_isDefault' => $trustedHostsPattern_isDefault,
-            'webspace_allow' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['allow'],
-            'webspace_deny' => $GLOBALS['TYPO3_CONF_VARS']['BE']['fileExtensions']['webspace']['deny'],
             'indexSize' => $indexSize,
             'indexSize_shouldBe' => $indexSize_shouldBe,
             'isIndexSymlink' => $isIndexSymlink,

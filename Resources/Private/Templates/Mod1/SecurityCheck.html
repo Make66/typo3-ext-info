@@ -38,20 +38,6 @@
       <f:if condition="{trustedHostsPattern_isDefault}">(Default: SERVER_NAME)</f:if>
     </li>
 
-    <li><h4>$TYPO3_CONF_VARS['BE']['fileExtensions']['webspace']['allow']</h4>
-      <f:if condition="!{webspace_allow}">
-        <f:then>(empty)</f:then>
-        <f:else>{webspace_allow}</f:else>
-      </f:if>
-    </li>
-
-    <li><h4>$TYPO3_CONF_VARS['BE']['fileExtensions']['webspace']['deny']</h4>
-      <f:if condition="!{webspace_deny}">
-        <f:then>(empty)</f:then>
-        <f:else>{webspace_deny}</f:else>
-      </f:if>
-    </li>
-
     <li><h4>/index.php altered</h4>
       <f:comment>
         In composer mode: index.php is a file w/ a len of x bytes (todo: should not be apache-writable)
