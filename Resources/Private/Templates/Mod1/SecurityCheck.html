@@ -1,5 +1,9 @@
-{namespace tt=Taketool\Sysinfo\ViewHelpers}
-{namespace core=TYPO3\CMS\Core\ViewHelpers}
+<html
+    xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+    xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
+    xmlns:tt="http://typo3.org/ns/Taketool\Sysinfo\ViewHelpers"
+    data-namespace-typo3-fluid="true">
 
 <f:layout name="Default"/>
 <f:section name="content">
@@ -148,22 +152,19 @@
     </li>
 
   </ol>
-<f:comment>
-  route=%2Fmodule%2Fsystem%2Freports&amp;
-  * token=35ea518cb371cacacdc9ca9f6b855a1051d948c4&amp;
-  * action=detail&amp;
-  * extension=tx_reports&amp;
-  * report=status"
-</f:comment>
-  <ul>See also:
-    <li><a href="{be:moduleLink(
-      route:'system_reports',
-      arguments:'[
-        route:\system_reports\,
-        action:\'detail\',
-        extension:\'tx_reports\',
-        report:\'status\'
-      ]')}">Typo3 Security Check</a></li>
+
+  <f:comment>
+    route=%2Fmodule%2Fsystem%2Freports&amp;
+    token=35ea518cb371cacacdc9ca9f6b855a1051d948c4&amp;
+    action=detail&amp;
+    extension=tx_reports&amp;
+    report=status"
+
+    https://test.taketool.net/typo3/%7Bbe:moduleLink(route:'system_reports',arguments:[route:'system_reports',action:'detail',extension:'tx_reports',report:'status'])%7D
+  </f:comment>
+  <h2>See also:</h2>
+  <ul>
+    <li><a href="{be:moduleLink(route:'system_reports',arguments:{route:'system_reports',action:'detail',extension:'tx_reports',report:'status'})}">Typo3 Security Check</a></li>
   </ul>
 </f:section>
 
@@ -172,3 +173,4 @@
 </f:section>
 
 <f:debug>{_all}</f:debug>
+</html>
