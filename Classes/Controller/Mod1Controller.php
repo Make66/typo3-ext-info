@@ -11,13 +11,13 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 //use TYPO3\CMS\Frontend\Page\PageRepository;  // T3v9
 use TYPO3\CMS\Core\Domain\Repository\PageRepository; // T3v10
 use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
+use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
-use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 /***************************************************************
@@ -180,7 +180,7 @@ class Mod1Controller extends ActionController
         $this->publicPath = $environment->getPublicPath();
         $this->extPath = $environment->getExtensionsPath() . '/' . self::EXTKEY;
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
-        $this->t3version = VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
+        $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
         $extensionManagementUtility = GeneralUtility::makeInstance(ExtensionManagementUtility::class);
         //$isExtTool = $extensionManagementUtility::isLoaded('tool');
 
@@ -489,7 +489,7 @@ class Mod1Controller extends ActionController
     private static function build_sorter(string $key): Closure
     {
         return function ($a, $b) use ($key) {
-            return strnatcmp($b[$key], $a[$key]);
+            return strnatcmp($a[$key], $b[$key]);
         };
     }
 

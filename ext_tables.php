@@ -1,17 +1,20 @@
 <?php
 
-use TYPO3\CMS\Core\Utility\VersionNumberUtility;
+use TYPO3\CMS\Core\Information\Typo3Version;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
 
 defined('TYPO3_MODE') || die();
 
 (static function () {
-    $isT3v9 = VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version) < 10000000;
-    $extensionName = $isT3v9
+    $t3majorVersion = GeneralUtility::makeInstance(Typo3Version::class)
+        ->getMajorVersion();
+
+    $extensionName = $t3majorVersion < 10
         ? 'Taketool.Sysinfo'
         : 'Sysinfo';
 
-    if ($isT3v9) // <v10
+    if ($t3majorVersion < 10)
     {
         ExtensionUtility::registerModule(
             $extensionName,
@@ -29,7 +32,9 @@ defined('TYPO3_MODE') || die();
                 'labels' => 'LLL:EXT:sysinfo/Resources/Private/Language/locallang_m1.xlf',
             ]
         );
-    } else { // >= v10
+    }
+    if ($t3majorVersion == 10 || $t3majorVersion == 11)
+    {
         ExtensionUtility::registerModule(
             $extensionName,
             'tools',

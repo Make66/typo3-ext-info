@@ -4,7 +4,7 @@ namespace Taketool\Sysinfo\Controller;
 
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use TYPO3\CMS\Core\Utility\VersionNumberUtility;
+use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 class Sha1Controller extends ActionController
@@ -24,7 +24,7 @@ class Sha1Controller extends ActionController
         $this->publicPath = $environment->getPublicPath();
         $this->extPath = $environment->getExtensionsPath() . '/' . self::EXTKEY;
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
-        $this->t3version = VersionNumberUtility::convertVersionNumberToInteger(TYPO3_version);
+        $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
 
         // this does not work on v11 - why?
         //$sysinfoWebPath = PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath(SELF::EXTKEY));
