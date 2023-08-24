@@ -1,5 +1,5 @@
 # typo3-ext-sysinfo
-Extension for Typo3 v10 + v11. Helpful for preparing migration or maintaining security of an installation.
+Extension for Typo3 v12. Helpful for preparing migration or maintaining security of an installation.
 Information on plugins used in pages, robots.txt, sitemap.xml and security checks.
 
 In detail:
