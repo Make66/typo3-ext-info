@@ -201,7 +201,14 @@ class Mod1Controller extends ActionController
 
     public function allTemplatesAction()
     {
-        $templates = $this->getAllTemplates('1');
+        $templates = $this->getAllTemplates(false);
+        $this->templatesToView($templates);
+        $this->view->assignMultiple($this->globalTemplateVars);
+    }
+
+    public function allTemplatesNoCacheAction()
+    {
+        $templates = $this->getAllTemplates(false, true);
         $this->templatesToView($templates);
         $this->view->assignMultiple($this->globalTemplateVars);
     }
@@ -625,20 +632,31 @@ class Mod1Controller extends ActionController
     /**
      *
      * @param string $showAll
+     * @param bool $filterNoCache
      * @return array
      */
-    private function getAllTemplates(string $showAll = ''): array
+    private function getAllTemplates(bool $rootOnly = true, bool $filterNoCache = false): array
     {
         $query = $this->connectionPool->getQueryBuilderForTable('sys_template');
-        if ($showAll == '1') {
-            $res = $query->select('*')
-                ->from('sys_template')
-                ->execute();
-        } else {
+        if ($rootOnly) {
             $res = $query->select('*')
                 ->from('sys_template')
                 ->where($query->expr()->eq('root', 1))
                 ->execute();
+        } else {
+            if ($filterNoCache)
+            {
+                $res = $query->select('*')
+                    ->from('sys_template')
+                    ->where($query->expr()->like('constants', $query->createNamedParameter('%no_cache%')))
+                    ->orWhere($query->expr()->like('config', $query->createNamedParameter('%no_cache%')))
+                    ->execute();
+            } else {
+                $res = $query->select('*')
+                    ->from('sys_template')
+                    ->execute();
+            }
+
         }
         $templates = $res->fetchAll();
         $pagesOfTemplates = [];

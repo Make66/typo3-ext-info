@@ -1,0 +1,31 @@
+<f:layout name="Default"/>
+
+<f:section name="content">
+
+  <h1>Templates that contain "no_cache"</h1>
+  <p>There are {templates->f:count()} <strong></strong> templates<br>
+  </p>
+
+  <table class="table">
+    <tr>
+      <th>uid</th>
+      <th>pid</th>
+      <th>siteroot</th>
+      <th>rootline</th>
+      <th>include_static_file</th>
+    </tr>
+    <f:for as="template" each="{templates}">
+      <tr id="{templates.uid}">
+        <td>{template.uid}</td>
+        <td>
+          <f:be.link parameters="{id: template.pid, action: 'InformationModule'}" route="web_ts">{template.pid}:{template.pagetitle}</f:be.link>
+        </td>
+        <td>{template.siteroot}</td>
+        <td>{template.rootline}</td>
+        <td>
+          <f:format.raw>{template.include_static_file}</f:format.raw>
+        </td>
+      </tr>
+    </f:for>
+  </table>
+</f:section>
