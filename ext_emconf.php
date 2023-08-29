@@ -8,10 +8,10 @@ $EM_CONF[$_EXTKEY] = [
     'author_email' => 'martin.keller@taketool.de',
     'state' => 'beta',
     'clearCacheOnLoad' => 0,
-    'version' => '1.0.5',
+    'version' => '1.0.7',
     'constraints' => [
         'depends' => [
-            'typo3' => '12.4.5-12.4.99',
+            'typo3' => '10.4.0-11.5.99',
         ],
         'conflicts' => [],
         'suggests' => [],

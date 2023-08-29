@@ -67,7 +67,6 @@ class CurlController //extends ActionController
             throw new InvalidArgumentException('Please provide a site identifier', 1580585109);}
         if ($type=== null) {
             throw new InvalidArgumentException('Please provide a file type', 1580585110);}
-        $this->log($file, $site.':'.$type);
 
         $data = ['result' => [
             'site' => $site,
@@ -96,12 +95,15 @@ class CurlController //extends ActionController
         curl_setopt($curl, CURLOPT_TIMEOUT, 2);
         $result = curl_exec($curl);
         $ret = false;
-        $this->log($url, serialize($result));
+
         if ($result !== false) {
             //if request was ok, check response code
             if (curl_getinfo($curl, CURLINFO_RESPONSE_CODE) < 400) {
                 $ret = true;
             }
+            $this->log($url, ($ret)? 'found' : 'miss');
+        } else {
+            $this->log($url, 'false');
         }
         curl_close($curl);
         return $ret;
@@ -111,7 +113,7 @@ class CurlController //extends ActionController
     {
         fwrite(
             fopen($_SERVER['DOCUMENT_ROOT'] . '/curl.log', 'a'),
-            date('Y-m-d H:i:s') . ' ' . $url .' '.$str . "\r\n\r\n"
+            date('Y-m-d H:i:s') . ' ' . $url .' - '.$str . "\r\n"
         );
     }
 

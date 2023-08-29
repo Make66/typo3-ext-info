@@ -14,10 +14,13 @@ use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
 use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\PathUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
+use TYPO3\CMS\Extbase\Configuration\ConfigurationManager;
+use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 /***************************************************************
@@ -279,6 +282,11 @@ class Mod1Controller extends ActionController
         $this->view->assignMultiple($this->globalTemplateVars);
     }
 
+    /**
+     * Feature: Verify at elast for root page that compression and concatination is active
+     *
+     * @return void
+     */
     public function rootTemplatesAction()
     {
         /*
@@ -891,19 +899,43 @@ class Mod1Controller extends ActionController
     }
 
     /**
-     * @todo sort by siteroot and rootline
+     *
      * @param array $templates
      * @return void
      */
     private function templatesToView(array $templates): void
     {
+       // \nn\t3::debug($templates);
+
         foreach ($templates as $key => $t) {
+            $config = $this->getTsConfig( $templates[$key]['pid']);
+
             $templates[$key]['pagetitle'] = $this->pageRepository->getPage($t['pid'], $disableGroupAccessCheck = true)['title'];
             $templates[$key]['include_static_file'] = implode('<br>', explode(',', $t['include_static_file']));
+            $templates[$key]['compressCss'] = $config['compressCss'];
+            $templates[$key]['compressJs'] = $config['compressJs'];
+            $templates[$key]['concatenateCss'] = $config['concatenateCss'];
+            $templates[$key]['concatenateJs'] = $config['concatenateJs'];
         }
         // order by siteroot
         $templates = self::sort($templates, 'siteroot');
         $this->view->assign('templates', $templates);
+    }
+
+    /**
+     * returns config TS settings for specified pid
+     *
+     * @param $pid
+     * @return mixed
+     */
+    private function getTsConfig($pid)
+    {
+        $template = GeneralUtility::makeInstance(TemplateService::class);
+        $template->tt_track = false;
+        $rootline = GeneralUtility::makeInstance(RootlineUtility::class, $pid)->get();
+        $template->runThroughTemplates($rootline, 0);
+        $template->generateConfig();
+        return $template->setup['config.'];
     }
 
 }
