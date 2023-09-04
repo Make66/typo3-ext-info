@@ -10,6 +10,8 @@
     <tr>
       <th>uid</th>
       <th>pid</th>
+      <th>title</th>
+      <th>description</th>
       <th>siteroot</th>
       <th>rootline</th>
       <th>include_static_file</th>
@@ -20,6 +22,8 @@
         <td>
           <f:be.link parameters="{id: template.pid, action: 'InformationModule'}" route="web_ts">{template.pid}:{template.pagetitle}</f:be.link>
         </td>
+        <td>{template.title}</td>
+        <td>{template.description}</td>
         <td>{template.siteroot}</td>
         <td>/{template.rootline}</td>
         <td>

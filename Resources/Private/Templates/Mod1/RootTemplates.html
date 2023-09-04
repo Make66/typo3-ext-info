@@ -11,6 +11,8 @@
     <tr>
       <th>uid</th>
       <th>pid</th>
+      <th>title</th>
+      <th>description</th>
       <th>compress<br/>Css</th>
       <th>compress<br/>Js</th>
       <th>concat<br/>Css</th>
@@ -23,6 +25,8 @@
         <td>
           <f:be.link parameters="{id: template.pid, action: 'InformationModule'}" route="web_ts">{template.pid}:{template.pagetitle}</f:be.link>
         </td>
+        <td>{template.title}</td>
+        <td>{template.description}</td>
         <td><f:render partial="{f:if(condition:template.compressCss,then:'granted',else:'denied')}"></f:render></td>
         <td><f:render partial="{f:if(condition:template.compressJs,then:'granted',else:'denied')}"></f:render></td>
         <td><f:render partial="{f:if(condition:template.concatenateCss,then:'granted',else:'denied')}"></f:render></td>

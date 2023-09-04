@@ -156,9 +156,9 @@ class Mod1Controller extends ActionController
     ];
     protected array $fileinfo = [
         '/index.php' => [
-            '10004037' => ['size' => 987],
-            '11005030' => ['size' => 815],
-            '12004005' => ['size' => 815],
+            '10.4.37' => ['size' => 987],
+            '11.5.30' => ['size' => 815],
+            '12.4.5' => ['size' => 815],
             ]
     ];
 
@@ -691,7 +691,9 @@ class Mod1Controller extends ActionController
                 'pid' => $template['pid'],
                 'siteroot' => $siteRoot,
                 'rootline' => $rootLine,
-                'include_static_file' => $template['include_static_file']
+                'include_static_file' => $template['include_static_file'],
+                'title' => $template['title'],
+                'description' => $template['description'],
             ];
         }
         //DebuggerUtility::var_dump(['$query' =>$query, '$res'=>$res, '$templates'=>$templates,'$pagesOfTemplates'=>$pagesOfTemplates], 'getAllTemplates()');
