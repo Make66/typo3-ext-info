@@ -154,12 +154,13 @@ class Mod1Controller extends ActionController
     protected array $falsePositives = [
         '/typo3conf/ext/sysinfo/Classes/Controller/Mod1Controller.php',
     ];
-    protected array $fileinfo = [
+    protected array $fileInfo = [
         '/index.php' => [
             '10.4.37' => ['size' => 987],
             '11.5.30' => ['size' => 815],
+            '11.5.31' => ['size' => 822],
             '12.4.5' => ['size' => 815],
-            ]
+        ]
     ];
 
     /**
@@ -184,12 +185,6 @@ class Mod1Controller extends ActionController
         $this->extPath = $environment->getExtensionsPath() . '/' . self::EXTKEY;
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
-        $extensionManagementUtility = GeneralUtility::makeInstance(ExtensionManagementUtility::class);
-        //$isExtTool = $extensionManagementUtility::isLoaded('tool');
-
-        // this does not work on v11 - why?
-        //$sysinfoWebPath = PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath(SELF::EXTKEY));
-        //$jsCheckPages = $sysinfoWebPath . 'Resources/Public/JavaScript/checkPages.js';
         
         // global template information
         $this->globalTemplateVars = [
@@ -341,11 +336,11 @@ class Mod1Controller extends ActionController
 
         /*
          * test index on siteroot
-         * needs $this->>isComposerMode in template
+         * needs $this->isComposerMode in template
          * composer: v10: index.php.len should be 987bytes or is assumed altered
          */
         $indexSize = @filesize($this->publicPath . '/index.php');
-        $indexSize_shouldBe = $this->fileinfo['/index.php'][$this->t3version]['size'];
+        $indexSize_shouldBe = $this->fileInfo['/index.php'][$this->t3version]['size'];
         $indexStat = $this->stat($this->publicPath . '/index.php');
         $isIndexSymlink = $indexStat['stat']['nlink'];
 

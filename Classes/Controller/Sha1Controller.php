@@ -9,7 +9,7 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 class Sha1Controller extends ActionController
 {
-    const EXTKEY = 'sysinfo';
+    const extKey = 'sysinfo';
     protected string $publicPath;
     protected string $configPath;
     protected string $extPath;
@@ -22,7 +22,7 @@ class Sha1Controller extends ActionController
         $environment = GeneralUtility::makeInstance(Environment::class);
         $this->isComposerMode = $environment->isComposerMode();
         $this->publicPath = $environment->getPublicPath();
-        $this->extPath = $environment->getExtensionsPath() . '/' . self::EXTKEY;
+        $this->extPath = $environment->getExtensionsPath() . '/' . self::extKey;
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
 
