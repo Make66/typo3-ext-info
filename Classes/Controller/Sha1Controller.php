@@ -26,10 +26,6 @@ class Sha1Controller extends ActionController
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
 
-        // this does not work on v11 - why?
-        //$sysinfoWebPath = PathUtility::getAbsoluteWebPath(ExtensionManagementUtility::extPath(SELF::EXTKEY));
-        //$jsCheckPages = $sysinfoWebPath . 'Resources/Public/JavaScript/checkPages.js';
-
         // global template information
         $this->globalTemplateVars = [
             't3version' => $this->t3version,
