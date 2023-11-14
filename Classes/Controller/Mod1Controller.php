@@ -153,6 +153,8 @@ class Mod1Controller extends ActionController
             '10.4.37' => ['size' => 987],
             '11.5.30' => ['size' => 815],
             '11.5.31' => ['size' => 822],
+            '11.5.32' => ['size' => 822],
+            '11.5.33' => ['size' => 822],
             '12.4.5' => ['size' => 815],
         ]
     ];
