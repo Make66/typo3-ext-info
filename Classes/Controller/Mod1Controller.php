@@ -4,6 +4,7 @@ namespace Taketool\Sysinfo\Controller;
 
 use Closure;
 use PDO;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -13,6 +14,7 @@ use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
+use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
@@ -160,6 +162,16 @@ class Mod1Controller extends ActionController
     ];
 
     /**
+     * @var BackendUserAuthentication
+     */
+    protected $backendUserAuthentication;
+
+    public function __construct()
+    {
+        $this->backendUserAuthentication = $GLOBALS['BE_USER'];
+    }
+
+    /**
      * @param PageRepository $pageRepository
      */
     public function injectPageRepository(PageRepository $pageRepository)
@@ -298,6 +310,12 @@ class Mod1Controller extends ActionController
 
     public function securityCheckAction()
     {
+        // only link to System Reports if Extension is loaded
+        $isSystemReports = false;
+        if (ExtensionManagementUtility::isLoaded('system_reports') && $this->backendUserAuthentication->isAdmin())
+        {
+            $isSystemReports = true;
+        }
         $localConfPath = $this->configPath . '/LocalConfiguration.php';
 
         // removed in v9
@@ -458,6 +476,7 @@ class Mod1Controller extends ActionController
             'isUploadsPhps' => count($uploadsPhps) > 0,
             'suspiciousPhps' => $suspiciousPhps,
             'isSuspiciousPhps' => count($suspiciousPhps) > 0,
+            'isSystemReports' => $isSystemReports,
         ]);
         $this->view->assignMultiple($this->globalTemplateVars);
     }

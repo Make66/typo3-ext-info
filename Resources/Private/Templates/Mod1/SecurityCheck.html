@@ -162,10 +162,12 @@
 
     https://test.taketool.net/typo3/%7Bbe:moduleLink(route:'system_reports',arguments:[route:'system_reports',action:'detail',extension:'tx_reports',report:'status'])%7D
   </f:comment>
-  <h2>See also:</h2>
-  <ul>
-    <li><a href="{be:moduleLink(route:'system_reports',arguments:{route:'system_reports',action:'detail',extension:'tx_reports',report:'status'})}">Typo3 Security Check</a></li>
-  </ul>
+  <f:if condition="{isSystemReports}">
+    <h2>See also:</h2>
+    <ul>
+      <li><a href="{be:moduleLink(route:'system_reports',arguments:{route:'system_reports',action:'detail',extension:'tx_reports',report:'status'})}">Typo3 Security Check</a></li>
+    </ul>
+  </f:if>
 </f:section>
 
 <f:section name="list1File">
