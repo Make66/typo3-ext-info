@@ -311,11 +311,10 @@ class Mod1Controller extends ActionController
     public function securityCheckAction()
     {
         // only link to System Reports if Extension is loaded
-        $isSystemReports = false;
-        if (ExtensionManagementUtility::isLoaded('system_reports') && $this->backendUserAuthentication->isAdmin())
-        {
-            $isSystemReports = true;
-        }
+        $isLoaded = ExtensionManagementUtility::isLoaded('reports');
+        $isAdmin = $this->backendUserAuthentication->isAdmin();
+        $isSystemReports =  $isLoaded && $isAdmin;
+
         $localConfPath = $this->configPath . '/LocalConfiguration.php';
 
         // removed in v9
