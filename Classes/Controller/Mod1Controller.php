@@ -617,19 +617,19 @@ class Mod1Controller extends ActionController
         $res = $query->select('*')
             ->from('tt_content')
             ->groupBy('list_type')
-            ->execute();
-        $pT = $res->fetchAll();
+            ->executeQuery();
+        $pT = $res->fetchAllAssociative();
 
         // 2nd query: get count()
         $res = $query->select('*')
             ->from('tt_content')
             ->groupBy('list_type')
             ->count('list_type')
-            ->execute();
+            ->executeQuery();
         $i = 0;
 
         // join the two results into one array
-        foreach ($res->fetchAll() as $cnt) {
+        foreach ($res->fetchAllAssociative() as $cnt) {
             $pT[$i]['cnt'] = $cnt['COUNT(`list_type`)'];
             $i++;
         }
@@ -659,7 +659,7 @@ class Mod1Controller extends ActionController
             $res = $query->select('*')
                 ->from('sys_template')
                 ->where($query->expr()->eq('root', 1))
-                ->execute();
+                ->executeQuery();
         } else {
             if ($filterNoCache)
             {
@@ -667,15 +667,15 @@ class Mod1Controller extends ActionController
                     ->from('sys_template')
                     ->where($query->expr()->like('constants', $query->createNamedParameter('%no_cache%')))
                     ->orWhere($query->expr()->like('config', $query->createNamedParameter('%no_cache%')))
-                    ->execute();
+                    ->executeQuery();
             } else {
                 $res = $query->select('*')
                     ->from('sys_template')
-                    ->execute();
+                    ->executeQuery();
             }
 
         }
-        $templates = $res->fetchAll();
+        $templates = $res->fetchAllAssociative();
         $pagesOfTemplates = [];
         foreach ($templates as $template) {
             $siteRoot = '- no siteroot -';
@@ -719,8 +719,8 @@ class Mod1Controller extends ActionController
         $res = $query->select('*')
             ->from('tt_content')
             ->where($query->expr()->eq('CType', $query->createNamedParameter($type)))
-            ->execute();
-        $plugins = $res->fetchAll();
+            ->executeQuery();
+        $plugins = $res->fetchAllAssociative();
 
         // we need uid and pid and page rootpath
         $pagesOfContentType = [];
@@ -777,8 +777,8 @@ class Mod1Controller extends ActionController
             ->where(
                 $queryBuilder->expr()->eq('list_type', $queryBuilder->createNamedParameter($type, PDO::PARAM_STR))
             )
-            ->execute();
-        $plugins = $res->fetchAll();
+            ->executeQuery();
+        $plugins = $res->fetchAllAssociative();
 
         /*
         $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
