@@ -120,15 +120,30 @@
 
     <f:else>
       <h2>Select one PluginType to continue</h2>
-      <f:for each="{pluginTypes}" as="pT">
-        <f:link.action action="plugins" arguments="{type:pT.list_type}">{pT.list_type} ({pT.cnt})</f:link.action>
-        <br>
-      </f:for>
+      <f:if condition="{pluginTypes->f:count()} >0">
+        <f:then>
+          <f:for as="pT" each="{pluginTypes}">
+            <f:link.action action="plugins" arguments="{type:pT.list_type}">{pT.list_type} ({pT.cnt})</f:link.action>
+            <br>
+          </f:for>
+        </f:then>
+        <f:else>
+          There are no Plugin Types.
+        </f:else>
+      </f:if>
       <h2>Select one ContentType to continue</h2>
-      <f:for each="{contentTypes}" as="cT">
-        <f:link.action action="plugins" arguments="{type:cT.CType}">{cT.CType} ({cT.cnt})</f:link.action>
-        <br>
-      </f:for>
+      <f:if condition="{contentTypes->f:count()} >0">
+        <f:then>
+          <f:for as="cT" each="{contentTypes}">
+            <f:link.action action="plugins" arguments="{type:cT.CType}">{cT.CType} ({cT.cnt})</f:link.action>
+            <br>
+          </f:for>
+        </f:then>
+        <f:else>
+          There are no Content Types.
+        </f:else>
+      </f:if>
+
     </f:else>
   </f:if>
 
