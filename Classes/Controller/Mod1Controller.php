@@ -14,6 +14,7 @@ use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
+use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
@@ -193,7 +194,7 @@ class Mod1Controller extends ActionController
         $this->extPath = $environment->getExtensionsPath() . '/' . self::EXTKEY;
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
-        
+
         // global template information
         $this->globalTemplateVars = [
             't3version' => $this->t3version,
@@ -324,10 +325,10 @@ class Mod1Controller extends ActionController
         /*
          * test if $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'] original or altered or empty?
          */
-        $fileDenyPattern = $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'];
-        $fileDenyPatternDefault = '\.(php[3-8]?|phpsh|phtml|pht|phar|shtml|cgi)(\..*)?$|\.pl$|^\.htaccess$';
-        $isFileDenyPatternAltered = $fileDenyPattern != $fileDenyPatternDefault;
-        $isFileDenyPatternEmpty = trim($fileDenyPattern) == '';
+        //$fileDenyPattern = $GLOBALS['TYPO3_CONF_VARS']['BE']['fileDenyPattern'];
+        //$fileDenyPatternDefault = '\.(php[3-8]?|phpsh|phtml|pht|phar|shtml|cgi)(\..*)?$|\.pl$|^\.htaccess$';
+        //$isFileDenyPatternAltered = $fileDenyPattern != $fileDenyPatternDefault;
+        //$isFileDenyPatternEmpty = trim($fileDenyPattern) == '';
 
         // $this->publicPath/index.php should not be writable: is_writable(string $filename): bool
 
@@ -375,7 +376,7 @@ class Mod1Controller extends ActionController
         $notIndexPhpFiles = $phpFiles;
         $indexKey = array_search('/index.php', array_column($phpFiles, 'short'));
         unset($notIndexPhpFiles[$indexKey]);
-        
+
         /*
          * test /typo3temp for *.php which should not be there
          */
@@ -452,10 +453,12 @@ class Mod1Controller extends ActionController
         //\nn\t3::debug($suspiciousPhps);
 
         $this->view->assignMultiple([
+            /*
             'fileDenyPattern' => $fileDenyPattern,
             'fileDenyPatternDefault' => $fileDenyPatternDefault,
             'isFileDenyPatternEmpty' => $isFileDenyPatternEmpty,
             'isFileDenyPatternAltered' => $isFileDenyPatternAltered,
+            */
             'trustedHostsPattern' => $trustedHostsPattern,
             'trustedHostsPattern_disabled' => $trustedHostsPattern_disabled,
             'trustedHostsPattern_isDefault' => $trustedHostsPattern_isDefault,
@@ -617,19 +620,19 @@ class Mod1Controller extends ActionController
         $res = $query->select('*')
             ->from('tt_content')
             ->groupBy('list_type')
-            ->executeQuery();
-        $pT = $res->fetchAllAssociative();
+            ->execute();
+        $pT = $res->fetchAll();
 
         // 2nd query: get count()
         $res = $query->select('*')
             ->from('tt_content')
             ->groupBy('list_type')
             ->count('list_type')
-            ->executeQuery();
+            ->execute();
         $i = 0;
 
         // join the two results into one array
-        foreach ($res->fetchAllAssociative() as $cnt) {
+        foreach ($res->fetchAll() as $cnt) {
             $pT[$i]['cnt'] = $cnt['COUNT(`list_type`)'];
             $i++;
         }
@@ -659,7 +662,7 @@ class Mod1Controller extends ActionController
             $res = $query->select('*')
                 ->from('sys_template')
                 ->where($query->expr()->eq('root', 1))
-                ->executeQuery();
+                ->execute();
         } else {
             if ($filterNoCache)
             {
@@ -667,15 +670,15 @@ class Mod1Controller extends ActionController
                     ->from('sys_template')
                     ->where($query->expr()->like('constants', $query->createNamedParameter('%no_cache%')))
                     ->orWhere($query->expr()->like('config', $query->createNamedParameter('%no_cache%')))
-                    ->executeQuery();
+                    ->execute();
             } else {
                 $res = $query->select('*')
                     ->from('sys_template')
-                    ->executeQuery();
+                    ->execute();
             }
 
         }
-        $templates = $res->fetchAllAssociative();
+        $templates = $res->fetchAll();
         $pagesOfTemplates = [];
         foreach ($templates as $template) {
             $siteRoot = '- no siteroot -';
@@ -719,8 +722,8 @@ class Mod1Controller extends ActionController
         $res = $query->select('*')
             ->from('tt_content')
             ->where($query->expr()->eq('CType', $query->createNamedParameter($type)))
-            ->executeQuery();
-        $plugins = $res->fetchAllAssociative();
+            ->execute();
+        $plugins = $res->fetchAll();
 
         // we need uid and pid and page rootpath
         $pagesOfContentType = [];
@@ -777,8 +780,8 @@ class Mod1Controller extends ActionController
             ->where(
                 $queryBuilder->expr()->eq('list_type', $queryBuilder->createNamedParameter($type, PDO::PARAM_STR))
             )
-            ->executeQuery();
-        $plugins = $res->fetchAllAssociative();
+            ->execute();
+        $plugins = $res->fetchAll();
 
         /*
         $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
@@ -921,15 +924,28 @@ class Mod1Controller extends ActionController
         foreach ($templates as $key => $t) {
             $config = $this->getTsConfig( $templates[$key]['pid']);
 
-            $templates[$key]['pagetitle'] = $this->pageRepository->getPage($t['pid'], $disableGroupAccessCheck = true)['title'];
-            $templates[$key]['include_static_file'] = implode('<br>', explode(',', $t['include_static_file']));
-            $templates[$key]['compressCss'] = $config['compressCss'];
-            $templates[$key]['compressJs'] = $config['compressJs'];
-            $templates[$key]['concatenateCss'] = $config['concatenateCss'];
-            $templates[$key]['concatenateJs'] = $config['concatenateJs'];
+            //$page = $this->pageRepository->getPage($t['pid'], $disableGroupAccessCheck = true);
+
+            /*
+            DebugUtility::debug([
+                't' => $t,
+                '$t[pid]' => $t['pid'],
+                'page' => $this->pageRepository->getPage($t['pid'], $disableGroupAccessCheck = true),
+            ],__line__.''); die();
+            */
+
+            $templates[$key]['pagetitle'] = $t['rootline'];
+            $templates[$key]['include_static_file'] = $t['include_static_file']
+                ? implode('<br>', explode(',', $t['include_static_file']))
+                : '';
+            $templates[$key]['compressCss'] = $config['compressCss'] ?? 'undefined';
+            $templates[$key]['compressJs'] = $config['compressJs'] ?? 'undefined';
+            $templates[$key]['concatenateCss'] = $config['concatenateCss'] ?? 'undefined';
+            $templates[$key]['concatenateJs'] = $config['concatenateJs'] ?? 'undefined';
         }
         // order by siteroot
         $templates = self::sort($templates, 'siteroot');
+
         $this->view->assign('templates', $templates);
     }
 
