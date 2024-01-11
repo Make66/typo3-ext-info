@@ -1,10 +1,8 @@
 <?php
 
-use Taketool\Sysinfo\Controller\CurlController;
-
 return [
-    'sysinfo_checkpage' => [
-        'path' => '/sysinfo/checkpage',
-        'target' => CurlController::class . '::indexAction',
+    'sysinfo_curl' => [
+        'path' => '/sysinfo/checksite',
+        'target' => Taketool\Sysinfo\Controller\CurlController::class . '::indexAction',
     ],
 ];

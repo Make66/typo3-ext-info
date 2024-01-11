@@ -4,47 +4,50 @@
       xmlns:f="http://typo3.org/ns/TYPO3/Fluid/ViewHelpers"
       xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers" data-namespace-typo3-fluid="true">
 
-<f:layout name="Default"/>
+<f:layout name="Module"/>
 
-<f:section name="content">
+<f:section name="Content">
 
-  <h1>Domain Check</h1>
-  <p>See wich Domains have robots.txt, sitemap.xml or 404</p>
+    <h1>Domain Check</h1>
+    <p>See wich Domains have robots.txt, sitemap.xml or 404</p>
 
-  <table class="table" style="width: min-content;">
-    <tr>
-      <th>&nbsp;</th>
-      <th>site</th>
-      <th>base URL</th>
-      <th>robots.txt</th>
-      <th>sitemap.xml</th>
-      <th>404</th>
-      <th>&nbsp;</th>
-      <th>&nbsp;</th>
-    </tr>
-    <f:for each="{allDomains}" as="domain" key="id" iteration="i">
-      <tr>
-        <td>{i.cycle}</td>
-        <td nowrap="true">
-          <a title="Edit" class="btn btn-default" href="{tt:be.editSite(site: '{domain.site}')}">
-            <core:icon identifier="actions-file-edit" size="small"/>
-            {domain.site}
-          </a>
-        </td>
-        <td nowrap="true">{domain.baseUrl}</td>
-        <td id="robots-{domain.site}" style="color:gray; text-align: center;">
-          <core:icon identifier="actions-question" size="small"/>
-        </td>
-        <td id="sitemap-{domain.site}" style="color:gray; text-align: center;">
-          <core:icon identifier="actions-question" size="small"/>
-        </td>
-        <td id="404-{domain.site}" style="color:gray; text-align: center;">
-          <core:icon identifier="actions-question" size="small"/>
-        </td>
-      </tr>
-    </f:for>
-  </table>
-  <script src="/typo3conf/ext/sysinfo/Resources/Public/JavaScript/checkPages.js"></script>
-
+    <table class="table" style="width: min-content;">
+        <tr>
+            <th>&nbsp;</th>
+            <th>site</th>
+            <th>base URL</th>
+            <th>robots.txt</th>
+            <th>sitemap.xml</th>
+            <th>404</th>
+            <th>404.html</th>
+            <th>&nbsp;</th>
+            <th>&nbsp;</th>
+        </tr>
+        <f:for each="{allDomains}" as="domain" key="id" iteration="i">
+            <tr>
+                <td>{i.cycle}</td>
+                <td nowrap="true">
+                    <a title="Edit" class="btn btn-default" href="{tt:be.editSite(site: '{domain.site}')}">
+                        <core:icon identifier="actions-file-edit" size="small"/>
+                        {domain.site}
+                    </a>
+                </td>
+                <td nowrap="true">{domain.baseUrl}</td>
+                <td id="robots-{domain.site}" style="color:gray; text-align: center;">
+                    <core:icon identifier="actions-question" size="small"/>
+                </td>
+                <td id="sitemap-{domain.site}" style="color:gray; text-align: center;">
+                    <core:icon identifier="actions-question" size="small"/>
+                </td>
+                <td id="404-{domain.site}" style="color:gray; text-align: center;">
+                    <core:icon identifier="actions-question" size="small"/>
+                </td>
+                <td id="404html-{domain.site}" style="color:gray; text-align: center;">
+                    <core:icon identifier="actions-question" size="small"/>
+                </td>
+            </tr>
+        </f:for>
+    </table>
+    <f:be.pageRenderer includeJavaScriptModules="{0: '@taketool/sysinfo/checkSites.js'}" />
 </f:section>
 </html>

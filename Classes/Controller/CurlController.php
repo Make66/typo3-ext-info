@@ -7,6 +7,13 @@ use InvalidArgumentException;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
+use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Localization\LanguageService;
+
 //use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 /***************************************************************
@@ -41,13 +48,8 @@ use Psr\Http\Message\ServerRequestInterface;
  */
 class CurlController //extends ActionController
 {
-    /** @var ResponseFactoryInterface */
-    private $responseFactory;
-
-    public function __construct(ResponseFactoryInterface $responseFactory)
-    {
-        $this->responseFactory = $responseFactory;
-    }
+    public function __construct(protected readonly ResponseFactoryInterface $responseFactory)
+    {}
 
     /**
      * finds out if a remote file exists or not
@@ -55,6 +57,7 @@ class CurlController //extends ActionController
      *
      * @param ServerRequestInterface $request
      * @return ResponseInterface
+     * @throws \JsonException
      */
     public function indexAction(ServerRequestInterface $request): ResponseInterface
     {
@@ -68,20 +71,20 @@ class CurlController //extends ActionController
         if ($type=== null) {
             throw new InvalidArgumentException('Please provide a file type', 1580585110);}
 
-        $data = ['result' => [
+        $data = [
             'site' => $site,
             'type' => $type,
-            'res' => $this->remoteFileExists($file),
-        ]];
+            'res' => $this->remoteFileExists($file)
+        ];
 
         $response = $this->responseFactory->createResponse()
             ->withHeader('Content-Type', 'application/json; charset=utf-8');
-        $response->getBody()->write(json_encode($data));
+        $response->getBody()->write(json_encode(['result' => $data], JSON_THROW_ON_ERROR));
         return $response;
     }
 
     /**
-     * waits 2 sec for the url to answer
+     * waits up to 2 sec for the url to answer
      * and accepts everything HTTP < 400 as success
      *
      * @param $url
@@ -109,12 +112,14 @@ class CurlController //extends ActionController
         return $ret;
     }
 
-    private function log($url, $str)
+    private function log($url, $str): void
     {
-        fwrite(
+        /*
+         fwrite(
             fopen($_SERVER['DOCUMENT_ROOT'] . '/curl.log', 'a'),
             date('Y-m-d H:i:s') . ' ' . $url .' - '.$str . "\r\n"
         );
+        */
     }
 
 }

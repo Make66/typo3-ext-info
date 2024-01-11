@@ -32,7 +32,14 @@ class EditSiteViewHelper extends AbstractViewHelper
 
     /**
      * Returns a URL to link to FormEngine.
-     * Sample: href="/typo3/index.php?route=%2Fmodule%2Fsite%2Fconfiguration&amp;token=5fd7a07b3eb738d853495707ee7605b68df113fd&amp;action=edit&amp;site=vintage"
+     * Link to edit a site: typo3/module/site/configuration/edit
+     *      ?token=b9e7c7a701ec311e4820f80d2ce4e3f5e4b58080
+     *      &site=bbw
+     * Sample: href="/typo3/index.php
+     *      ?route=%2Fmodule%2Fsite%2Fconfiguration
+     *      &amp;token=5fd7a07b3eb738d853495707ee7605b68df113fd
+     *      &amp;action=edit
+     *      &amp;site=vintage"
      * + returnUrl
      *
      * @return Uri URL to FormEngine module + parameters
@@ -43,22 +50,23 @@ class EditSiteViewHelper extends AbstractViewHelper
     public function render(): Uri
     {
         $uriBuilder = GeneralUtility::makeInstance(UriBuilder::class);
-        $returnUrl = $uriBuilder->buildUriFromRoute('tools_SysinfoM1',
+        $returnUrl = $uriBuilder->buildUriFromRoute('sysinfo_checkdomains',
             [
                 'action' => 'edit',
                 'site' => $this->arguments['site'],
             ]);
+        // @todo: returnUrl does not yet contain the checkDomain action
         $parameters = GeneralUtility::explodeUrl2Array('&returnUrl=' . urldecode($returnUrl->getQuery()));
         /*
             $parameters =
             array(3 items)
-               returnUrl => 'route=/module/tools/InfoM1' (36 chars)
-               token => 'e5a7d1d3a45229de1aafc4162cac22dbe656e8e8' (40 chars)
-               site => 'vintage' (7 chars)
+               returnUrl => 'token=e0b561df207fc34acb1b40408e1f0d981936f497' (46 chars)
+               action => 'edit' (4 chars)
+               site => 'bbw' (3 chars)
          */
         //\nn\t3::debug($parameters);
         $uriFromRoute = $uriBuilder
-            ->buildUriFromRoute('site_configuration', $parameters);
+            ->buildUriFromRoute('site_configuration.edit', $parameters);
         return $uriFromRoute;
     }
 }

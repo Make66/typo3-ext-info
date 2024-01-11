@@ -1,34 +1,16 @@
 <?php
-// this file is neeed for T3 >=v11.4  In T3v10 this is done in ext_localconf.php
+// this file is needed for T3 >=v11.4  In T3v10 this is done in ext_localconf.php
 
 use TYPO3\CMS\Core\Imaging\IconProvider\BitmapIconProvider;
 use TYPO3\CMS\Core\Imaging\IconProvider\SvgIconProvider;
 
 return [
-    // Icon identifier
-    'mysvgicon' => [
-        // Icon provider class
+    'extension' => [
         'provider' => SvgIconProvider::class,
-        // The source SVG for the SvgIconProvider
-        'source' => 'EXT:tx_sysinfo/Resources/Public/Icons/mysvg.svg',
+        'source' => 'EXT:sysinfo/Resources/Public/Icons/Extension.svg',
     ],
-    'mybitmapicon' => [
-        'provider' => BitmapIconProvider::class,
-        // The source bitmap file
-        'source' => 'EXT:tx_sysinfo/Resources/Public/Icons/mybitmap.png',
-        // All icon providers provide the possibility to register an icon that spins
-        'spinning' => true,
-    ],
-    'anothersvgicon' => [
+    'mod1' => [
         'provider' => SvgIconProvider::class,
-        'source' => 'EXT:tx_sysinfo/Resources/Public/Icons/anothersvg.svg',
-        // Since TYPO3 v12.0 an extension that provides icons for broader
-        // use can mark such icons as deprecated with logging to the TYPO3
-        // deprecation log. All keys (since, until, replacement) are optional.
-        'deprecated' => [
-            'since' => 'my extension v2',
-            'until' => 'my extension v3',
-            'replacement' => 'alternative-icon',
-        ],
+        'source' => 'EXT:sysinfo/Resources/Public/Icons/user_mod_m1.svg',
     ],
 ];

@@ -3,48 +3,60 @@
       xmlns:f="http://typo3.org/ns/TYPO3/Fluid/ViewHelpers"
       xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers" data-namespace-typo3-fluid="true">
 
-<f:layout name="Default"/>
-<f:debug>{_all}</f:debug>
-<f:section name="content">
+<f:layout name="Module"/>
 
-  <h1>Template Info</h1>
-  <p>There are {templates->f:count()} <strong></strong> templates<br>
-    <f:link.action action="rootTemplates" class="btn btn-default">show only root templates</f:link.action>
-  </p>
+<f:section name="Content">
 
-  <table class="table">
-    <tr>
-      <th>uid</th>
-      <th>pid</th>
-      <th>title</th>
-      <th>description</th>
-      <th>compress<br/>Css</th>
-      <th>compress<br/>Js</th>
-      <th>concat<br/>Css</th>
-      <th>concat<br/>Js</th>
-      <th>siteroot</th>
-      <th>rootline</th>
-      <th>include_static_file</th>
-    </tr>
-    <f:for as="template" each="{templates}">
-      <tr id="{templates.uid}">
-        <td>{template.uid}</td>
-        <td>
-          <f:be.link parameters="{id: template.pid, action: 'InformationModule'}" route="web_ts">{template.pid}:{template.pagetitle}</f:be.link>
-        </td>
-        <td>{template.title}</td>
-        <td>{template.description}</td>
-        <td><f:render partial="{f:if(condition:template.compressCss,then:'granted',else:'denied')}"></f:render></td>
-        <td><f:render partial="{f:if(condition:template.compressJs,then:'granted',else:'denied')}"></f:render></td>
-        <td><f:render partial="{f:if(condition:template.concatenateCss,then:'granted',else:'denied')}"></f:render></td>
-        <td><f:render partial="{f:if(condition:template.concatenateJs,then:'granted',else:'denied')}"></f:render></td>
-        <td>{template.siteroot}</td>
-        <td>/{template.rootline}</td>
-        <td>
-          <f:format.raw>{template.include_static_file}</f:format.raw>
-        </td>
-      </tr>
-    </f:for>
-  </table>
+    <h1>Template Info</h1>
+    <p>There are {templates->f:count()} <strong></strong> templates<br>
+        <f:link.action action="rootTemplates" class="btn btn-default">show only root templates</f:link.action>
+    </p>
+
+    <table class="table">
+        <tr>
+            <th>uid</th>
+            <th>pid</th>
+            <th>title</th>
+            <th>description</th>
+            <th>compress<br/>Css</th>
+            <th>compress<br/>Js</th>
+            <th>concat<br/>Css</th>
+            <th>concat<br/>Js</th>
+            <th>siteroot</th>
+            <th>rootline</th>
+            <th>include_static_file</th>
+        </tr>
+        <f:for as="template" each="{templates}">
+            <tr id="{templates.uid}">
+                <td>{template.uid}</td>
+                <td>
+                    <f:be.link parameters="{id: template.pid, action: 'InformationModule'}" route="web_ts">
+                        {template.pid}:{template.pagetitle}
+                    </f:be.link>
+                </td>
+                <td>{template.title}</td>
+                <td>{template.description}</td>
+                <td>
+                    <f:render partial="{f:if(condition:template.compressCss,then:'granted',else:'denied')}"></f:render>
+                </td>
+                <td>
+                    <f:render partial="{f:if(condition:template.compressJs,then:'granted',else:'denied')}"></f:render>
+                </td>
+                <td>
+                    <f:render
+                        partial="{f:if(condition:template.concatenateCss,then:'granted',else:'denied')}"></f:render>
+                </td>
+                <td>
+                    <f:render
+                        partial="{f:if(condition:template.concatenateJs,then:'granted',else:'denied')}"></f:render>
+                </td>
+                <td>{template.siteroot}</td>
+                <td>/{template.rootline}</td>
+                <td>
+                    <f:format.raw>{template.include_static_file}</f:format.raw>
+                </td>
+            </tr>
+        </f:for>
+    </table>
 </f:section>
 </html>

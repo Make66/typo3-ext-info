@@ -4,6 +4,23 @@ namespace Taketool\Sysinfo\Controller;
 
 use Closure;
 use PDO;
+use Psr\Http\Message\ResponseInterface;
+// the module template will be initialized in handleRequest()
+use TYPO3\CMS\Backend\Attribute\Controller as BackendController;
+use TYPO3\CMS\Backend\Routing\Exception\RouteNotFoundException;
+use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Backend\Template\Components\Buttons\Action\ShortcutButton;
+use TYPO3\CMS\Backend\Template\Components\Buttons\ButtonInterface;
+use TYPO3\CMS\Backend\Template\Components\Buttons\DropDownButton;
+use TYPO3\CMS\Backend\Template\Components\Buttons\InputButton;
+use TYPO3\CMS\Backend\Template\Components\Buttons\LinkButton;
+use TYPO3\CMS\Backend\Template\Components\Buttons\PositionInterface;
+use TYPO3\CMS\Backend\Template\Components\Buttons\SplitButton;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
+use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
@@ -11,9 +28,11 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
 use TYPO3\CMS\Core\Information\Typo3Version;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
 use TYPO3\CMS\Core\Page\PageRenderer;
-use TYPO3\CMS\Core\TypoScript\TemplateService;
+//use TYPO3\CMS\Core\TypoScript\TemplateService;
+//use TYPO3\CMS\Core\TypoScript\FrontendTypoScript;
 use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -50,18 +69,17 @@ use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
  * @package     Taketool
  * @subpackage  Sysinfo
  */
+#[BackendController]
 class Mod1Controller extends ActionController
 {
     const EXTKEY = 'sysinfo';
-    protected ConnectionPool $connectionPool;
-    protected PageRepository $pageRepository;
-    protected SiteConfiguration $siteConfiguration;
     protected string $publicPath;
     protected string $configPath;
     protected string $extPath;
     protected string $t3version;
     protected bool $isComposerMode;
     protected array $globalTemplateVars;
+    protected ModuleTemplate $moduleTemplate;
 
     protected array $hackfiles = [
         'index.php',
@@ -158,7 +176,8 @@ class Mod1Controller extends ActionController
             '11.5.31' => ['size' => 822],
             '11.5.32' => ['size' => 822],
             '11.5.33' => ['size' => 822],
-            '12.4.5' => ['size' => 815],
+            '12.4.8' => ['size' => 822],
+            '12.4.9' => ['size' => 822],
         ]
     ];
 
@@ -167,31 +186,30 @@ class Mod1Controller extends ActionController
      */
     protected $backendUserAuthentication;
 
-    public function __construct()
-    {
+    public function __construct(
+        protected readonly ConnectionPool $connectionPool,
+        protected readonly Environment $environment,
+        //protected readonly FrontendTypoScript $frontendTypoScript,
+        protected readonly IconFactory $iconFactory,
+        protected readonly ModuleTemplateFactory $moduleTemplateFactory,
+        protected readonly PageRenderer $pageRenderer,
+        protected readonly PageRepository $pageRepository,
+        protected readonly SiteConfiguration $siteConfiguration,
+    ){
         $this->backendUserAuthentication = $GLOBALS['BE_USER'];
     }
 
     /**
-     * @param PageRepository $pageRepository
-     */
-    public function injectPageRepository(PageRepository $pageRepository)
-    {
-        $this->pageRepository = $pageRepository;
-    }
-
-    /**
      * initialize action
-     * @throws PackageStatesUnavailableException
      */
     public function initializeAction()
     {
-        $this->connectionPool = GeneralUtility::makeInstance(ConnectionPool::class);
-        $this->siteConfiguration = GeneralUtility::makeInstance(SiteConfiguration::class);
-        $environment = GeneralUtility::makeInstance(Environment::class);
-        $this->isComposerMode = $environment->isComposerMode();
-        $this->publicPath = $environment->getPublicPath();
-        $this->extPath = $environment->getExtensionsPath() . '/' . self::EXTKEY;
+        $this->moduleTemplate = $this->moduleTemplateFactory->create($this->request);
+        $this->addDocHeaderButtons();
+
+        $this->isComposerMode = $this->environment->isComposerMode();
+        $this->publicPath = $this->environment->getPublicPath();
+        $this->extPath = $this->environment->getExtensionsPath() . '/' . self::EXTKEY;
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
 
@@ -201,23 +219,27 @@ class Mod1Controller extends ActionController
             'publicPath' => $this->publicPath,
             'isComposerMode' => $this->isComposerMode,
             'memoryLimit' => $memoryLimit = ini_get('memory_limit'),
-            //'sysinfoWebPath' => $sysinfoWebPath,
-            //'jsCheckPages' => $jsCheckPages,
         ];
     }
 
-    public function allTemplatesAction()
+    public function allTemplatesAction(): ResponseInterface
     {
         $templates = $this->getAllTemplates(false);
-        $this->templatesToView($templates);
-        $this->view->assignMultiple($this->globalTemplateVars);
+
+        $this->moduleTemplate->assign('templates', $this->templatesToView($templates));
+        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+
+        return $this->moduleTemplate->renderResponse();
     }
 
-    public function allTemplatesNoCacheAction()
+    public function noCacheAction(): ResponseInterface
     {
         $templates = $this->getAllTemplates(false, true);
-        $this->templatesToView($templates);
-        $this->view->assignMultiple($this->globalTemplateVars);
+
+        $this->moduleTemplate->assign('templates', $this->templatesToView($templates));
+        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+
+        return $this->moduleTemplate->renderResponse();
     }
 
     /**
@@ -225,26 +247,27 @@ class Mod1Controller extends ActionController
      *
      * @return void
      */
-    public function checkDomainsAction()
+    public function checkDomainsAction(): ResponseInterface
     {
         $allDomains = $this->getAllDomains();
-        $jsInlineCode = 'var checkFiles = [' . "\n";
+        $jsInlineCode = 'var sites = [' . "\n";
         foreach ($allDomains as $domain)
         {
             $jsInlineCode .= '  { site:"' . $domain['site'] . '", url:"' . $domain['baseUrl'] . '"},' . "\n";
         }
         $jsInlineCode .= '];';
 
-        $this->view->assign('allDomains', $allDomains);
-        $this->view->assignMultiple($this->globalTemplateVars);
-
         // add JS
-        $pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
-        $pageRenderer->addJsInlineCode('tx_' . SELF::EXTKEY . '_m1', $jsInlineCode);
-        // add checkPages.js is done in template
+        $this->pageRenderer->addJsFooterInlineCode('tx_' . SELF::EXTKEY . '_m1', $jsInlineCode);
+        // add checkSites.js is done in template
+
+        $this->moduleTemplate->assign('allDomains', $allDomains);
+        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+
+        return $this->moduleTemplate->renderResponse();
     }
 
-    public function deleteFileAction(string $file = '') // v11: ResponseInterface and no param
+    public function deleteFileAction( string $file = ''): ResponseInterface
     {
         $content = 'File could not be deleted';
         if ($file != '') {
@@ -254,36 +277,41 @@ class Mod1Controller extends ActionController
         }
         clearstatcache();
 
-        $this->view->assign('file', $file);
-        $this->view->assign('content', $content);
-        $this->view->assignMultiple($this->globalTemplateVars);
-        // v11: return $this->htmlResponse();
-    }
+        $this->moduleTemplate->assign('file', $file);
+        $this->moduleTemplate->assign('content', $content);
+        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+
+        return $this->moduleTemplate->renderResponse();
+}
 
     /**
      * @return void
      */
-    public function pluginsAction()
+    public function pluginsAction(): ResponseInterface
     {
         $arguments = $this->request->getArguments();
         $type = (isset($arguments['type'])) ? $arguments['type'] : '';
         //DebuggerUtility::var_dump(['$arguments'=>$arguments,'$type'=>$type], __class__.'->'.__function__.'()');
 
         if ($type == '') {
-            $this->view->assign('type', '');
-            $this->view->assign('pluginTypes', $this->getAllPluginTypes());
-            $this->view->assign('contentTypes', $this->getAllContentTypes());
+            $this->moduleTemplate->assign('type', '');
+            $this->moduleTemplate->assign('pluginTypes', $this->getAllPluginTypes());
+            $this->moduleTemplate->assign('contentTypes', $this->getAllContentTypes());
         } else {
-            $this->view->assign('type', $type);
-            $this->view->assign('pages4PluginType', $this->getPages4PluginType($type));
-            $this->view->assign('pages4ContentType', $this->getPages4ContentType($type));
+            $this->moduleTemplate->assign('type', $type);
+            $this->moduleTemplate->assign('pages4PluginType', $this->getPages4PluginType($type));
+            $this->moduleTemplate->assign('pages4ContentType', $this->getPages4ContentType($type));
         }
-        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+
+        return $this->moduleTemplate->renderResponse();
     }
 
-    public function postAction()
+    public function postAction(): ResponseInterface
     {
-        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+
+        return $this->moduleTemplate->renderResponse();
     }
 
     /**
@@ -291,25 +319,21 @@ class Mod1Controller extends ActionController
      *
      * @return void
      */
-    public function rootTemplatesAction()
+    public function rootTemplatesAction(): ResponseInterface
     {
-        /*
-        // Check permission to read config tables
-        if (!$GLOBALS['BE_USER']->check('tables_select', 'tx_tool_domain_model_config')) {
-            $this->addFlashMessage('Berechtigung für diese Seite fehlt.', '', AbstractMessage::ERROR);
-            return;
-        }
-        */
         $arguments = $this->request->getArguments();
         $showAll = (isset($arguments['showAll'])) ? $arguments['showAll'] : '';
         //DebuggerUtility::var_dump(['$arguments'=>$arguments,'showAll'=>$showAll], __class__.'->'.__function__.'()');
 
         $templates = $this->getAllTemplates();
-        $this->templatesToView($templates);
-        $this->view->assignMultiple($this->globalTemplateVars);
+
+        $this->moduleTemplate->assign('templates', $this->templatesToView($templates));
+        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+
+        return $this->moduleTemplate->renderResponse();
     }
 
-    public function securityCheckAction()
+    public function securityCheckAction(): ResponseInterface
     {
         // only link to System Reports if Extension is loaded
         $isLoaded = ExtensionManagementUtility::isLoaded('reports');
@@ -452,7 +476,7 @@ class Mod1Controller extends ActionController
         }
         //\nn\t3::debug($suspiciousPhps);
 
-        $this->view->assignMultiple([
+        $this->moduleTemplate->assignMultiple([
             /*
             'fileDenyPattern' => $fileDenyPattern,
             'fileDenyPatternDefault' => $fileDenyPatternDefault,
@@ -480,14 +504,16 @@ class Mod1Controller extends ActionController
             'isSuspiciousPhps' => count($suspiciousPhps) > 0,
             'isSystemReports' => $isSystemReports,
         ]);
-        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+
+        return $this->moduleTemplate->renderResponse();
     }
 
     /**
      * @param string $file
      * @return void
      */
-    public function viewFileAction(string $file = '') // v11: ResponseInterface and no param
+    public function viewFileAction( string $file = '') : ResponseInterface
     {
         //\nn\t3::debug($file);
 
@@ -501,10 +527,11 @@ class Mod1Controller extends ActionController
             $content = @file_get_contents($file);
         }
 
-        $this->view->assign('file', $file);
-        $this->view->assign('content', $content);
-        $this->view->assignMultiple($this->globalTemplateVars);
-        // v11: return $this->htmlResponse();
+        $this->moduleTemplate->assign('file', $file);
+        $this->moduleTemplate->assign('content', $content);
+        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+
+        return $this->moduleTemplate->renderResponse();
     }
 
     /**
@@ -529,19 +556,19 @@ class Mod1Controller extends ActionController
         $res = $query->select('*')
             ->from('tt_content')
             ->groupBy('CType')
-            ->execute();
-        $pT = $res->fetchAll();
+            ->executeQuery();
+        $pT = $res->fetchAllAssociative();
 
         // 2nd query: get count()
         $res = $query->select('*')
             ->from('tt_content')
             ->groupBy('CType')
             ->count('CType')
-            ->execute();
+            ->executeQuery();
 
         // join the two results into one array
         $i = 0;
-        foreach ($res->fetchAll() as $cnt) {
+        foreach ($res->fetchAllAssociative() as $cnt) {
             $pT[$i]['cnt'] = $cnt['COUNT(`CType`)'];
             $i++;
         }
@@ -620,19 +647,19 @@ class Mod1Controller extends ActionController
         $res = $query->select('*')
             ->from('tt_content')
             ->groupBy('list_type')
-            ->execute();
-        $pT = $res->fetchAll();
+            ->executeQuery();
+        $pT = $res->fetchAllAssociative();
 
         // 2nd query: get count()
         $res = $query->select('*')
             ->from('tt_content')
             ->groupBy('list_type')
             ->count('list_type')
-            ->execute();
+            ->executeQuery();
         $i = 0;
 
         // join the two results into one array
-        foreach ($res->fetchAll() as $cnt) {
+        foreach ($res->fetchAllAssociative() as $cnt) {
             $pT[$i]['cnt'] = $cnt['COUNT(`list_type`)'];
             $i++;
         }
@@ -662,7 +689,7 @@ class Mod1Controller extends ActionController
             $res = $query->select('*')
                 ->from('sys_template')
                 ->where($query->expr()->eq('root', 1))
-                ->execute();
+                ->executeQuery();
         } else {
             if ($filterNoCache)
             {
@@ -670,15 +697,15 @@ class Mod1Controller extends ActionController
                     ->from('sys_template')
                     ->where($query->expr()->like('constants', $query->createNamedParameter('%no_cache%')))
                     ->orWhere($query->expr()->like('config', $query->createNamedParameter('%no_cache%')))
-                    ->execute();
+                    ->executeQuery();
             } else {
                 $res = $query->select('*')
                     ->from('sys_template')
-                    ->execute();
+                    ->executeQuery();
             }
 
         }
-        $templates = $res->fetchAll();
+        $templates = $res->fetchAllAssociative();
         $pagesOfTemplates = [];
         foreach ($templates as $template) {
             $siteRoot = '- no siteroot -';
@@ -722,8 +749,8 @@ class Mod1Controller extends ActionController
         $res = $query->select('*')
             ->from('tt_content')
             ->where($query->expr()->eq('CType', $query->createNamedParameter($type)))
-            ->execute();
-        $plugins = $res->fetchAll();
+            ->executeQuery();
+        $plugins = $res->fetchAllAssociative();
 
         // we need uid and pid and page rootpath
         $pagesOfContentType = [];
@@ -780,8 +807,8 @@ class Mod1Controller extends ActionController
             ->where(
                 $queryBuilder->expr()->eq('list_type', $queryBuilder->createNamedParameter($type, PDO::PARAM_STR))
             )
-            ->execute();
-        $plugins = $res->fetchAll();
+            ->executeQuery();
+        $plugins = $res->fetchAllAssociative();
 
         /*
         $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
@@ -915,14 +942,12 @@ class Mod1Controller extends ActionController
     /**
      *
      * @param array $templates
-     * @return void
+     * @return array
      */
-    private function templatesToView(array $templates): void
+    private function templatesToView(array $templates): array
     {
-       // \nn\t3::debug($templates);
-
         foreach ($templates as $key => $t) {
-            $config = $this->getTsConfig( $templates[$key]['pid']);
+            $config = $this->getTsConfig($t['pid']);
 
             //$page = $this->pageRepository->getPage($t['pid'], $disableGroupAccessCheck = true);
 
@@ -944,9 +969,7 @@ class Mod1Controller extends ActionController
             $templates[$key]['concatenateJs'] = $config['concatenateJs'] ?? 'undefined';
         }
         // order by siteroot
-        $templates = self::sort($templates, 'siteroot');
-
-        $this->view->assign('templates', $templates);
+        return self::sort($templates, 'siteroot');
     }
 
     /**
@@ -957,12 +980,63 @@ class Mod1Controller extends ActionController
      */
     private function getTsConfig($pid)
     {
+        /*
+        new in v12
+        FrontendTypoScript->getFlatSettings()
+        */
+
+        /*DebugUtility::debug($this->frontendTypoScript->getFlatSettings() );
+        $fullTypoScript = $this->request->getAttribute('frontend.typoscript')->getSetupArray();
+        DebugUtility::debug($fullTypoScript);
+
         $template = GeneralUtility::makeInstance(TemplateService::class);
         $template->tt_track = false;
         $rootline = GeneralUtility::makeInstance(RootlineUtility::class, $pid)->get();
         $template->runThroughTemplates($rootline, 0);
         $template->generateConfig();
-        return $template->setup['config.'];
+        return $template->setup['config.'];*/
+        return [];
+    }
+
+    private function addDocHeaderButtons(): void
+    {
+        /*  Valid linkButton conditions are:
+            trim($this->getHref()) !== ''
+            && trim($this->getTitle()) !== ''
+            && $this->getType() === self::class
+            && $this->getIcon() !== null
+        */
+        //$languageService = $this->getLanguageService();
+        $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
+        foreach([
+            'securityCheck' => 'Mod1:Security Check:module-security',
+            'shaOne' => 'Sha1:Typo3 SHA1:actions-extension',
+            'plugins' => 'Mod1:Plugins:content-plugin',
+            'rootTemplates' => 'Mod1:Root Templates:actions-template',
+            'allTemplates' => 'Mod1:All Templates:actions-template',
+            //'noCache' => 'Mod1:no_cache:actions-extension',
+            'checkDomains' => 'Mod1:robots.txt, sitemap.xml & 404:install-scan-extensions',
+        ] as $action => $param)
+        {
+            list($controller, $title, $icon) = explode(':', $param);
+            //\nn\t3::debug([$controller, $action, $title, $this->uriBuilder->uriFor($action,null,$controller)]);
+            $addButton = $buttonBar->makeLinkButton()
+                ->setTitle($title)
+                ->setShowLabelText($action)
+                ->setHref($this->uriBuilder->uriFor($action,null,$controller))
+                ->setIcon($this->iconFactory->getIcon($icon, Icon::SIZE_SMALL));
+            $buttonBar->addButton($addButton);
+        }
+    }
+
+    protected function getLanguageService(): LanguageService
+    {
+        return $GLOBALS['LANG'];
+    }
+
+    protected function getBackendUser(): BackendUserAuthentication
+    {
+        return $GLOBALS['BE_USER'];
     }
 
 }

@@ -2,7 +2,14 @@
 
 namespace Taketool\Sysinfo\Controller;
 
+use Psr\Http\Message\ResponseInterface;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
+use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
@@ -16,9 +23,22 @@ class Sha1Controller extends ActionController
     protected string $t3version;
     protected bool $isComposerMode;
     protected array $globalTemplateVars;
+    protected ModuleTemplate $moduleTemplate;
+    protected mixed $backendUserAuthentication;
 
-    public function initializeAction()
+    public function __construct(
+        protected readonly Environment $environment,
+        protected readonly IconFactory $iconFactory,
+        protected readonly ModuleTemplateFactory $moduleTemplateFactory,
+    ){
+        $this->backendUserAuthentication = $GLOBALS['BE_USER'];
+    }
+
+    public function initializeAction(): void
     {
+        $this->moduleTemplate = $this->moduleTemplateFactory->create($this->request);
+        $this->addDocHeaderButtons();
+
         $environment = GeneralUtility::makeInstance(Environment::class);
         $this->isComposerMode = $environment->isComposerMode();
         $this->publicPath = $environment->getPublicPath();
@@ -40,14 +60,15 @@ class Sha1Controller extends ActionController
      * precompiled file generated gzip(find ./typo3 -type f -name "*.php" -exec sha1sum {} \;)
      * a line looks like this: 5964dd3a9fcc9d3141415b1b8511b8938e1aabf0  ./typo3/index.php%
      *
-     * @return void
+     * @return ResponseInterface
      */
-    public function shaOneAction()
+    public function shaOneAction(): ResponseInterface
     {
-        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+        return $this->moduleTemplate->renderResponse();
     }
 
-    public function shaOneJsAction()
+    public function shaOneJsAction(): ResponseInterface
     {
         $shaMsg = [];
         $msg = $this->sha1getBaselineFile($baseLineFiles,'js');
@@ -56,14 +77,15 @@ class Sha1Controller extends ActionController
             $shaMsg = $this->sha1compareFiles( $baseLineFiles, 'js');
         }
 
-        $this->view->assignMultiple([
+        $this->moduleTemplate->assignMultiple([
             'msg' => $msg,
             'shaMsg' => $shaMsg,
         ]);
-        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+        return $this->moduleTemplate->renderResponse();
     }
 
-    public function shaOnePhpAction()
+    public function shaOnePhpAction(): ResponseInterface
     {
         $shaMsg = [];
         $msg = $this->sha1getBaselineFile($baseLineFiles,'php');
@@ -77,6 +99,7 @@ class Sha1Controller extends ActionController
             'shaMsg' => $shaMsg,
         ]);
         $this->view->assignMultiple($this->globalTemplateVars);
+        return $this->htmlResponse();
     }
     /**
      * returns array of messages[$filepath] => message
@@ -225,6 +248,47 @@ class Sha1Controller extends ActionController
             $hexdump .= '</td></tr></table>'."\n";
             echo $hexdump;
         }
+    }
+
+    private function addDocHeaderButtons(): void
+    {
+        /*  Valid linkButton conditions are:
+            trim($this->getHref()) !== ''
+            && trim($this->getTitle()) !== ''
+            && $this->getType() === self::class
+            && $this->getIcon() !== null
+        */
+        //$languageService = $this->getLanguageService();
+        $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
+        foreach([
+                    'securityCheck' => 'Mod1:Security Check:module-security',
+                    'shaOne' => 'Sha1:Typo3 SHA1:actions-extension',
+                    'plugins' => 'Mod1:Plugins:content-plugin',
+                    'rootTemplates' => 'Mod1:Root Templates:actions-template',
+                    'allTemplates' => 'Mod1:All Templates:actions-template',
+                    //'noCache' => 'Mod1:no_cache:actions-extension',
+                    'checkDomains' => 'Mod1:robots.txt, sitemap.xml & 404:install-scan-extensions',
+                ] as $action => $param)
+        {
+            list($controller, $title, $icon) = explode(':', $param);
+            //\nn\t3::debug([$controller, $action, $title, $this->uriBuilder->uriFor($action,null,$controller)]);
+            $addButton = $buttonBar->makeLinkButton()
+                ->setTitle($title)
+                ->setShowLabelText($action)
+                ->setHref($this->uriBuilder->uriFor($action,null,$controller))
+                ->setIcon($this->iconFactory->getIcon($icon, Icon::SIZE_SMALL));
+            $buttonBar->addButton($addButton);
+        }
+    }
+
+    protected function getLanguageService(): LanguageService
+    {
+        return $GLOBALS['LANG'];
+    }
+
+    protected function getBackendUser(): BackendUserAuthentication
+    {
+        return $GLOBALS['BE_USER'];
     }
 
 }

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<xliff version="1.0">
+    <file source-language="en" datatype="plaintext" original="EXT:sysinfo/Resources/Private/Language/locallang_mod" date="2022-10-28T11:57:46Z" product-name="info">
+        <header/>
+        <body>
+            <trans-unit id="mlang_tabs_tab" resname="mlang_tabs_tab">
+                <source>Sysinfo</source>
+            </trans-unit>
+            <trans-unit id="mlang_labels_tabdescr" resname="mlang_labels_tabdescr">
+                <source>shows which templates included where</source>
+            </trans-unit>
+            <trans-unit id="mlang_labels_tablabel" resname="mlang_labels_tablabel">
+                <source>shows which templates included where</source>
+            </trans-unit>
+
+            <trans-unit id="module.menu.allTemplates" resname="allTemplates">
+                <source>allTemplates</source>
+            </trans-unit>
+            <trans-unit id="module.menu.allTemplatesNoCache" resname="allTemplatesNoCache">
+                <source>allTemplatesNoCache</source>
+            </trans-unit>
+            <trans-unit id="module.menu.checkDomains" resname="checkDomains">
+                <source>checkDomains</source>
+            </trans-unit>
+            <trans-unit id="module.menu.deleteFile" resname="deleteFile">
+                <source>deleteFile</source>
+            </trans-unit>
+            <trans-unit id="module.menu.plugins" resname="plugins">
+                <source>plugins</source>
+            </trans-unit>
+            <trans-unit id="module.menu.post" resname="post">
+                <source>post</source>
+            </trans-unit>
+            <trans-unit id="module.menu.rootTemplates" resname="rootTemplates">
+                <source>rootTemplates</source>
+            </trans-unit>
+            <trans-unit id="module.menu.securityCheck" resname="securityCheck">
+                <source>securityCheck</source>
+            </trans-unit>
+            <trans-unit id="module.menu.viewFile" resname="viewFile">
+                <source>viewFile</source>
+            </trans-unit>
+        </body>
+    </file>
+</xliff>

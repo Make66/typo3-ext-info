@@ -1,15 +1,15 @@
 {namespace core = TYPO3\CMS\Core\ViewHelpers}
 {namespace tt=Taketool\Sysinfo\ViewHelpers}
 
-<f:layout name="Default"/>
-<f:debug>{_all}</f:debug>
-<f:section name="content">
+<f:layout name="Module"/>
+
+<f:section name="Content">
 
   <h1>Typo3 SHA-1 check</h1>
   <p>See which source files do not match LTS version</p>
   <p>Your PHP memory_limit is {memoryLimit}</p>
 
-  <f:if condition="{t3version}== '12004005'">
+  <f:if condition="{t3version}== '12004005' || {t3version}== '12004006'">
     <p>Hint: Your Installation claims to run on Typo3 v12.4.5; here are no JS files to check and only 2 PHP files in webspace to check!</p>
   </f:if>
   <span class="btn btn-default"><f:link.action action="shaOneJs">check JS files</f:link.action></span>
