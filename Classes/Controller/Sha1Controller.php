@@ -2,14 +2,24 @@
 
 namespace Taketool\Sysinfo\Controller;
 
+use Psr\Http\Message\ResponseInterface;
+use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use TYPO3\CMS\Backend\Template\ModuleTemplate;
+use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Core\Domain\Repository\PageRepository;
+use TYPO3\CMS\Core\Imaging\Icon;
+use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 class Sha1Controller extends ActionController
 {
-    const extKey = 'sysinfo';
+    const EXTKEY = 'sysinfo';
+
     protected string $publicPath;
     protected string $configPath;
     protected string $extPath;
@@ -17,14 +27,42 @@ class Sha1Controller extends ActionController
     protected bool $isComposerMode;
     protected array $globalTemplateVars;
 
+    protected $backendUserAuthentication;
+    protected ConnectionPool $connectionPool;
+    protected Environment $environment;
+    protected IconFactory $iconFactory;
+    protected ModuleTemplateFactory $moduleTemplateFactory;
+    protected ModuleTemplate $moduleTemplate;
+    protected PageRepository $pageRepository;
+    protected SiteConfiguration $siteConfiguration;
+
+    public function __construct(
+        ConnectionPool $connectionPool,
+        Environment $environment,
+        IconFactory $iconFactory,
+        ModuleTemplateFactory $moduleTemplateFactory,
+        PageRepository $pageRepository,
+        SiteConfiguration $siteConfiguration,
+    )
+    {
+        $this->backendUserAuthentication = $GLOBALS['BE_USER'];
+        $this->connectionPool = $connectionPool;
+        $this->environment = $environment;
+        $this->iconFactory = $iconFactory;
+        $this->moduleTemplateFactory = $moduleTemplateFactory;
+        $this->pageRepository = $pageRepository;
+        $this->siteConfiguration = $siteConfiguration;
+    }
+
     public function initializeAction()
     {
-        $environment = GeneralUtility::makeInstance(Environment::class);
-        $this->isComposerMode = $environment->isComposerMode();
-        $this->publicPath = $environment->getPublicPath();
-        $this->extPath = $environment->getExtensionsPath() . '/' . self::extKey;
+        $this->isComposerMode = $this->environment->isComposerMode();
+        $this->publicPath = $this->environment->getPublicPath();
+        $this->extPath = $this->environment->getExtensionsPath() . '/' . self::EXTKEY;
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
+        $this->moduleTemplate = $this->moduleTemplateFactory->create($this->request);
+        $this->addDocHeaderButtons();
 
         // global template information
         $this->globalTemplateVars = [
@@ -42,12 +80,14 @@ class Sha1Controller extends ActionController
      *
      * @return void
      */
-    public function shaOneAction()
+    public function shaOneAction(): ResponseInterface
     {
         $this->view->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->setContent($this->view->render());
+        return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
 
-    public function shaOneJsAction()
+    public function shaOneJsAction(): ResponseInterface
     {
         $shaMsg = [];
         $msg = $this->sha1getBaselineFile($baseLineFiles,'js');
@@ -61,9 +101,11 @@ class Sha1Controller extends ActionController
             'shaMsg' => $shaMsg,
         ]);
         $this->view->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->setContent($this->view->render());
+        return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
 
-    public function shaOnePhpAction()
+    public function shaOnePhpAction(): ResponseInterface
     {
         $shaMsg = [];
         $msg = $this->sha1getBaselineFile($baseLineFiles,'php');
@@ -77,6 +119,8 @@ class Sha1Controller extends ActionController
             'shaMsg' => $shaMsg,
         ]);
         $this->view->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->setContent($this->view->render());
+        return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
     /**
      * returns array of messages[$filepath] => message
@@ -225,6 +269,53 @@ class Sha1Controller extends ActionController
             $hexdump .= '</td></tr></table>'."\n";
             echo $hexdump;
         }
+    }
+
+    private function addDocHeaderButtons(): void
+    {
+        /*  Valid linkButton conditions are:
+            trim($this->getHref()) !== ''
+            && trim($this->getTitle()) !== ''
+            && $this->getType() === self::class
+            && $this->getIcon() !== null
+        */
+        //$languageService = $this->getLanguageService();
+        $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
+        foreach([
+                    'securityCheck' => 'Mod1:Security Check:module-adminpanel',
+                    'shaOne' => 'Sha1:Typo3 SHA1:actions-extension',
+                    'plugins' => 'Mod1:Plugins:content-plugin',
+                    'rootTemplates' => 'Mod1:Root Templates:actions-template',
+                    'allTemplates' => 'Mod1:All Templates:actions-template',
+                    'noCache' => 'Mod1:no_cache:actions-extension',
+                    'checkDomains' => 'Mod1:robots.txt, sitemap.xml & 404:install-scan-extensions',
+                ] as $action => $param)
+        {
+            list($controller, $title, $icon) = explode(':', $param);
+            //\nn\t3::debug([$controller, $action, $title, $this->uriBuilder->uriFor($action,null,$controller)]);
+            $addButton = $buttonBar->makeLinkButton()
+                ->setTitle($title)
+                ->setShowLabelText($action)
+                ->setHref($this->uriBuilder->uriFor($action,null,$controller))
+                ->setIcon($this->iconFactory->getIcon($icon, Icon::SIZE_SMALL));
+            $buttonBar->addButton($addButton);
+        }
+        $composerButton = $buttonBar->makeLinkButton()
+            ->setTitle(($this->isComposerMode ? 'Composer Mode' : 'Legacy Mode'))
+            ->setShowLabelText(($this->isComposerMode ? 'Dieses Typo3 ist eine Composer basierende Installation' : 'Dieses Typo3 ist keine Composer Installation'))
+            ->setHref('#')
+            ->setIcon($this->iconFactory->getIcon('content-info', Icon::SIZE_SMALL));
+        $buttonBar->addButton($composerButton, ButtonBar::BUTTON_POSITION_RIGHT);
+    }
+
+    protected function getLanguageService(): LanguageService
+    {
+        return $GLOBALS['LANG'];
+    }
+
+    protected function getBackendUser(): BackendUserAuthentication
+    {
+        return $GLOBALS['BE_USER'];
     }
 
 }
