@@ -4,7 +4,7 @@ Information on plugins used in pages, robots.txt, sitemap.xml and security check
 
 In detail:
 - security: check some settings and files that should not be there or are altered. The extension needs the shell commands "find" and "grep" to function.
-- plugins: find content usng specific PluginType or ContentType and links directly to edit content
+- plugins: find content using specific PluginType or ContentType and links directly to edit content
 - root templates: find all and show what they include statically
 - all template: as above + find alltemplates
-- walk over all domains from site configuration and see f we can access robots.txt, sitemap.xml
+- walk over all domains from site configuration and see if we can access robots.txt, sitemap.xml or 404(.html)
