@@ -178,7 +178,7 @@ class Mod1Controller extends ActionController
         IconFactory $iconFactory,
         ModuleTemplateFactory $moduleTemplateFactory,
         PageRepository $pageRepository,
-        SiteConfiguration $siteConfiguration,
+        SiteConfiguration $siteConfiguration
     )
     {
         $this->backendUserAuthentication = $GLOBALS['BE_USER'];
