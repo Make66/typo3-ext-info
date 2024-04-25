@@ -8,6 +8,8 @@ use Psr\Http\Message\ResponseInterface;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+use TYPO3\CMS\Belog\Domain\Model\Constraint;
+use TYPO3\CMS\Belog\Domain\Repository\LogEntryRepository;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -167,6 +169,7 @@ class Mod1Controller extends ActionController
     protected ConnectionPool $connectionPool;
     protected Environment $environment;
     protected IconFactory $iconFactory;
+    protected LogEntryRepository $logEntryRepository;
     protected ModuleTemplateFactory $moduleTemplateFactory;
     protected ModuleTemplate $moduleTemplate;
     protected PageRepository $pageRepository;
@@ -176,6 +179,7 @@ class Mod1Controller extends ActionController
         ConnectionPool $connectionPool,
         Environment $environment,
         IconFactory $iconFactory,
+        LogEntryRepository $logEntryRepository,
         ModuleTemplateFactory $moduleTemplateFactory,
         PageRepository $pageRepository,
         SiteConfiguration $siteConfiguration
@@ -185,6 +189,7 @@ class Mod1Controller extends ActionController
         $this->connectionPool = $connectionPool;
         $this->environment = $environment;
         $this->iconFactory = $iconFactory;
+        $this->logEntryRepository = $logEntryRepository;
         $this->moduleTemplateFactory = $moduleTemplateFactory;
         $this->pageRepository = $pageRepository;
         $this->siteConfiguration = $siteConfiguration;
@@ -253,7 +258,7 @@ class Mod1Controller extends ActionController
 
         // add JS
         $pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
-        $pageRenderer->addJsInlineCode('tx_' . SELF::EXTKEY . '_m1', $jsInlineCode);
+        $pageRenderer->addJsInlineCode('tx_' . self::EXTKEY . '_m1', $jsInlineCode);
         // add checkPages.js is done in template
         $this->moduleTemplate->setContent($this->view->render());
         return $this->htmlResponse($this->moduleTemplate->renderContent());
@@ -507,6 +512,68 @@ class Mod1Controller extends ActionController
         return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
 
+    public function syslogAction(): ResponseInterface
+    {
+        // Fetch logs
+        $logs = $this->logEntryRepository->findByConstraint($this->getSyslogConstraint());
+
+        // If no logs were found, we don't need to continue
+        if (count($logs) > 0) {
+            // Filter for errors, because the LogRepo cannot filter them in advance
+            $logs = array_filter($logs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
+                return $log->getError() == 2;
+            });
+            // Check if there are NO logs left after filtering, because in that case we will also stop!
+            if (count($logs) > 0) {
+                $res = [] ;
+                foreach ($logs as $log)
+                {
+                    $detail = $log->getDetails();
+                    $hash = hash('md5', $detail);
+                    if (empty($res[$hash])) {
+                        $res[$hash]['cnt'] = 1;
+                    } else {
+                        $res[$hash]['cnt'] += 1;
+                    }
+                    $res[$hash]['detail'] = $detail;
+                    $res[$hash]['ts'] = $log->getTstamp();
+                }
+
+                $res = self::sort($res, 'cnt', true);
+
+                //deliver only <max> +1 entries
+                $max = 9;
+                $cnt = 0;
+                $logs = [];
+                foreach ( $res as $r)
+                {
+                    $logs[] = $r;
+                    if ($cnt++ >= $max) break;
+                }
+                //\nn\t3::debug($res);
+            }
+        }
+
+
+        $this->view->assign('logs', $logs);
+        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->setContent($this->view->render());
+        return $this->htmlResponse($this->moduleTemplate->renderContent());
+    }
+
+    protected function getSyslogConstraint (): Constraint
+    {
+
+        /** @var Constraint $constraint */
+        $constraint = GeneralUtility::makeInstance(Constraint::class);
+        //$constraint->setStartTimestamp(intval($this->registry->get(\Datamints\DatamintsErrorReport\Utility\ErrorReportUtility::EXTENSION_NAME, 'lastExecutedTimestamp')));
+        $constraint->setStartTimestamp(0); // Output all reports for test purposes (but will be limited again, so don't worry)
+        //$constraint->setNumber(intval($this->input->getOption('max'))); // Maximum amount of log entries$constraint->setNumber();
+        $constraint->setNumber(50);
+        $constraint->setEndTimestamp(time());
+        return $constraint;
+    }
+
     /**
      * @param string $file
      * @return void
@@ -535,12 +602,15 @@ class Mod1Controller extends ActionController
     /**
      * sort array by certain key, works together with self::sort()
      * @param string $key
+     * @param bool $reverse
      * @return Closure
      */
-    private static function build_sorter(string $key): Closure
+    private static function build_sorter(string $key, bool $reverse = false): Closure
     {
         return function ($a, $b) use ($key) {
-            return strnatcmp($a[$key], $b[$key]);
+            return ($reverse)
+                ? strnatcmp($a[$key], $b[$key])
+                : strnatcmp($b[$key], $a[$key]);
         };
     }
 
@@ -883,11 +953,12 @@ class Mod1Controller extends ActionController
     /**
      * @param array $array
      * @param string $key
+     * @param bool $reverse
      * @return array
      */
-    private static function sort(array $array, string $key): array
+    private static function sort(array $array, string $key, bool $reverse = false): array
     {
-        usort($array, self::build_sorter($key));
+        usort($array, self::build_sorter($key, $reverse));
         return $array;
     }
 
@@ -1001,6 +1072,7 @@ class Mod1Controller extends ActionController
         //$languageService = $this->getLanguageService();
         $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
         foreach([
+                    'syslog' => 'Mod1:Syslog:actions-debug',
                     'securityCheck' => 'Mod1:Security Check:module-adminpanel',
                     'shaOne' => 'Sha1:Typo3 SHA1:actions-extension',
                     'plugins' => 'Mod1:Plugins:content-plugin',
@@ -1011,7 +1083,7 @@ class Mod1Controller extends ActionController
                 ] as $action => $param)
         {
             list($controller, $title, $icon) = explode(':', $param);
-            //\nn\t3::debug([$controller, $action, $title, $this->uriBuilder->uriFor($action,null,$controller)]);
+            //\nn\t3::debug([$controller, $icon, $title, $this->uriBuilder->uriFor($action,null,$controller)]);
             $addButton = $buttonBar->makeLinkButton()
                 ->setTitle($title)
                 ->setShowLabelText($action)

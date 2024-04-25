@@ -1,0 +1,31 @@
+{namespace tt=Taketool\Sysinfo\ViewHelpers}
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en"
+      xmlns:v="http://typo3.org/ns/FluidTYPO3/Vhs/ViewHelpers"
+      xmlns:f="http://typo3.org/ns/TYPO3/Fluid/ViewHelpers"
+      xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers" data-namespace-typo3-fluid="true">
+
+<f:layout name="Default"/>
+
+<f:section name="Content">
+  <h1>Syslog</h1>
+  <p>Top 10 error messages</p>
+
+  <table>
+    <thead><th>Count</th><th>Last timestamp</th><th>Message</th></thead>
+    <tbody>
+    <f:for as="log" each="{logs}">
+      <tr>
+        <th valign="top">{log.cnt}</th>
+        <td valign="top" nowrap="true">{log.ts -> f:format.date(format:'%d.%m.%Y %H:%M')}&nbsp;&nbsp;</td>
+        <td>{log.detail}</td>
+      </tr>
+    </f:for>
+    </tbody>
+  </table>
+
+  <p style="margin-top: 3em;">
+    <f:link.action class="btn btn-default" action="securityCheck">zurück</f:link.action>
+  </p>
+
+</f:section>
+</html>
