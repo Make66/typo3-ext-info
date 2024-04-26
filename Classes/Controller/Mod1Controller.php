@@ -9,6 +9,7 @@ use TYPO3\CMS\Backend\Attribute\Controller as BackendController;
 use TYPO3\CMS\Backend\Template\Components\Buttons\DropDownButton;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+use TYPO3\CMS\Belog\Domain\Model\Constraint;
 use TYPO3\CMS\Belog\Domain\Repository\LogEntryRepository;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
@@ -543,6 +544,19 @@ class Mod1Controller extends ActionController
         $this->view->assignMultiple($this->globalTemplateVars);
         $this->moduleTemplate->setContent($this->view->render());
         return $this->htmlResponse($this->moduleTemplate->renderContent());
+    }
+
+    protected function getSyslogConstraint (): Constraint
+    {
+
+        /** @var Constraint $constraint */
+        $constraint = GeneralUtility::makeInstance(Constraint::class);
+        //$constraint->setStartTimestamp(intval($this->registry->get(\Datamints\DatamintsErrorReport\Utility\ErrorReportUtility::EXTENSION_NAME, 'lastExecutedTimestamp')));
+        $constraint->setStartTimestamp(0); // Output all reports for test purposes (but will be limited again, so don't worry)
+        //$constraint->setNumber(intval($this->input->getOption('max'))); // Maximum amount of log entries$constraint->setNumber();
+        $constraint->setNumber(50);
+        $constraint->setEndTimestamp(time());
+        return $constraint;
     }
 
     /**
