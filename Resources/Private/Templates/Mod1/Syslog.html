@@ -10,18 +10,25 @@
   <h1>Syslog</h1>
   <p>Top 10 error messages</p>
 
-  <table>
-    <thead><th>Count</th><th>Last timestamp</th><th>Message</th></thead>
-    <tbody>
-    <f:for as="log" each="{logs}">
-      <tr>
-        <th valign="top">{log.cnt}</th>
-        <td valign="top" nowrap="true">{log.ts -> f:format.date(format:'%d.%m.%Y %H:%M')}&nbsp;&nbsp;</td>
-        <td>{log.detail}</td>
-      </tr>
-    </f:for>
-    </tbody>
-  </table>
+  <f:if condition="{msg}">
+    <f:then>
+      <p>{msg}</p>
+    </f:then>
+    <f:else>
+      <table>
+        <thead><th>Count</th><th>Last timestamp</th><th>Message</th></thead>
+        <tbody>
+        <f:for as="log" each="{logs}">
+          <tr>
+            <th valign="top">{log.cnt}</th>
+            <td valign="top" nowrap="true">{log.ts -> f:format.date(format:'%d.%m.%Y %H:%M')}&nbsp;&nbsp;</td>
+            <td>{log.detail}</td>
+          </tr>
+        </f:for>
+        </tbody>
+      </table>
+    </f:else>
+  </f:if>
 
   <p style="margin-top: 3em;">
     <f:link.action class="btn btn-default" action="securityCheck">zurück</f:link.action>

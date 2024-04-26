@@ -166,6 +166,7 @@ class Mod1Controller extends ActionController
             '11.5.33' => ['size' => 822],
             '12.4.8' => ['size' => 822],
             '12.4.9' => ['size' => 822],
+            '12.4.14' => ['size' => 822],
         ]
     ];
 
@@ -499,6 +500,8 @@ class Mod1Controller extends ActionController
 
     public function syslogAction(): ResponseInterface
     {
+        $msg = '';
+
         // Fetch logs
         $logs = $this->logEntryRepository->findByConstraint($this->getSyslogConstraint());
 
@@ -536,14 +539,13 @@ class Mod1Controller extends ActionController
                     if ($cnt++ >= $max) break;
                 }
                 //\nn\t3::debug($res);
-            }
-        }
+            } else $msg = 'No error logs after filtering available.';
+        } else $msg = 'No error logs available.';
 
-
+        $this->view->assign('msg', $msg);
         $this->view->assign('logs', $logs);
         $this->view->assignMultiple($this->globalTemplateVars);
-        $this->moduleTemplate->setContent($this->view->render());
-        return $this->htmlResponse($this->moduleTemplate->renderContent());
+        return $this->moduleTemplate->renderResponse();
     }
 
     protected function getSyslogConstraint (): Constraint
