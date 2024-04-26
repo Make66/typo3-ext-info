@@ -5,20 +5,10 @@ namespace Taketool\Sysinfo\Controller;
 use Closure;
 use PDO;
 use Psr\Http\Message\ResponseInterface;
-// the module template will be initialized in handleRequest()
 use TYPO3\CMS\Backend\Attribute\Controller as BackendController;
-use TYPO3\CMS\Backend\Routing\Exception\RouteNotFoundException;
-use TYPO3\CMS\Backend\Template\Components\ButtonBar;
-use TYPO3\CMS\Backend\Template\Components\Buttons\Action\ShortcutButton;
-use TYPO3\CMS\Backend\Template\Components\Buttons\ButtonInterface;
 use TYPO3\CMS\Backend\Template\Components\Buttons\DropDownButton;
-use TYPO3\CMS\Backend\Template\Components\Buttons\InputButton;
-use TYPO3\CMS\Backend\Template\Components\Buttons\LinkButton;
-use TYPO3\CMS\Backend\Template\Components\Buttons\PositionInterface;
-use TYPO3\CMS\Backend\Template\Components\Buttons\SplitButton;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
-
 use TYPO3\CMS\Belog\Domain\Repository\LogEntryRepository;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
@@ -30,11 +20,7 @@ use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Localization\LanguageService;
-use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
 use TYPO3\CMS\Core\Page\PageRenderer;
-//use TYPO3\CMS\Core\TypoScript\TemplateService;
-//use TYPO3\CMS\Core\TypoScript\FrontendTypoScript;
-use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
@@ -190,7 +176,6 @@ class Mod1Controller extends ActionController
     public function __construct(
         protected readonly ConnectionPool $connectionPool,
         protected readonly Environment $environment,
-        //protected readonly FrontendTypoScript $frontendTypoScript,
         protected readonly IconFactory $iconFactory,
         protected readonly LogEntryRepository $logEntryRepository,
         protected readonly ModuleTemplateFactory $moduleTemplateFactory,
@@ -593,7 +578,7 @@ class Mod1Controller extends ActionController
      */
     private static function build_sorter(string $key, bool $reverse = false): Closure
     {
-        return function ($a, $b) use ($key) {
+        return function ($a, $b) use ($key, $reverse) {
             return ($reverse)
                 ? strnatcmp($a[$key], $b[$key])
                 : strnatcmp($b[$key], $a[$key]);
