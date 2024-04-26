@@ -581,7 +581,7 @@ class Mod1Controller extends ActionController
         //$constraint->setStartTimestamp(intval($this->registry->get(\Datamints\DatamintsErrorReport\Utility\ErrorReportUtility::EXTENSION_NAME, 'lastExecutedTimestamp')));
         $constraint->setStartTimestamp(0); // Output all reports for test purposes (but will be limited again, so don't worry)
         //$constraint->setNumber(intval($this->input->getOption('max'))); // Maximum amount of log entries$constraint->setNumber();
-        $constraint->setNumber(50);
+        $constraint->setNumber(10000);
         $constraint->setEndTimestamp(time());
         return $constraint;
     }
