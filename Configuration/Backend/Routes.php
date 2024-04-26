@@ -12,7 +12,6 @@
  * Currently the "access" property is only used so no token creation + validation is made,
  * but will be extended further.
  * /typo3/index.php?route=/module/tools/toolsmaintenance
- * &token=b6807cef8230783cc658fa2b526c3db30cbf35c5
  */
 
 use Taketool\Sysinfo\Controller\Mod1Controller;
