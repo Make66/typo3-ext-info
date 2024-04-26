@@ -8,24 +8,60 @@
 
 <f:section name="Content">
   <h1>Syslog</h1>
-  <p>Top 10 error messages</p>
+
+  <h3>Summary ({cntLogs})</h3>
 
   <table>
-    <thead><th>Count</th><th>Last timestamp</th><th>Message</th></thead>
+    <thead><th>Count</th><th>&nbsp;</th><th>Error description</th></thead>
     <tbody>
-    <f:for as="log" each="{logs}">
-      <tr>
-        <th valign="top">{log.cnt}</th>
-        <td valign="top" nowrap="true">{log.ts -> f:format.date(format:'%d.%m.%Y %H:%M')}&nbsp;&nbsp;</td>
-        <td>{log.detail}</td>
-      </tr>
-    </f:for>
+    <tr>
+      <th style="text-align: right;">{logsCount.0}</th>
+      <td>&nbsp;</td>
+      <td>0: message, a notice of an action that happened</td>
+    </tr>
+    <tr>
+      <th style="text-align: right;">{logsCount.1}</th>
+      <td>&nbsp;</td>
+      <td>1: error, typically a permission problem for the user</td>
+    </tr>
+    <tr>
+      <th style="text-align: right;">{logsCount.2}</th>
+      <td>&nbsp;</td>
+      <td>2: System Error, something which should not happen for technical reasons</td>
+    </tr>
+    <tr>
+      <th style="text-align: right;">{logsCount.3}</th>
+      <td>&nbsp;</td>
+      <td>3: Security notice, like login failures</td>
+    </tr>
     </tbody>
   </table>
 
-  <p style="margin-top: 3em;">
-    <f:link.action class="btn btn-default" action="securityCheck">zurück</f:link.action>
-  </p>
+  <h3>Top 10 system error messages ({cntErrors})</h3>
+  <f:if condition="{msg}">
+    <f:then>
+      <p>{msg}</p>
+    </f:then>
+    <f:else>
+      <table>
+        <thead>
+        <th>Count</th>
+        <th>Last timestamp</th>
+        <th>Message</th>
+        </thead>
+        <tbody>
+        <f:for as="log" each="{logs}">
+          <tr>
+            <th valign="top">{log.cnt}</th>
+            <td nowrap="true" valign="top">{log.ts -> f:format.date(format:'%d.%m.%Y %H:%M')}&nbsp;&nbsp;</td>
+            <td>{log.detail}</td>
+          </tr>
+        </f:for>
+        </tbody>
+      </table>
+    </f:else>
+  </f:if>
 
 </f:section>
+
 </html>

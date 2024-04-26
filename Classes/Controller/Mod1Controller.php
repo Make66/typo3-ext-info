@@ -512,21 +512,41 @@ class Mod1Controller extends ActionController
         return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
 
-    public function syslogAction(): ResponseInterface
+    public function syslogAction()
     {
         // Fetch logs
-        $logs = $this->logEntryRepository->findByConstraint($this->getSyslogConstraint());
+        $rawLogs = $this->logEntryRepository->findByConstraint($this->getSyslogConstraint());
+
+        $msg = '';
+        $logsCount = [];
 
         // If no logs were found, we don't need to continue
-        if (count($logs) > 0) {
+        if (($cntLogs = count($rawLogs)) > 0) {
             // Filter for errors, because the LogRepo cannot filter them in advance
-            $logs = array_filter($logs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
+            $logs_0 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
+                return $log->getError() == 0;
+            });
+            $logsCount[0] = count($logs_0);
+
+            $logs_1 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
+                return $log->getError() == 1;
+            });
+            $logsCount[1] = count($logs_1);
+
+            $logs_2 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
                 return $log->getError() == 2;
             });
+            $logsCount[2] = count($logs_2);
+
+            $logs_3 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
+                return $log->getError() == 3;
+            });
+            $logsCount[3] = count($logs_3);
+
             // Check if there are NO logs left after filtering, because in that case we will also stop!
-            if (count($logs) > 0) {
+            if (($cntErrors = count($logs_2)) > 0) {
                 $res = [] ;
-                foreach ($logs as $log)
+                foreach ($logs_2 as $log)
                 {
                     $detail = $log->getDetails();
                     $hash = hash('md5', $detail);
@@ -551,14 +571,15 @@ class Mod1Controller extends ActionController
                     if ($cnt++ >= $max) break;
                 }
                 //\nn\t3::debug($res);
-            }
-        }
+            } else $msg = 'No error logs after filtering available.';
+        } else $msg = 'No error logs available.';
 
-
+        $this->view->assign('cntErrors', $cntErrors);
+        $this->view->assign('cntLogs', $cntLogs);
         $this->view->assign('logs', $logs);
+        $this->view->assign('msg', $msg);
+        $this->view->assign('logsCount', $logsCount);
         $this->view->assignMultiple($this->globalTemplateVars);
-        $this->moduleTemplate->setContent($this->view->render());
-        return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
 
     protected function getSyslogConstraint (): Constraint
@@ -569,7 +590,7 @@ class Mod1Controller extends ActionController
         //$constraint->setStartTimestamp(intval($this->registry->get(\Datamints\DatamintsErrorReport\Utility\ErrorReportUtility::EXTENSION_NAME, 'lastExecutedTimestamp')));
         $constraint->setStartTimestamp(0); // Output all reports for test purposes (but will be limited again, so don't worry)
         //$constraint->setNumber(intval($this->input->getOption('max'))); // Maximum amount of log entries$constraint->setNumber();
-        $constraint->setNumber(50);
+        $constraint->setNumber(10000);
         $constraint->setEndTimestamp(time());
         return $constraint;
     }
