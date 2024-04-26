@@ -1,7 +1,22 @@
 <html
     xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers"
+    xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
     data-namespace-typo3-fluid="true">
 
-<f:render section="Content"/>
+<be:moduleLayout>
+  <f:be.menus.actionMenu>
+    <f:be.menus.actionMenuItem action="syslog" controller="Mod1" label="Syslog"/>
+    <f:be.menus.actionMenuItem action="securityCheck" controller="Mod1" label="Security Check"/>
+    <f:be.menus.actionMenuItem action="shaOne" controller="Sha1" label="Typo3 SHA-1"/>
+    <f:be.menus.actionMenuItem action="plugins" controller="Mod1" label="Find Plugins"/>
+    <f:be.menus.actionMenuItem action="rootTemplates" controller="Mod1" label="Find root TS-templates"/>
+    <f:be.menus.actionMenuItem action="allTemplates" controller="Mod1" label="Find all TS-templates"/>
+    <f:be.menus.actionMenuItem action="checkDomains" controller="Curl" label="robots.txt, sitemap.xml & 404"/>
+  </f:be.menus.actionMenu>
+  <p>&nbsp;</p>
+  <p>&nbsp;</p>
+  <f:render section="Content" />
+
+</be:moduleLayout>
 
 </html>
