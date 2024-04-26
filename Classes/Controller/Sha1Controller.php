@@ -29,7 +29,7 @@ class Sha1Controller extends ActionController
     public function __construct(
         protected readonly Environment $environment,
         protected readonly IconFactory $iconFactory,
-        protected readonly ModuleTemplateFactory $moduleTemplateFactory,
+        protected readonly ModuleTemplateFactory $moduleTemplateFactory
     ){
         $this->backendUserAuthentication = $GLOBALS['BE_USER'];
     }

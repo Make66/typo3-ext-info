@@ -19,6 +19,7 @@ use TYPO3\CMS\Backend\Template\Components\Buttons\SplitButton;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 
+use TYPO3\CMS\Belog\Domain\Repository\LogEntryRepository;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -191,10 +192,11 @@ class Mod1Controller extends ActionController
         protected readonly Environment $environment,
         //protected readonly FrontendTypoScript $frontendTypoScript,
         protected readonly IconFactory $iconFactory,
+        protected readonly LogEntryRepository $logEntryRepository,
         protected readonly ModuleTemplateFactory $moduleTemplateFactory,
         protected readonly PageRenderer $pageRenderer,
         protected readonly PageRepository $pageRepository,
-        protected readonly SiteConfiguration $siteConfiguration,
+        protected readonly SiteConfiguration $siteConfiguration
     ){
         $this->backendUserAuthentication = $GLOBALS['BE_USER'];
     }
@@ -509,6 +511,55 @@ class Mod1Controller extends ActionController
         return $this->moduleTemplate->renderResponse();
     }
 
+    public function syslogAction(): ResponseInterface
+    {
+        // Fetch logs
+        $logs = $this->logEntryRepository->findByConstraint($this->getSyslogConstraint());
+
+        // If no logs were found, we don't need to continue
+        if (count($logs) > 0) {
+            // Filter for errors, because the LogRepo cannot filter them in advance
+            $logs = array_filter($logs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
+                return $log->getError() == 2;
+            });
+            // Check if there are NO logs left after filtering, because in that case we will also stop!
+            if (count($logs) > 0) {
+                $res = [] ;
+                foreach ($logs as $log)
+                {
+                    $detail = $log->getDetails();
+                    $hash = hash('md5', $detail);
+                    if (empty($res[$hash])) {
+                        $res[$hash]['cnt'] = 1;
+                    } else {
+                        $res[$hash]['cnt'] += 1;
+                    }
+                    $res[$hash]['detail'] = $detail;
+                    $res[$hash]['ts'] = $log->getTstamp();
+                }
+
+                $res = self::sort($res, 'cnt', true);
+
+                //deliver only <max> +1 entries
+                $max = 9;
+                $cnt = 0;
+                $logs = [];
+                foreach ( $res as $r)
+                {
+                    $logs[] = $r;
+                    if ($cnt++ >= $max) break;
+                }
+                //\nn\t3::debug($res);
+            }
+        }
+
+
+        $this->view->assign('logs', $logs);
+        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->setContent($this->view->render());
+        return $this->htmlResponse($this->moduleTemplate->renderContent());
+    }
+
     /**
      * @param string $file
      * @return void
@@ -537,12 +588,15 @@ class Mod1Controller extends ActionController
     /**
      * sort array by certain key, works together with self::sort()
      * @param string $key
+     * @param bool $reverse
      * @return Closure
      */
-    private static function build_sorter(string $key): Closure
+    private static function build_sorter(string $key, bool $reverse = false): Closure
     {
         return function ($a, $b) use ($key) {
-            return strnatcmp($a[$key], $b[$key]);
+            return ($reverse)
+                ? strnatcmp($a[$key], $b[$key])
+                : strnatcmp($b[$key], $a[$key]);
         };
     }
 
@@ -885,11 +939,12 @@ class Mod1Controller extends ActionController
     /**
      * @param array $array
      * @param string $key
+     * @param bool $reverse
      * @return array
      */
-    private static function sort(array $array, string $key): array
+    private static function sort(array $array, string $key, bool $reverse = false): array
     {
-        usort($array, self::build_sorter($key));
+        usort($array, self::build_sorter($key, $reverse));
         return $array;
     }
 
@@ -1009,6 +1064,7 @@ class Mod1Controller extends ActionController
         //$languageService = $this->getLanguageService();
         $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
         foreach([
+            'syslog' => 'Mod1:Syslog:actions-debug',
             'securityCheck' => 'Mod1:Security Check:module-security',
             'shaOne' => 'Sha1:Typo3 SHA1:actions-extension',
             'plugins' => 'Mod1:Plugins:content-plugin',
