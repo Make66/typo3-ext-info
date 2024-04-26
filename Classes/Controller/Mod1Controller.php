@@ -234,7 +234,7 @@ class Mod1Controller extends ActionController
     /**
      * from all domains gets all robots.txt and sitemap.xml via https:// (might take long!)
      *
-     * @return void
+     * @return ResponseInterface
      */
     public function checkDomainsAction(): ResponseInterface
     {
@@ -247,7 +247,7 @@ class Mod1Controller extends ActionController
         $jsInlineCode .= '];';
 
         // add JS
-        $this->pageRenderer->addJsFooterInlineCode('tx_' . SELF::EXTKEY . '_m1', $jsInlineCode);
+        $this->pageRenderer->addJsFooterInlineCode('tx_' . self::EXTKEY . '_m1', $jsInlineCode);
         // add checkSites.js is done in template
 
         $this->moduleTemplate->assign('allDomains', $allDomains);
@@ -274,7 +274,7 @@ class Mod1Controller extends ActionController
 }
 
     /**
-     * @return void
+     * @return ResponseInterface
      */
     public function pluginsAction(): ResponseInterface
     {
@@ -306,7 +306,7 @@ class Mod1Controller extends ActionController
     /**
      * Feature: Verify at elast for root page that compression and concatination is active
      *
-     * @return void
+     * @return ResponseInterface
      */
     public function rootTemplatesAction(): ResponseInterface
     {
@@ -563,7 +563,7 @@ class Mod1Controller extends ActionController
 
     /**
      * @param string $file
-     * @return void
+     * @return ResponseInterface
      */
     public function viewFileAction( string $file = '') : ResponseInterface
     {
@@ -642,9 +642,10 @@ class Mod1Controller extends ActionController
     /**
      * returns array of rootPid => https://xxx/
      *
+     * @param int $limit
      * @return array
      */
-    private function getAllDomains($limit = 1000): array
+    private function getAllDomains(int $limit = 1000): array
     {
         $domains = $this->siteConfiguration->getAllExistingSites(true);
         //\nn\t3::debug($domains);
