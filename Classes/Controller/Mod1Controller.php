@@ -542,9 +542,8 @@ class Mod1Controller extends ActionController
             } else $msg = 'No error logs after filtering available.';
         } else $msg = 'No error logs available.';
 
-        $this->view->assign('msg', $msg);
-        $this->view->assign('logs', $logs);
-        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->assign('msg', $msg);
+        $this->moduleTemplate->assign('logs', $logs);
         return $this->moduleTemplate->renderResponse();
     }
 
