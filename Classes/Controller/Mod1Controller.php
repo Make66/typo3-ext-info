@@ -512,12 +512,18 @@ class Mod1Controller extends ActionController
         return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
 
-    public function syslogAction()
+    public function syslogAction(): ResponseInterface
     {
         // Fetch logs
         $rawLogs = $this->logEntryRepository->findByConstraint($this->getSyslogConstraint());
 
+        //deliver only <max> +1 entries
+        $max = 19;
+
+        $logs = [];
         $msg = '';
+        $cntErrors = 0;
+        $cntErrorsShown = 0;
         $logsCount = [];
 
         // If no logs were found, we don't need to continue
@@ -558,15 +564,12 @@ class Mod1Controller extends ActionController
                     $res[$hash]['detail'] = $detail;
                     $res[$hash]['ts'] = $log->getTstamp();
                 }
-
                 $res = self::sort($res, 'cnt', true);
 
-                //deliver only <max> +1 entries
-                $max = 9;
                 $cnt = 0;
-                $logs = [];
-                foreach ( $res as $r)
+                foreach ($res as $r)
                 {
+                    $cntErrorsShown += $r['cnt'];
                     $logs[] = $r;
                     if ($cnt++ >= $max) break;
                 }
@@ -574,17 +577,22 @@ class Mod1Controller extends ActionController
             } else $msg = 'No error logs after filtering available.';
         } else $msg = 'No error logs available.';
 
-        $this->view->assign('cntErrors', $cntErrors);
-        $this->view->assign('cntLogs', $cntLogs);
-        $this->view->assign('logs', $logs);
-        $this->view->assign('msg', $msg);
-        $this->view->assign('logsCount', $logsCount);
+        $this->view->assignMultiple([
+            'cntErrors' => $cntErrors,
+            'cntErrorsShown' => $cntErrorsShown,
+            'cntLogs' => $cntLogs,
+            'logs' => $logs,
+            'msg' => $msg,
+            'logsCount' => $logsCount,
+        ]);
         $this->view->assignMultiple($this->globalTemplateVars);
+
+        $this->moduleTemplate->setContent($this->view->render());
+        return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
 
     protected function getSyslogConstraint (): Constraint
     {
-
         /** @var Constraint $constraint */
         $constraint = GeneralUtility::makeInstance(Constraint::class);
         //$constraint->setStartTimestamp(intval($this->registry->get(\Datamints\DatamintsErrorReport\Utility\ErrorReportUtility::EXTENSION_NAME, 'lastExecutedTimestamp')));

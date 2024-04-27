@@ -9,8 +9,8 @@
 <f:section name="Content">
   <h1>Syslog</h1>
 
-  <h3>Summary ({cntLogs})</h3>
-
+  <h3>Summary</h3>
+  <p>We read a max of {cntLogs} log entries</p>
   <table>
     <thead><th>Count</th><th>&nbsp;</th><th>Error description</th></thead>
     <tbody>
@@ -37,12 +37,13 @@
     </tbody>
   </table>
 
-  <h3>Top 10 system error messages ({cntErrors})</h3>
+  <h3>Top 20 system error messages</h3>
   <f:if condition="{msg}">
     <f:then>
       <p>{msg}</p>
     </f:then>
     <f:else>
+      <p>Total errors: {cntErrors}, {cntErrorsShown} in this list</p>
       <table>
         <thead>
         <th>Count</th>
