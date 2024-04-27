@@ -1,7 +1,7 @@
 {
   "name": "taketool/sysinfo",
   "type": "typo3-cms-extension",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Migration support, maintenance and security: Provides a backend module for showing which plugins / templates included where and some security related topics. Check configured sitemap.xml and robots.txt",
   "authors": [
     {
