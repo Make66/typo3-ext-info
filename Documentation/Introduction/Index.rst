@@ -6,7 +6,7 @@
 Introduction
 ============
 
-Extension for Typo3 v10 + v11. Helpful for preparing migration or maintaining security of an installation.
+Extension for Typo3 v10 + v11 + v12. Helpful for preparing migration or maintaining security of an installation.
 Information on plugins used in pages, robots.txt, sitemap.xml and security checks.
 
 "sysinfo" is meant as a start to think about easy security checks and migration support and is far from complete.
@@ -18,18 +18,24 @@ Other extensions that have me inspired (and I recommend to try):
 What does it do?
 ================
 In detail:
+- syslog: shows summary of error types and a detailed top-ten of system errors sorted by apperance.
 - security: check some settings and files that should not be there or are altered. The extension needs the shell commands "find" and "grep" to function.
-- plugins: find content usng specific PluginType or ContentType and links directly to edit content
+- sha1: compares hashes of core files with original ones. Actuality is here a bit of a problem, some versions might be missing.
+- plugins: find content using specific PluginType or ContentType and links directly to edit content
 - root templates: find all and show what they include statically
 - all template: as above + find alltemplates
-- walk over all domains from site configuration and see f we can access robots.txt, sitemap.xml
+- walk over all domains from site configuration and see if we can access robots.txt, sitemap.xml and 404 page
 
 What problems does it solve?
 ============================
+- what are my most frequent errors?
 - have I been hacked?
+- are my core files genuine or altered?
 - does somebody uses my site to sell illegal drugs?
-- where are all the plugins hidden, that I want to replace?
+- where are all the plugins hidden, that I want to migrate?
+- is it relevant to migrate an extension or do we have no or almost none uses?
 - which TS templates do I need to address for a rebuild of my site?
+- where are all these typoscript settings coming from?
 
 Who is the target audience?
 ============================

@@ -47,7 +47,7 @@ If you find an error or something is missing, please:
 
 **Extension Manual**
 
-This documentation is for the TYPO3 extension info.
+This documentation is for the TYPO3 extension sysinfo.
 
 **For Contributors**
 
