@@ -282,14 +282,15 @@ class Sha1Controller extends ActionController
         //$languageService = $this->getLanguageService();
         $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
         foreach([
-                    'securityCheck' => 'Mod1:Security Check:module-adminpanel',
-                    'shaOne' => 'Sha1:Typo3 SHA1:actions-extension',
-                    'plugins' => 'Mod1:Plugins:content-plugin',
-                    'rootTemplates' => 'Mod1:Root Templates:actions-template',
-                    'allTemplates' => 'Mod1:All Templates:actions-template',
-                    'noCache' => 'Mod1:no_cache:actions-extension',
-                    'checkDomains' => 'Mod1:robots.txt, sitemap.xml & 404:install-scan-extensions',
-                ] as $action => $param)
+                'syslog' => 'Mod1:Syslog:actions-debug',
+                'securityCheck' => 'Mod1:Security Check:module-adminpanel',
+                'shaOne' => 'Sha1:Typo3 SHA1:actions-extension',
+                'plugins' => 'Mod1:Plugins:content-plugin',
+                'rootTemplates' => 'Mod1:Root Templates:actions-template',
+                'allTemplates' => 'Mod1:All Templates:actions-template',
+                'noCache' => 'Mod1:no_cache:actions-extension',
+                'checkDomains' => 'Mod1:robots.txt, sitemap.xml & 404:install-scan-extensions',
+            ] as $action => $param)
         {
             list($controller, $title, $icon) = explode(':', $param);
             //\nn\t3::debug([$controller, $action, $title, $this->uriBuilder->uriFor($action,null,$controller)]);
