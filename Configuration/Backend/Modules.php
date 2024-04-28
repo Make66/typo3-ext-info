@@ -1,8 +1,7 @@
 <?php
 
-use Taketool\Sysinfo\Controller\Mod1Controller;
-use Taketool\Sysinfo\Controller\Sha1Controller;
-use Taketool\Sysinfo\Controller\CurlController;
+use T3docs\Examples\Controller\ModuleController;
+use T3docs\Examples\Controller\AdminModuleController;
 
 /**
  * Definitions for modules provided by EXT:sysinfo
@@ -15,13 +14,11 @@ return [
         'access' => 'admin',
         'workspaces' => 'live',
         'path' => '/module/tools/sysinfo',
-        'labels' => 'LLL:EXT:sysinfo/Resources/Private/Language/locallang_mod1.xlf',
+        'labels' => 'LLL:EXT:sysinfo/Resources/Private/Language/Module/locallang_mod.xlf',
         'extensionName' => 'Sysinfo',
-        'iconIdentifier' => 'mod1',
-        'inheritNavigationComponentFromMainModule' => false,
         'controllerActions' => [
-            Mod1Controller::class => ['syslog','securityCheck','allTemplates','checkDomains','deleteFile','plugins','rootTemplates','viewFile'],
-            Sha1Controller::class => ['shaOne','shaOneJs','shaOnePhp'],
+            Mod1Controller::class => ['syslog,securityCheck,allTemplates,checkDomains,deleteFile,plugins,rootTemplates,viewFile'],
+            Sha1Controller::class => ['shaOne,shaOneJs,shaOnePhp'],
             CurlController::class => ['index'],
         ],
     ],
