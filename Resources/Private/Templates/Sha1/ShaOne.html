@@ -1,12 +1,12 @@
 {namespace core = TYPO3\CMS\Core\ViewHelpers}
 {namespace tt=Taketool\Sysinfo\ViewHelpers}
 
-<f:layout name="Default"/>
+<f:layout name="Module"/>
 
 <f:section name="Content">
 
   <h1>Typo3 SHA-1 check</h1>
-  <p>See which source files do not match last LTS version</p>
+  <p>See which source files do not match latest LTS version</p>
   <p>Your PHP memory_limit is {memoryLimit}</p>
 
   <span class="btn btn-default"><f:link.action action="shaOneJs">check JS files</f:link.action></span>

@@ -160,13 +160,8 @@ class Mod1Controller extends ActionController
     protected array $fileInfo = [
         '/index.php' => [
             '10.4.37' => ['size' => 987],
-            '11.5.30' => ['size' => 815],
-            '11.5.31' => ['size' => 822],
-            '11.5.32' => ['size' => 822],
-            '11.5.33' => ['size' => 822],
-            '12.4.8' => ['size' => 822],
-            '12.4.9' => ['size' => 822],
-            '12.4.14' => ['size' => 822],
+            '11.5.36' => ['size' => 815],
+            '12.4.14' => ['size' => 815],
         ]
     ];
 
@@ -550,7 +545,7 @@ class Mod1Controller extends ActionController
                     $res[$hash]['detail'] = $detail;
                     $res[$hash]['ts'] = $log->getTstamp();
                 }
-                $res = self::sort($res, 'cnt', true);
+                $res = self::sortReverse($res, 'cnt');
 
                 $cnt = 0;
                 foreach ($res as $r)
@@ -616,15 +611,18 @@ class Mod1Controller extends ActionController
     /**
      * sort array by certain key, works together with self::sort()
      * @param string $key
-     * @param bool $reverse
      * @return Closure
      */
-    private static function build_sorter(string $key, bool $reverse = false): Closure
+    private static function build_sorter(string $key): Closure
     {
-        return function ($a, $b) use ($key, $reverse) {
-            return ($reverse)
-                ? strnatcmp($a[$key], $b[$key])
-                : strnatcmp($b[$key], $a[$key]);
+        return function ($a, $b) use ($key) {
+            return strnatcmp($a[$key], $b[$key]);
+        };
+    }
+    private static function build_sorter_reverse(string $key): Closure
+    {
+        return function ($a, $b) use ($key) {
+            return strnatcmp($b[$key], $a[$key]);
         };
     }
 
@@ -968,12 +966,16 @@ class Mod1Controller extends ActionController
     /**
      * @param array $array
      * @param string $key
-     * @param bool $reverse
      * @return array
      */
-    private static function sort(array $array, string $key, bool $reverse = false): array
+    private static function sort(array $array, string $key): array
     {
-        usort($array, self::build_sorter($key, $reverse));
+        usort($array, self::build_sorter($key));
+        return $array;
+    }
+    private static function sortReverse(array $array, string $key): array
+    {
+        usort($array, self::build_sorter_reverse($key));
         return $array;
     }
 

@@ -42,7 +42,7 @@ class Sha1Controller extends ActionController
         $environment = GeneralUtility::makeInstance(Environment::class);
         $this->isComposerMode = $environment->isComposerMode();
         $this->publicPath = $environment->getPublicPath();
-        $this->extPath = $environment->getExtensionsPath() . '/' . self::extKey;
+        $this->extPath = $environment->getProjectPath() . '/vendor/taketool/' . self::extKey;
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
 
@@ -99,7 +99,7 @@ class Sha1Controller extends ActionController
             'shaMsg' => $shaMsg,
         ]);
         $this->view->assignMultiple($this->globalTemplateVars);
-        return $this->htmlResponse();
+        return $this->moduleTemplate->renderResponse();
     }
     /**
      * returns array of messages[$filepath] => message
@@ -206,7 +206,7 @@ class Sha1Controller extends ActionController
                         foreach($gzArray as $line)
                         {
                             $l = explode('  ', $line);
-                            $baseLineFiles[$l[1]] = $l[0];
+                            if(!empty($l[1])) $baseLineFiles[$l[1]] = $l[0];
                         }
                         $gzArray = null;
                         unset($gzArray);
@@ -261,14 +261,15 @@ class Sha1Controller extends ActionController
         //$languageService = $this->getLanguageService();
         $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
         foreach([
-                    'securityCheck' => 'Mod1:Security Check:module-security',
-                    'shaOne' => 'Sha1:Typo3 SHA1:actions-extension',
-                    'plugins' => 'Mod1:Plugins:content-plugin',
-                    'rootTemplates' => 'Mod1:Root Templates:actions-template',
-                    'allTemplates' => 'Mod1:All Templates:actions-template',
-                    //'noCache' => 'Mod1:no_cache:actions-extension',
-                    'checkDomains' => 'Mod1:robots.txt, sitemap.xml & 404:install-scan-extensions',
-                ] as $action => $param)
+                'syslog' => 'Mod1:Syslog:actions-debug',
+                'securityCheck' => 'Mod1:Security Check:module-security',
+                'shaOne' => 'Sha1:Typo3 SHA1:actions-extension',
+                'plugins' => 'Mod1:Plugins:content-plugin',
+                'rootTemplates' => 'Mod1:Root Templates:actions-template',
+                'allTemplates' => 'Mod1:All Templates:actions-template',
+                //'noCache' => 'Mod1:no_cache:actions-extension',
+                'checkDomains' => 'Mod1:robots.txt, sitemap.xml & 404:install-scan-extensions',
+            ] as $action => $param)
         {
             list($controller, $title, $icon) = explode(':', $param);
             //\nn\t3::debug([$controller, $action, $title, $this->uriBuilder->uriFor($action,null,$controller)]);
