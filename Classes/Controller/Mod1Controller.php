@@ -4,18 +4,15 @@ namespace Taketool\Sysinfo\Controller;
 
 use Closure;
 use PDO;
-use Psr\Http\Message\ResponseInterface;
-use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use Taketool\Sysinfo\Domain\Repository\LogEntryRepository;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Belog\Domain\Model\Constraint;
-use TYPO3\CMS\Belog\Domain\Repository\LogEntryRepository;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
-use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
@@ -25,7 +22,7 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
-use TYPO3\CMS\Extbase\Utility\DebuggerUtility;
+use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
 
 /***************************************************************
  *  Copyright notice
@@ -171,7 +168,6 @@ class Mod1Controller extends ActionController
     protected Environment $environment;
     protected IconFactory $iconFactory;
     protected LogEntryRepository $logEntryRepository;
-    //protected ModuleTemplateFactory $moduleTemplateFactory;
     protected ModuleTemplate $moduleTemplate;
     protected PageRepository $pageRepository;
     protected SiteConfiguration $siteConfiguration;
@@ -193,7 +189,6 @@ class Mod1Controller extends ActionController
         $this->environment = $environment;
         $this->iconFactory = $iconFactory;
         $this->logEntryRepository = $logEntryRepository;
-        //$this->moduleTemplateFactory = $moduleTemplateFactory;
         $this->pageRepository = $pageRepository;
         $this->siteConfiguration = $siteConfiguration;
     }
@@ -505,6 +500,9 @@ class Mod1Controller extends ActionController
 
     public function syslogAction()
     {
+        //deliver only <max> +1 entries
+        $max = 19;
+
         // Fetch logs
         $rawLogs = $this->logEntryRepository->findByConstraint($this->getSyslogConstraint());
 
@@ -537,23 +535,23 @@ class Mod1Controller extends ActionController
             // Check if there are NO logs left after filtering, because in that case we will also stop!
             if (($cntErrors = count($logs_2)) > 0) {
                 $res = [] ;
+                $uids = [];
                 foreach ($logs_2 as $log)
                 {
                     $detail = $log->getDetails();
                     $hash = hash('md5', $detail);
                     if (empty($res[$hash])) {
                         $res[$hash]['cnt'] = 1;
+                        $res[$hash]['detail'] = $detail;
+                        $res[$hash]['uidList'] = $this->getSyslogUidList($logs_2, $hash);
                     } else {
                         $res[$hash]['cnt'] += 1;
                     }
-                    $res[$hash]['detail'] = $detail;
                     $res[$hash]['ts'] = $log->getTstamp();
                 }
 
                 $res = self::sort($res, 'cnt', true);
 
-                //deliver only <max> +1 entries
-                $max = 9;
                 $cnt = 0;
                 $logs = [];
                 foreach ( $res as $r)
@@ -573,9 +571,33 @@ class Mod1Controller extends ActionController
         $this->view->assignMultiple($this->globalTemplateVars);
     }
 
+    private function getSyslogUidList($logs, $hash)
+    {
+        $res = [];
+        foreach($logs as $log)
+        {
+            if (hash('md5', $log->getDetails()) == $hash)
+            {
+                $res[] = $log->getUid();
+            }
+        }
+        return implode(',', $res);
+    }
+
+    /**
+     * @throws StopActionException
+     */
+    public function syslogDeleteAction()
+    {
+        $arguments = $this->request->getArguments();
+        $uidList = (isset($arguments['uidList'])) ? $arguments['uidList'] : '';
+        $cntDeleted = $this->logEntryRepository->deleteByUidList($uidList);
+        $this->addFlashMessage($cntDeleted . ' entries deleted.');
+        $this->forward('syslog');
+    }
+
     protected function getSyslogConstraint (): Constraint
     {
-
         /** @var Constraint $constraint */
         $constraint = GeneralUtility::makeInstance(Constraint::class);
         //$constraint->setStartTimestamp(intval($this->registry->get(\Datamints\DatamintsErrorReport\Utility\ErrorReportUtility::EXTENSION_NAME, 'lastExecutedTimestamp')));

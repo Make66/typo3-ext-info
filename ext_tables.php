@@ -41,7 +41,7 @@ defined('TYPO3_MODE') || die();
             'm1',
             'top',
             [
-                Taketool\Sysinfo\Controller\Mod1Controller::class => 'syslog,securityCheck,allTemplates,allTemplatesNoCache,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
+                Taketool\Sysinfo\Controller\Mod1Controller::class => 'syslog,syslogDelete,securityCheck,allTemplates,allTemplatesNoCache,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
                 Taketool\Sysinfo\Controller\Sha1Controller::class => 'shaOne,shaOneJs,shaOnePhp',
                 Taketool\Sysinfo\Controller\CurlController::class => 'index',
             ],

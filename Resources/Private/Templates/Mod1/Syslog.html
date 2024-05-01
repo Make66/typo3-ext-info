@@ -6,6 +6,8 @@
 
 <f:layout name="Default"/>
 
+<f:flashMessages />
+
 <f:section name="Content">
   <h1>Syslog</h1>
 
@@ -37,7 +39,7 @@
     </tbody>
   </table>
 
-  <h3>Top 10 system error messages ({cntErrors})</h3>
+  <h3>Top 20 system error messages ({cntErrors})</h3>
   <f:if condition="{msg}">
     <f:then>
       <p>{msg}</p>
@@ -47,13 +49,20 @@
         <thead>
         <th>Count</th>
         <th>Last timestamp</th>
+        <th>&nbsp;&nbsp;&nbsp;</th>
         <th>Message</th>
         </thead>
         <tbody>
         <f:for as="log" each="{logs}">
           <tr>
             <th valign="top">{log.cnt}</th>
-            <td nowrap="true" valign="top">{log.ts -> f:format.date(format:'%d.%m.%Y %H:%M')}&nbsp;&nbsp;</td>
+            <td style="vertical-align: top" nowrap="true">{log.ts -> f:format.date(format:'%d.%m.%Y %H:%M')}&nbsp;&nbsp;</td>
+            <td style="vertical-align: top; padding-right: 1em;" nowrap="true">&nbsp;
+              <f:form action="syslogDelete" arguments="{hash:log.hash}" style="margin-top: -1.8em;">
+                <f:form.hidden name="uidList" value="{log.uidList}" />
+                <f:form.button><core:icon identifier="actions-delete" /></f:form.button>
+              </f:form>&nbsp;
+            </td>
             <td>{log.detail}</td>
           </tr>
         </f:for>
