@@ -4,12 +4,10 @@ namespace Taketool\Sysinfo\Controller;
 
 use Closure;
 use PDO;
-use Psr\Http\Message\ResponseInterface;
-use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use Taketool\Sysinfo\Domain\Repository\LogEntryRepository;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Belog\Domain\Model\Constraint;
-use TYPO3\CMS\Belog\Domain\Repository\LogEntryRepository;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -25,6 +23,7 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
+use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
 
 /***************************************************************
  *  Copyright notice
@@ -170,10 +169,12 @@ class Mod1Controller extends ActionController
     protected Environment $environment;
     protected IconFactory $iconFactory;
     protected LogEntryRepository $logEntryRepository;
-    protected ModuleTemplateFactory $moduleTemplateFactory;
+    //protected ModuleTemplateFactory $moduleTemplateFactory;
     protected ModuleTemplate $moduleTemplate;
     protected PageRepository $pageRepository;
     protected SiteConfiguration $siteConfiguration;
+
+    protected $defaultViewObjectName = \TYPO3\CMS\Backend\View\BackendTemplateView::class;
 
     public function __construct(
         ConnectionPool $connectionPool,
@@ -287,7 +288,9 @@ class Mod1Controller extends ActionController
     public function pluginsAction(): ResponseInterface
     {
         $arguments = $this->request->getArguments();
-        $type = (isset($arguments['type'])) ? $arguments['type'] : '';
+        $type = (isset($arguments['type']))
+            ? $arguments['type']
+            : '';
         //DebuggerUtility::var_dump(['$arguments'=>$arguments,'$type'=>$type], __class__.'->'.__function__.'()');
 
         if ($type == '') {
@@ -552,12 +555,15 @@ class Mod1Controller extends ActionController
             // Check if there are NO logs left after filtering, because in that case we will also stop!
             if (($cntErrors = count($logs_2)) > 0) {
                 $res = [] ;
+                $uids = [];
                 foreach ($logs_2 as $log)
                 {
                     $detail = $log->getDetails();
                     $hash = hash('md5', $detail);
                     if (empty($res[$hash])) {
                         $res[$hash]['cnt'] = 1;
+                        $res[$hash]['detail'] = $detail;
+                        $res[$hash]['uidList'] = $this->getSyslogUidList($logs_2, $hash);
                     } else {
                         $res[$hash]['cnt'] += 1;
                     }
@@ -566,6 +572,8 @@ class Mod1Controller extends ActionController
                 }
                 $res = self::sort($res, 'cnt', true);
 
+                //deliver only <max> +1 entries
+                $max = 9;
                 $cnt = 0;
                 foreach ($res as $r)
                 {
@@ -589,6 +597,31 @@ class Mod1Controller extends ActionController
 
         $this->moduleTemplate->setContent($this->view->render());
         return $this->htmlResponse($this->moduleTemplate->renderContent());
+    }
+
+    private function getSyslogUidList($logs, $hash)
+    {
+        $res = [];
+        foreach($logs as $log)
+        {
+            if (hash('md5', $log->getDetails()) == $hash)
+            {
+                $res[] = $log->getUid();
+            }
+        }
+        return implode(',', $res);
+    }
+
+    /**
+     * @throws StopActionException
+     */
+    public function syslogDeleteAction()
+    {
+        $arguments = $this->request->getArguments();
+        $uidList = (isset($arguments['uidList'])) ? $arguments['uidList'] : '';
+        $cntDeleted = $this->logEntryRepository->deleteByUidList($uidList);
+        $this->addFlashMessage($cntDeleted . ' entries deleted.');
+        $this->forward('syslog');
     }
 
     protected function getSyslogConstraint (): Constraint
@@ -1044,20 +1077,8 @@ class Mod1Controller extends ActionController
      */
     private function templatesToView(array $templates): void
     {
-       // \nn\t3::debug($templates);
-
         foreach ($templates as $key => $t) {
             $config = $this->getTsConfig( $templates[$key]['pid']);
-
-            //$page = $this->pageRepository->getPage($t['pid'], $disableGroupAccessCheck = true);
-
-            /*
-            DebugUtility::debug([
-                't' => $t,
-                '$t[pid]' => $t['pid'],
-                'page' => $this->pageRepository->getPage($t['pid'], $disableGroupAccessCheck = true),
-            ],__line__.''); die();
-            */
 
             $templates[$key]['pagetitle'] = $t['rootline'];
             $templates[$key]['include_static_file'] = $t['include_static_file']
