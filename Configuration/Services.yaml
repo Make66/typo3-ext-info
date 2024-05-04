@@ -10,4 +10,5 @@ services:
   Taketool\Sysinfo\Controller\CurlController:
     public: true
     arguments:
+      - '@TYPO3\CMS\Core\Core\Environment'
       - '@Psr\Http\Message\ResponseFactoryInterface'

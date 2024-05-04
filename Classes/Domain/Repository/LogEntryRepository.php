@@ -2,6 +2,8 @@
 
 namespace Taketool\Sysinfo\Domain\Repository;
 
+use Doctrine\DBAL\DBALException;
+use Doctrine\DBAL\Exception;
 use TYPO3\CMS\Belog\Domain\Model\LogEntry;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -18,6 +20,8 @@ class LogEntryRepository extends \TYPO3\CMS\Belog\Domain\Repository\LogEntryRepo
      *
      * @param string $uidList
      * @return int
+     * @throws Exception
+     * @throws DBALException
      */
     public function deleteByUidList(string $uidList): int
     {
@@ -28,7 +32,7 @@ class LogEntryRepository extends \TYPO3\CMS\Belog\Domain\Repository\LogEntryRepo
             ->where(
                 $queryBuilder->expr()->in('uid', $uidList)
             )
-            ->execute();
+            ->executeStatement();
     }
 
 }

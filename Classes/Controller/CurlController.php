@@ -7,7 +7,7 @@ use InvalidArgumentException;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-//use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
+use TYPO3\CMS\Core\Core\Environment;
 
 /***************************************************************
  *  Copyright notice
@@ -39,13 +39,20 @@ use Psr\Http\Message\ServerRequestInterface;
  * @package     Taketool
  * @subpackage  Sysinfo
  */
-class CurlController //extends ActionController
+class CurlController
 {
-    /** @var ResponseFactoryInterface */
-    private $responseFactory;
+    /** @var Environment  */
+    private Environment $environment;
 
-    public function __construct(ResponseFactoryInterface $responseFactory)
+    /** @var ResponseFactoryInterface  */
+    private ResponseFactoryInterface $responseFactory;
+
+    public function __construct(
+        Environment $environment,
+        ResponseFactoryInterface $responseFactory
+    )
     {
+        $this->environment = $environment;
         $this->responseFactory = $responseFactory;
     }
 
@@ -112,7 +119,7 @@ class CurlController //extends ActionController
     private function log($url, $str)
     {
         fwrite(
-            fopen($_SERVER['DOCUMENT_ROOT'] . '/curl.log', 'a'),
+            fopen($this->environment->getProjectPath() . '/var/log/sysinfo_curl.log', 'a'),
             date('Y-m-d H:i:s') . ' ' . $url .' - '.$str . "\r\n"
         );
     }

@@ -3,11 +3,15 @@
 namespace Taketool\Sysinfo\Controller;
 
 use Closure;
+use Doctrine\DBAL\DBALException;
 use PDO;
+use Psr\Http\Message\ResponseInterface;
 use Taketool\Sysinfo\Domain\Repository\LogEntryRepository;
+use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Belog\Domain\Model\Constraint;
+use TYPO3\CMS\Belog\Domain\Model\LogEntry;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -22,6 +26,7 @@ use TYPO3\CMS\Core\TypoScript\TemplateService;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
+use TYPO3\CMS\Extbase\Http\ForwardResponse;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
 
@@ -169,12 +174,10 @@ class Mod1Controller extends ActionController
     protected Environment $environment;
     protected IconFactory $iconFactory;
     protected LogEntryRepository $logEntryRepository;
-    //protected ModuleTemplateFactory $moduleTemplateFactory;
+    protected ModuleTemplateFactory $moduleTemplateFactory;
     protected ModuleTemplate $moduleTemplate;
     protected PageRepository $pageRepository;
     protected SiteConfiguration $siteConfiguration;
-
-    protected $defaultViewObjectName = \TYPO3\CMS\Backend\View\BackendTemplateView::class;
 
     public function __construct(
         ConnectionPool $connectionPool,
@@ -532,22 +535,22 @@ class Mod1Controller extends ActionController
         // If no logs were found, we don't need to continue
         if (($cntLogs = count($rawLogs)) > 0) {
             // Filter for errors, because the LogRepo cannot filter them in advance
-            $logs_0 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
+            $logs_0 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
                 return $log->getError() == 0;
             });
             $logsCount[0] = count($logs_0);
 
-            $logs_1 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
+            $logs_1 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
                 return $log->getError() == 1;
             });
             $logsCount[1] = count($logs_1);
 
-            $logs_2 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
+            $logs_2 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
                 return $log->getError() == 2;
             });
             $logsCount[2] = count($logs_2);
 
-            $logs_3 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
+            $logs_3 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
                 return $log->getError() == 3;
             });
             $logsCount[3] = count($logs_3);
@@ -570,7 +573,7 @@ class Mod1Controller extends ActionController
                     $res[$hash]['detail'] = $detail;
                     $res[$hash]['ts'] = $log->getTstamp();
                 }
-                $res = self::sort($res, 'cnt', true);
+                $res = self::sortReverse($res, 'cnt');
 
                 //deliver only <max> +1 entries
                 $max = 9;
@@ -599,7 +602,7 @@ class Mod1Controller extends ActionController
         return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
 
-    private function getSyslogUidList($logs, $hash)
+    private function getSyslogUidList($logs, $hash): string
     {
         $res = [];
         foreach($logs as $log)
@@ -613,18 +616,24 @@ class Mod1Controller extends ActionController
     }
 
     /**
+     * @todo only 1st click on delete actually deletes something. Following clicks do nothing!
      * @throws StopActionException
+     * @throws DBALException
      */
-    public function syslogDeleteAction()
+    public function syslogDeleteAction(): ResponseInterface
     {
         $arguments = $this->request->getArguments();
+        //\nn\t3::debug($arguments);
         $uidList = (isset($arguments['uidList'])) ? $arguments['uidList'] : '';
-        $cntDeleted = $this->logEntryRepository->deleteByUidList($uidList);
-        $this->addFlashMessage($cntDeleted . ' entries deleted.');
-        $this->forward('syslog');
+        if (!empty($uidList))
+        {
+            $cntDeleted = $this->logEntryRepository->deleteByUidList($uidList);
+            $this->addFlashMessage($cntDeleted . ' entries deleted.');
+        }
+        return (new ForwardResponse('syslog'));
     }
 
-    protected function getSyslogConstraint (): Constraint
+    protected function getSyslogConstraint(): Constraint
     {
         /** @var Constraint $constraint */
         $constraint = GeneralUtility::makeInstance(Constraint::class);
@@ -667,14 +676,19 @@ class Mod1Controller extends ActionController
      * @param bool $reverse
      * @return Closure
      */
-    private static function build_sorter(string $key, bool $reverse = false): Closure
+    private static function build_sorter(string $key): Closure
     {
         return function ($a, $b) use ($key) {
-            return ($reverse)
-                ? strnatcmp($a[$key], $b[$key])
-                : strnatcmp($b[$key], $a[$key]);
+            return strnatcmp($a[$key], $b[$key]);
         };
     }
+    private static function build_sorter_reverse(string $key): Closure
+    {
+        return function ($a, $b) use ($key) {
+            return strnatcmp($b[$key], $a[$key]);
+        };
+    }
+
 
     /**
      * @return array
@@ -1018,9 +1032,14 @@ class Mod1Controller extends ActionController
      * @param bool $reverse
      * @return array
      */
-    private static function sort(array $array, string $key, bool $reverse = false): array
+    private static function sort(array $array, string $key): array
     {
-        usort($array, self::build_sorter($key, $reverse));
+        usort($array, self::build_sorter($key));
+        return $array;
+    }
+    private static function sortReverse(array $array, string $key): array
+    {
+        usort($array, self::build_sorter_reverse($key));
         return $array;
     }
 
