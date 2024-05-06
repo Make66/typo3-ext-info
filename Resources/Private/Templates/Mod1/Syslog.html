@@ -7,10 +7,13 @@
 <f:layout name="Module"/>
 
 <f:section name="Content">
+
+  <f:flashMessages />
+
   <h1>Syslog</h1>
 
-  <h3>Summary ({cntLogs})</h3>
-
+  <h3>Summary</h3>
+  <p>We read a max of {cntLogs} log entries</p>
   <table>
     <thead><th>Count</th><th>&nbsp;</th><th>Error description</th></thead>
     <tbody>
@@ -37,23 +40,30 @@
     </tbody>
   </table>
 
-  <h3>Top 10 system error messages ({cntErrors})</h3>
+  <h3>Top 20 system error messages</h3>
   <f:if condition="{msg}">
     <f:then>
       <p>{msg}</p>
     </f:then>
     <f:else>
+      <p>Total errors: {cntErrors}, {cntErrorsShown} in this list</p>
       <table>
         <thead>
         <th>Count</th>
         <th>Last timestamp</th>
+        <th>&nbsp;&nbsp;&nbsp;</th>
         <th>Message</th>
         </thead>
         <tbody>
-        <f:for as="log" each="{logs}">
+        <f:for each="{logs}" as="log" iteration="i">
           <tr>
             <th valign="top">{log.cnt}</th>
-            <td nowrap="true" valign="top">{log.ts -> f:format.date(format:'%d.%m.%Y %H:%M')}&nbsp;&nbsp;</td>
+            <td style="vertical-align: top" nowrap="true">{log.ts -> f:format.date(format:'%d.%m.%Y %H:%M')}&nbsp;&nbsp;</td>
+            <td style="vertical-align: top; padding-right: 1em;" nowrap="true">&nbsp;
+              <f:form id="syslogDelete-{i.index}" action="syslogDelete" style="margin-top: -1.8em;">
+                <f:form.button name="uidList" value="{log.uidList}" style="border: 1px solid; margin-top:.3rem;"><core:icon identifier="actions-delete" /></f:form.button>
+              </f:form>&nbsp;
+            </td>
             <td>{log.detail}</td>
           </tr>
         </f:for>

@@ -3,14 +3,15 @@
 namespace Taketool\Sysinfo\Controller;
 
 use Closure;
+use Doctrine\DBAL\Exception;
 use PDO;
 use Psr\Http\Message\ResponseInterface;
+use Taketool\Sysinfo\Domain\Model\LogEntry;
+use Taketool\Sysinfo\Domain\Repository\LogEntryRepository;
 use TYPO3\CMS\Backend\Attribute\Controller as BackendController;
-use TYPO3\CMS\Backend\Template\Components\Buttons\DropDownButton;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Belog\Domain\Model\Constraint;
-use TYPO3\CMS\Belog\Domain\Repository\LogEntryRepository;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -22,9 +23,11 @@ use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
+use TYPO3\CMS\Extbase\Http\ForwardResponse;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 
 /***************************************************************
@@ -168,7 +171,7 @@ class Mod1Controller extends ActionController
     /**
      * @var BackendUserAuthentication
      */
-    protected $backendUserAuthentication;
+    protected mixed $backendUserAuthentication;
 
     public function __construct(
         protected readonly ConnectionPool $connectionPool,
@@ -186,7 +189,7 @@ class Mod1Controller extends ActionController
     /**
      * initialize action
      */
-    public function initializeAction()
+    public function initializeAction(): void
     {
         $this->moduleTemplate = $this->moduleTemplateFactory->create($this->request);
         $this->addDocHeaderButtons();
@@ -202,10 +205,13 @@ class Mod1Controller extends ActionController
             't3version' => $this->t3version,
             'publicPath' => $this->publicPath,
             'isComposerMode' => $this->isComposerMode,
-            'memoryLimit' => $memoryLimit = ini_get('memory_limit'),
+            'memoryLimit' => ini_get('memory_limit'),
         ];
     }
 
+    /**
+     * @throws Exception
+     */
     public function allTemplatesAction(): ResponseInterface
     {
         $templates = $this->getAllTemplates(false);
@@ -216,6 +222,9 @@ class Mod1Controller extends ActionController
         return $this->moduleTemplate->renderResponse();
     }
 
+    /**
+     * @throws Exception
+     */
     public function noCacheAction(): ResponseInterface
     {
         $templates = $this->getAllTemplates(false, true);
@@ -270,6 +279,7 @@ class Mod1Controller extends ActionController
 
     /**
      * @return ResponseInterface
+     * @throws Exception
      */
     public function pluginsAction(): ResponseInterface
     {
@@ -302,13 +312,12 @@ class Mod1Controller extends ActionController
      * Feature: Verify at elast for root page that compression and concatination is active
      *
      * @return ResponseInterface
+     * @throws Exception
      */
     public function rootTemplatesAction(): ResponseInterface
     {
         $arguments = $this->request->getArguments();
         $showAll = (isset($arguments['showAll'])) ? $arguments['showAll'] : '';
-        //DebuggerUtility::var_dump(['$arguments'=>$arguments,'showAll'=>$showAll], __class__.'->'.__function__.'()');
-
         $templates = $this->getAllTemplates();
 
         $this->moduleTemplate->assign('templates', $this->templatesToView($templates));
@@ -506,54 +515,67 @@ class Mod1Controller extends ActionController
         $cntErrors = 0;
         $cntErrorsShown = 0;
         $logsCount = [];
+        $logsCount[0] = 0;
+        $logsCount[1] = 0;
+        $logsCount[2] = 0;
+        $logsCount[3] = 0;
 
         // If no logs were found, we don't need to continue
         if (($cntLogs = count($rawLogs)) > 0) {
             // Filter for errors, because the LogRepo cannot filter them in advance
-            $logs_0 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
+            $logs_0 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
                 return $log->getError() == 0;
             });
             $logsCount[0] = count($logs_0);
 
-            $logs_1 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
+            $logs_1 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
                 return $log->getError() == 1;
             });
             $logsCount[1] = count($logs_1);
 
-            $logs_2 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
+            $logs_2 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
                 return $log->getError() == 2;
             });
             $logsCount[2] = count($logs_2);
 
-            $logs_3 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
+            $logs_3 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
                 return $log->getError() == 3;
             });
             $logsCount[3] = count($logs_3);
 
-            // Check if there are NO logs left after filtering, because in that case we will also stop!
             if (($cntErrors = count($logs_2)) > 0) {
-                $res = [] ;
+
+                // collect all errors to hash=>errorDetails[cnt, detail, uidList]
+                $res = [];
                 foreach ($logs_2 as $log)
                 {
                     $detail = $log->getDetails();
                     $hash = hash('md5', $detail);
+                    // first error of this kind
                     if (empty($res[$hash])) {
                         $res[$hash]['cnt'] = 1;
+                        $res[$hash]['detail'] = $detail;
+                        // subsequent errors of this kind
                     } else {
                         $res[$hash]['cnt'] += 1;
                     }
-                    $res[$hash]['detail'] = $detail;
+                    $res[$hash]['uidList'][] = $log->getUid();
                     $res[$hash]['ts'] = $log->getTstamp();
                 }
+
+                // sort results
                 $res = self::sortReverse($res, 'cnt');
 
+                //deliver only <max> +1 entries
                 $cnt = 0;
                 foreach ($res as $r)
                 {
                     $cntErrorsShown += $r['cnt'];
+                    $r['uidList'] = implode(',', $r['uidList']);
                     $logs[] = $r;
                     if ($cnt++ >= $max) break;
                 }
+
                 //\nn\t3::debug($res);
             } else $msg = 'No error logs after filtering available.';
         } else $msg = 'No error logs available.';
@@ -566,12 +588,31 @@ class Mod1Controller extends ActionController
             'msg' => $msg,
             'logsCount' => $logsCount,
         ]);
-        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
 
         return $this->moduleTemplate->renderResponse();
     }
 
-    protected function getSyslogConstraint (): Constraint
+    /**
+     * @throws Exception
+     */
+    public function syslogDeleteAction(): ForwardResponse
+    {
+        $arguments = $this->request->getArguments();
+        //\nn\t3::debug($arguments);
+        $uidList = (isset($arguments['uidList'])) ? $arguments['uidList'] : '';
+        if (!empty($uidList))
+        {
+            $cntDeleted = $this->logEntryRepository->deleteByUidList($uidList);
+            $this->addFlashMessage(
+                $cntDeleted . ' entries deleted.',
+                'table sys_log',
+                ContextualFeedbackSeverity::OK,
+                false);
+        }
+        return (new ForwardResponse('syslog'));
+    }
+
+    protected function getSyslogConstraint(): Constraint
     {
         /** @var Constraint $constraint */
         $constraint = GeneralUtility::makeInstance(Constraint::class);
@@ -628,6 +669,7 @@ class Mod1Controller extends ActionController
 
     /**
      * @return array
+     * @throws Exception
      */
     private function getAllContentTypes(): array
     {
@@ -670,9 +712,10 @@ class Mod1Controller extends ActionController
      * @param int $limit
      * @return array
      */
-    private function getAllDomains(int $limit = 1000): array
+    private function getAllDomains(): array
     {
-        $domains = $this->siteConfiguration->getAllExistingSites(true);
+        $limit = 1000;
+        $domains = $this->siteConfiguration->getAllExistingSites();
         //\nn\t3::debug($domains);
         $domainUrls = [];
         foreach ($domains as $domain) {
@@ -695,9 +738,8 @@ class Mod1Controller extends ActionController
      */
     private function getAllDomainsAndExtra(): array
     {
-        $domains = $this->siteConfiguration->getAllExistingSites($useCache = true);
+        $domains = $this->siteConfiguration->getAllExistingSites();
         $domainUrls = [];
-        $cnt = 0;
         foreach ($domains as $domain) {
 
             // we do not need the content, just if the page is readable or not
@@ -712,14 +754,13 @@ class Mod1Controller extends ActionController
                 'isSitemapXml' => $isSitemap,
                 'isPage404'    => $is404,
             ];
-
-            //if ($cnt++ >10) break;
         }
         return $domainUrls;
     }
 
     /**
      * @return array
+     * @throws Exception
      */
     private function getAllPluginTypes(): array
     {
@@ -762,6 +803,7 @@ class Mod1Controller extends ActionController
      * @param string $showAll
      * @param bool $filterNoCache
      * @return array
+     * @throws Exception
      */
     private function getAllTemplates(bool $rootOnly = true, bool $filterNoCache = false): array
     {
@@ -794,7 +836,7 @@ class Mod1Controller extends ActionController
                 $rootLineArray = GeneralUtility::makeInstance(RootlineUtility::class, $template['pid'])->get();
                 $siteRoot = $rootLineArray[0]['title'];
                 unset($rootLineArray[0]);
-            } catch (PageNotFoundException $e) {
+            } catch (PageNotFoundException) {
                 // Usually when a page was hidden or disconnected
                 // This could be improved by handing in a Context object and decide whether hidden pages
                 // Should be linkeable too
@@ -823,6 +865,7 @@ class Mod1Controller extends ActionController
     /**
      * @param string
      * @return array
+     * @throws Exception
      */
     private function getPages4ContentType($type): array
     {
@@ -839,11 +882,10 @@ class Mod1Controller extends ActionController
         foreach ($plugins as $plugin) {
             try {
                 $rootLineArray = GeneralUtility::makeInstance(RootlineUtility::class, $plugin['pid'])->get();
-            } catch (PageNotFoundException $e) {
+            } catch (PageNotFoundException) {
                 // Usually when a page was hidden or disconnected
                 // This could be improved by handing in a Context object and decide whether hidden pages
                 // Should be linkeable too
-                $rootLine = [];
             }
             $siteRoot = $rootLineArray[0]['title'];
             unset($rootLineArray[0]);
@@ -867,10 +909,11 @@ class Mod1Controller extends ActionController
     }
 
     /**
-     * @param string
+     * @param string $type
      * @return array
+     * @throws Exception
      */
-    private function getPages4PluginType($type): array
+    private function getPages4PluginType(string $type): array
     {
         $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tt_content');
         $queryBuilder->getRestrictions()
@@ -906,11 +949,10 @@ class Mod1Controller extends ActionController
         foreach ($plugins as $plugin) {
             try {
                 $rootLineArray = GeneralUtility::makeInstance(RootlineUtility::class, $plugin['pid'])->get();
-            } catch (PageNotFoundException $e) {
+            } catch (PageNotFoundException) {
                 // Usually when a page was hidden or disconnected
                 // This could be improved by handing in a Context object and decide whether hidden pages
                 // Should be linkeable too
-                $rootLine = [];
             }
             $siteRoot = $rootLineArray[0]['title'];
             unset($rootLineArray[0]);
@@ -1062,7 +1104,7 @@ class Mod1Controller extends ActionController
      * returns config TS settings for specified pid
      *
      * @param $pid
-     * @return mixed
+     * @return array
      */
     private function getTsConfig($pid)
     {
