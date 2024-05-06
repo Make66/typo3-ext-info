@@ -20,6 +20,7 @@ use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Information\Typo3Version;
+use TYPO3\CMS\Core\Messaging\AbstractMessage;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\TypoScript\TemplateService;
@@ -555,35 +556,39 @@ class Mod1Controller extends ActionController
             });
             $logsCount[3] = count($logs_3);
 
-            // Check if there are NO logs left after filtering, because in that case we will also stop!
             if (($cntErrors = count($logs_2)) > 0) {
-                $res = [] ;
-                $uids = [];
+
+                // collect all errors to hash=>errorDetails[cnt, detail, uidList]
+                $res = [];
                 foreach ($logs_2 as $log)
                 {
                     $detail = $log->getDetails();
                     $hash = hash('md5', $detail);
+                    // first error of this kind
                     if (empty($res[$hash])) {
                         $res[$hash]['cnt'] = 1;
                         $res[$hash]['detail'] = $detail;
-                        $res[$hash]['uidList'] = $this->getSyslogUidList($logs_2, $hash);
+                    // subsequent errors of this kind
                     } else {
                         $res[$hash]['cnt'] += 1;
                     }
-                    $res[$hash]['detail'] = $detail;
+                    $res[$hash]['uidList'][] = $log->getUid();
                     $res[$hash]['ts'] = $log->getTstamp();
                 }
+
+                // sort results
                 $res = self::sortReverse($res, 'cnt');
 
                 //deliver only <max> +1 entries
-                $max = 9;
                 $cnt = 0;
                 foreach ($res as $r)
                 {
                     $cntErrorsShown += $r['cnt'];
+                    $r['uidList'] = implode(',', $r['uidList']);
                     $logs[] = $r;
                     if ($cnt++ >= $max) break;
                 }
+
                 //\nn\t3::debug($res);
             } else $msg = 'No error logs after filtering available.';
         } else $msg = 'No error logs available.';
@@ -596,23 +601,9 @@ class Mod1Controller extends ActionController
             'msg' => $msg,
             'logsCount' => $logsCount,
         ]);
-        $this->view->assignMultiple($this->globalTemplateVars);
 
         $this->moduleTemplate->setContent($this->view->render());
         return $this->htmlResponse($this->moduleTemplate->renderContent());
-    }
-
-    private function getSyslogUidList($logs, $hash): string
-    {
-        $res = [];
-        foreach($logs as $log)
-        {
-            if (hash('md5', $log->getDetails()) == $hash)
-            {
-                $res[] = $log->getUid();
-            }
-        }
-        return implode(',', $res);
     }
 
     /**
@@ -628,7 +619,11 @@ class Mod1Controller extends ActionController
         if (!empty($uidList))
         {
             $cntDeleted = $this->logEntryRepository->deleteByUidList($uidList);
-            $this->addFlashMessage($cntDeleted . ' entries deleted.');
+            $this->addFlashMessage(
+                $cntDeleted . ' entries deleted.',
+                'table sys_log',
+                AbstractMessage::OK,
+                false);
         }
         return (new ForwardResponse('syslog'));
     }

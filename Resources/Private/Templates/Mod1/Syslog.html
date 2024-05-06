@@ -7,7 +7,9 @@
 <f:layout name="Default"/>
 
 <f:section name="Content">
+
   <f:flashMessages />
+
   <h1>Syslog</h1>
 
   <h3>Summary</h3>
@@ -47,20 +49,19 @@
       <p>Total errors: {cntErrors}, {cntErrorsShown} in this list</p>
       <table>
         <thead>
-        <th>Count</th>
-        <th>Last timestamp</th>
-        <th>&nbsp;&nbsp;&nbsp;</th>
-        <th>Message</th>
+          <th>Count</th>
+          <th>Last timestamp</th>
+          <th>&nbsp;&nbsp;&nbsp;</th>
+          <th>Message</th>
         </thead>
         <tbody>
-        <f:for as="log" each="{logs}">
+        <f:for each="{logs}" as="log" iteration="i">
           <tr>
             <th valign="top">{log.cnt}</th>
             <td style="vertical-align: top" nowrap="true">{log.ts -> f:format.date(format:'%d.%m.%Y %H:%M')}&nbsp;&nbsp;</td>
             <td style="vertical-align: top; padding-right: 1em;" nowrap="true">&nbsp;
-              <f:form action="syslogDelete" style="margin-top: -1.8em;">
-                <f:form.hidden name="uidList" value="{log.uidList}" />
-                <f:form.button style="border: 1px solid; margin-top:.3rem;"><core:icon identifier="actions-delete" /></f:form.button>
+              <f:form id="syslogDelete-{i.index}" action="syslogDelete" style="margin-top: -1.8em;">
+                <f:form.button name="uidList" value="{log.uidList}" style="border: 1px solid; margin-top:.3rem;"><core:icon identifier="actions-delete" /></f:form.button>
               </f:form>&nbsp;
             </td>
             <td>{log.detail}</td>
