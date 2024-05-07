@@ -62,7 +62,7 @@ class Sha1Controller extends ActionController
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
         $this->moduleTemplate = $this->moduleTemplateFactory->create($this->request);
-        $this->addDocHeaderButtons();
+        $this->mod1Service->addDocHeaderButtons($this->moduleTemplate, $this->uriBuilder);
 
         // global template information
         $this->globalTemplateVars = [
