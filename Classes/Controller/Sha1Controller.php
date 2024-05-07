@@ -3,6 +3,7 @@
 namespace Taketool\Sysinfo\Controller;
 
 use Psr\Http\Message\ResponseInterface;
+use Taketool\Sysinfo\Service\Mod1Service;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
@@ -29,6 +30,7 @@ class Sha1Controller extends ActionController
     public function __construct(
         protected readonly Environment $environment,
         protected readonly IconFactory $iconFactory,
+        protected readonly Mod1Service $mod1Service,
         protected readonly ModuleTemplateFactory $moduleTemplateFactory
     ){
         $this->backendUserAuthentication = $GLOBALS['BE_USER'];
@@ -37,7 +39,7 @@ class Sha1Controller extends ActionController
     public function initializeAction(): void
     {
         $this->moduleTemplate = $this->moduleTemplateFactory->create($this->request);
-        $this->addDocHeaderButtons();
+        $this->mod1Service->addDocHeaderButtons($this->moduleTemplate, $this->uriBuilder);
 
         $environment = GeneralUtility::makeInstance(Environment::class);
         $this->isComposerMode = $environment->isComposerMode();
@@ -215,81 +217,6 @@ class Sha1Controller extends ActionController
             }
         }
         return $msg;
-    }
-
-    function debug_hexdump($string, $lines=10) {
-        if (true) //($_SESSION['debug'] & DEBUG_HEXDUMP)
-        {
-            $hexdump = '';
-            echo '<style>'."\n"
-                .' td { font-family: monospace; line-height: 1;}'."\n"
-                .'</style>'."\n";
-            // hexdump display
-            $hexdump .= '<table border="0" cellpadding="0" cellspacing="2" bgcolor="Silver"><tr><td>'."\n";
-            $hexdump .= '<table border="0" cellpadding="1" cellspacing="1" bgcolor="White"><tr bgcolor="Silver"><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>&nbsp;</th><th>8</th><th>9</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>&nbsp;</th><th>ascii</th></tr>'."\n";
-            for ($i=0; $i<$lines; $i++){
-                $hexdump .= '<tr>';
-                $chrview = "";
-                for ($j=0; $j<16; $j++) {
-                    $chr = substr($string, $i*16+$j, 1);
-                    $asc = ord($chr);
-                    $hexdump .= "<td>".bin2hex($chr)."</td>";
-                    if ($j==7) { $hexdump .= "<td>&nbsp;</td>"; }
-                    if (($asc >31) and ($asc <128)) {
-                        $chrview .= chr($asc);
-                    } else {
-                        $chrview .= ".";
-                    }
-                }
-                $hexdump .= "<td>&nbsp;</td><td>".$chrview."</td>\n";
-                $hexdump .= "</tr>";
-            }
-            $hexdump .= "</table>\n";
-            $hexdump .= '</td></tr></table>'."\n";
-            echo $hexdump;
-        }
-    }
-
-    private function addDocHeaderButtons(): void
-    {
-        /*  Valid linkButton conditions are:
-            trim($this->getHref()) !== ''
-            && trim($this->getTitle()) !== ''
-            && $this->getType() === self::class
-            && $this->getIcon() !== null
-        */
-        //$languageService = $this->getLanguageService();
-        $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
-        foreach([
-                'syslog' => 'Mod1:Syslog:actions-debug',
-                'securityCheck' => 'Mod1:Security Check:module-security',
-                'shaOne' => 'Sha1:Typo3 SHA1:actions-extension',
-                'plugins' => 'Mod1:Plugins:content-plugin',
-                'rootTemplates' => 'Mod1:Root Templates:actions-template',
-                'allTemplates' => 'Mod1:All Templates:actions-template',
-                //'noCache' => 'Mod1:no_cache:actions-extension',
-                'checkDomains' => 'Mod1:robots.txt, sitemap.xml & 404:install-scan-extensions',
-            ] as $action => $param)
-        {
-            list($controller, $title, $icon) = explode(':', $param);
-            //\nn\t3::debug([$controller, $action, $title, $this->uriBuilder->uriFor($action,null,$controller)]);
-            $addButton = $buttonBar->makeLinkButton()
-                ->setTitle($title)
-                ->setShowLabelText($action)
-                ->setHref($this->uriBuilder->uriFor($action,null,$controller))
-                ->setIcon($this->iconFactory->getIcon($icon, Icon::SIZE_SMALL));
-            $buttonBar->addButton($addButton);
-        }
-    }
-
-    protected function getLanguageService(): LanguageService
-    {
-        return $GLOBALS['LANG'];
-    }
-
-    protected function getBackendUser(): BackendUserAuthentication
-    {
-        return $GLOBALS['BE_USER'];
     }
 
 }

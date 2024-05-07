@@ -15,24 +15,28 @@
   <h3>Summary</h3>
   <p>We read a max of {cntLogs} log entries</p>
   <table>
-    <thead><th>Count</th><th>&nbsp;</th><th>Error description</th></thead>
+    <thead><th>&nbsp;</th><th>Count</th><th>&nbsp;</th><th>Error description</th></thead>
     <tbody>
     <tr>
+      <td><f:if condition="{logType} != 0"><f:link.action arguments="{logType: 0}" action="syslog"><core:icon identifier="actions-eye" title="Show" /></f:link.action></f:if></td>
       <th style="text-align: right;">{logsCount.0}</th>
       <td>&nbsp;</td>
       <td>0: message, a notice of an action that happened</td>
     </tr>
     <tr>
+      <td><f:if condition="{logType} != 1"><f:link.action arguments="{logType: 1}" action="syslog"><core:icon identifier="actions-eye" title="Show" /></f:link.action></f:if></td>
       <th style="text-align: right;">{logsCount.1}</th>
       <td>&nbsp;</td>
       <td>1: error, typically a permission problem for the user</td>
     </tr>
     <tr>
+      <td><f:if condition="{logType} != 2"><f:link.action arguments="{logType: 2}" action="syslog"><core:icon identifier="actions-eye" title="Show" /></f:link.action></f:if></td>
       <th style="text-align: right;">{logsCount.2}</th>
       <td>&nbsp;</td>
       <td>2: System Error, something which should not happen for technical reasons</td>
     </tr>
     <tr>
+      <td><f:if condition="{logType} != 3"><f:link.action arguments="{logType: 3}" action="syslog"><core:icon identifier="actions-eye" title="Show" /></f:link.action></f:if></td>
       <th style="text-align: right;">{logsCount.3}</th>
       <td>&nbsp;</td>
       <td>3: Security notice, like login failures</td>
@@ -40,7 +44,7 @@
     </tbody>
   </table>
 
-  <h3>Top 20 system error messages</h3>
+  <h3>Top 20 {logCategory}</h3>
   <f:if condition="{msg}">
     <f:then>
       <p>{msg}</p>
@@ -60,7 +64,11 @@
             <th valign="top">{log.cnt}</th>
             <td style="vertical-align: top" nowrap="true">{log.ts -> f:format.date(format:'%d.%m.%Y %H:%M')}&nbsp;&nbsp;</td>
             <td style="vertical-align: top; padding-right: 1em;" nowrap="true">&nbsp;
-              <f:form id="syslogDelete-{i.index}" action="syslogDelete" style="margin-top: -1.8em;">
+              <f:form
+                  id="syslogDelete-{i.index}"
+                  action="syslogDelete"
+                  arguments="{logType: logType}"
+                  style="margin-top: -1.8em;">
                 <f:form.button name="uidList" value="{log.uidList}" style="border: 1px solid; margin-top:.3rem;"><core:icon identifier="actions-delete" /></f:form.button>
               </f:form>&nbsp;
             </td>

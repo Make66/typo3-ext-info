@@ -2,18 +2,15 @@
 
 namespace Taketool\Sysinfo\Controller;
 
-use Closure;
 use Doctrine\DBAL\Exception;
 use PDO;
 use Psr\Http\Message\ResponseInterface;
-use Taketool\Sysinfo\Domain\Model\LogEntry;
-use Taketool\Sysinfo\Domain\Repository\LogEntryRepository;
+use Taketool\Sysinfo\Service\Mod1Service;
+use Taketool\Sysinfo\Service\SyslogService;
+use Taketool\Sysinfo\Utility\SysinfoUtility;
 use TYPO3\CMS\Backend\Attribute\Controller as BackendController;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
-use TYPO3\CMS\Belog\Domain\Model\Constraint;
-use TYPO3\CMS\Core\Imaging\Icon;
-use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
@@ -176,12 +173,12 @@ class Mod1Controller extends ActionController
     public function __construct(
         protected readonly ConnectionPool $connectionPool,
         protected readonly Environment $environment,
-        protected readonly IconFactory $iconFactory,
-        protected readonly LogEntryRepository $logEntryRepository,
+        protected readonly Mod1Service $mod1Service,
         protected readonly ModuleTemplateFactory $moduleTemplateFactory,
         protected readonly PageRenderer $pageRenderer,
         protected readonly PageRepository $pageRepository,
-        protected readonly SiteConfiguration $siteConfiguration
+        protected readonly SiteConfiguration $siteConfiguration,
+        protected readonly SyslogService $syslogService
     ){
         $this->backendUserAuthentication = $GLOBALS['BE_USER'];
     }
@@ -192,7 +189,7 @@ class Mod1Controller extends ActionController
     public function initializeAction(): void
     {
         $this->moduleTemplate = $this->moduleTemplateFactory->create($this->request);
-        $this->addDocHeaderButtons();
+        $this->mod1Service->addDocHeaderButtons($this->moduleTemplate, $this->uriBuilder);
 
         $this->isComposerMode = $this->environment->isComposerMode();
         $this->publicPath = $this->environment->getPublicPath();
@@ -504,91 +501,18 @@ class Mod1Controller extends ActionController
 
     public function syslogAction(): ResponseInterface
     {
-        // Fetch logs
-        $rawLogs = $this->logEntryRepository->findByConstraint($this->getSyslogConstraint());
-
-        //deliver only <max> +1 entries
-        $max = 19;
-
-        $logs = [];
-        $msg = '';
-        $cntErrors = 0;
-        $cntErrorsShown = 0;
-        $logsCount = [];
-        $logsCount[0] = 0;
-        $logsCount[1] = 0;
-        $logsCount[2] = 0;
-        $logsCount[3] = 0;
-
-        // If no logs were found, we don't need to continue
-        if (($cntLogs = count($rawLogs)) > 0) {
-            // Filter for errors, because the LogRepo cannot filter them in advance
-            $logs_0 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
-                return $log->getError() == 0;
-            });
-            $logsCount[0] = count($logs_0);
-
-            $logs_1 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
-                return $log->getError() == 1;
-            });
-            $logsCount[1] = count($logs_1);
-
-            $logs_2 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
-                return $log->getError() == 2;
-            });
-            $logsCount[2] = count($logs_2);
-
-            $logs_3 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
-                return $log->getError() == 3;
-            });
-            $logsCount[3] = count($logs_3);
-
-            if (($cntErrors = count($logs_2)) > 0) {
-
-                // collect all errors to hash=>errorDetails[cnt, detail, uidList]
-                $res = [];
-                foreach ($logs_2 as $log)
-                {
-                    $detail = $log->getDetails();
-                    $hash = hash('md5', $detail);
-                    // first error of this kind
-                    if (empty($res[$hash])) {
-                        $res[$hash]['cnt'] = 1;
-                        $res[$hash]['detail'] = $detail;
-                        // subsequent errors of this kind
-                    } else {
-                        $res[$hash]['cnt'] += 1;
-                    }
-                    $res[$hash]['uidList'][] = $log->getUid();
-                    $res[$hash]['ts'] = $log->getTstamp();
-                }
-
-                // sort results
-                $res = self::sortReverse($res, 'cnt');
-
-                //deliver only <max> +1 entries
-                $cnt = 0;
-                foreach ($res as $r)
-                {
-                    $cntErrorsShown += $r['cnt'];
-                    $r['uidList'] = implode(',', $r['uidList']);
-                    $logs[] = $r;
-                    if ($cnt++ >= $max) break;
-                }
-
-                //\nn\t3::debug($res);
-            } else $msg = 'No error logs after filtering available.';
-        } else $msg = 'No error logs available.';
-
-        $this->moduleTemplate->assignMultiple([
-            'cntErrors' => $cntErrors,
-            'cntErrorsShown' => $cntErrorsShown,
-            'cntLogs' => $cntLogs,
-            'logs' => $logs,
-            'msg' => $msg,
-            'logsCount' => $logsCount,
-        ]);
-
+        $arguments = $this->request->getArguments();
+        $logType = (isset($arguments['logType'])) ? $arguments['logType'] : 2;
+        $logCategory = ['notices', 'error', 'system error', 'security notices'][$logType];
+        $this->moduleTemplate->assignMultiple(
+            array_merge(
+                [
+                    'logType' => $logType,
+                    'logCategory' => $logCategory
+                ],
+                $this->syslogService->getLog($logType)
+            )
+        );
         return $this->moduleTemplate->renderResponse();
     }
 
@@ -600,28 +524,18 @@ class Mod1Controller extends ActionController
         $arguments = $this->request->getArguments();
         //\nn\t3::debug($arguments);
         $uidList = (isset($arguments['uidList'])) ? $arguments['uidList'] : '';
+        $logType = (isset($arguments['logType'])) ? $arguments['logType'] : 2;
         if (!empty($uidList))
         {
-            $cntDeleted = $this->logEntryRepository->deleteByUidList($uidList);
+            $cntDeleted = $this->syslogService->deleteByUidList($uidList);
             $this->addFlashMessage(
                 $cntDeleted . ' entries deleted.',
                 'table sys_log',
                 ContextualFeedbackSeverity::OK,
                 false);
         }
-        return (new ForwardResponse('syslog'));
-    }
-
-    protected function getSyslogConstraint(): Constraint
-    {
-        /** @var Constraint $constraint */
-        $constraint = GeneralUtility::makeInstance(Constraint::class);
-        //$constraint->setStartTimestamp(intval($this->registry->get(\Datamints\DatamintsErrorReport\Utility\ErrorReportUtility::EXTENSION_NAME, 'lastExecutedTimestamp')));
-        $constraint->setStartTimestamp(0); // Output all reports for test purposes (but will be limited again, so don't worry)
-        //$constraint->setNumber(intval($this->input->getOption('max'))); // Maximum amount of log entries$constraint->setNumber();
-        $constraint->setNumber(10000);
-        $constraint->setEndTimestamp(time());
-        return $constraint;
+        return (new ForwardResponse('syslog'))
+            ->withArguments(['logType' => $logType]);
     }
 
     /**
@@ -647,24 +561,6 @@ class Mod1Controller extends ActionController
         $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
 
         return $this->moduleTemplate->renderResponse();
-    }
-
-    /**
-     * sort array by certain key, works together with self::sort()
-     * @param string $key
-     * @return Closure
-     */
-    private static function build_sorter(string $key): Closure
-    {
-        return function ($a, $b) use ($key) {
-            return strnatcmp($a[$key], $b[$key]);
-        };
-    }
-    private static function build_sorter_reverse(string $key): Closure
-    {
-        return function ($a, $b) use ($key) {
-            return strnatcmp($b[$key], $a[$key]);
-        };
     }
 
     /**
@@ -1006,22 +902,6 @@ class Mod1Controller extends ActionController
     }
 
     /**
-     * @param array $array
-     * @param string $key
-     * @return array
-     */
-    private static function sort(array $array, string $key): array
-    {
-        usort($array, self::build_sorter($key));
-        return $array;
-    }
-    private static function sortReverse(array $array, string $key): array
-    {
-        usort($array, self::build_sorter_reverse($key));
-        return $array;
-    }
-
-    /**
      * returns an array of file=>fullpath,stat=stat(fullpath)[uid,gid,mode,size,ctime,mtime]
      *
      * @param string $fullpath
@@ -1097,7 +977,7 @@ class Mod1Controller extends ActionController
             $templates[$key]['concatenateJs'] = $config['concatenateJs'] ?? 'undefined';
         }
         // order by siteroot
-        return self::sort($templates, 'siteroot');
+        return SysinfoUtility::sort($templates, 'siteroot');
     }
 
     /**
@@ -1124,38 +1004,6 @@ class Mod1Controller extends ActionController
         $template->generateConfig();
         return $template->setup['config.'];*/
         return [];
-    }
-
-    private function addDocHeaderButtons(): void
-    {
-        /*  Valid linkButton conditions are:
-            trim($this->getHref()) !== ''
-            && trim($this->getTitle()) !== ''
-            && $this->getType() === self::class
-            && $this->getIcon() !== null
-        */
-        //$languageService = $this->getLanguageService();
-        $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
-        foreach([
-            'syslog' => 'Mod1:Syslog:actions-debug',
-            'securityCheck' => 'Mod1:Security Check:module-security',
-            'shaOne' => 'Sha1:Typo3 SHA1:actions-extension',
-            'plugins' => 'Mod1:Plugins:content-plugin',
-            'rootTemplates' => 'Mod1:Root Templates:actions-template',
-            'allTemplates' => 'Mod1:All Templates:actions-template',
-            //'noCache' => 'Mod1:no_cache:actions-extension',
-            'checkDomains' => 'Mod1:robots.txt, sitemap.xml & 404:install-scan-extensions',
-        ] as $action => $param)
-        {
-            list($controller, $title, $icon) = explode(':', $param);
-            //\nn\t3::debug([$controller, $action, $title, $this->uriBuilder->uriFor($action,null,$controller)]);
-            $addButton = $buttonBar->makeLinkButton()
-                ->setTitle($title)
-                ->setShowLabelText($action)
-                ->setHref($this->uriBuilder->uriFor($action,null,$controller))
-                ->setIcon($this->iconFactory->getIcon($icon, Icon::SIZE_SMALL));
-            $buttonBar->addButton($addButton);
-        }
     }
 
     protected function getLanguageService(): LanguageService
