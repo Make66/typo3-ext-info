@@ -17,6 +17,7 @@ class Mod1Service extends ActionController
     public function addDocHeaderButtons(ModuleTemplate $moduleTemplate, UriBuilder $uriBuilder): void
     {
         $iconFactory = GeneralUtility::makeInstance(IconFactory::class);
+        $uriBuilder->reset();
         /*  Valid linkButton conditions are:
             trim($this->getHref()) !== ''
             && trim($this->getTitle()) !== ''
