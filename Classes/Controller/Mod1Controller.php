@@ -5,6 +5,9 @@ namespace Taketool\Sysinfo\Controller;
 use Closure;
 use PDO;
 use Taketool\Sysinfo\Domain\Repository\LogEntryRepository;
+use Taketool\Sysinfo\Service\Mod1Service;
+use Taketool\Sysinfo\Service\SyslogService;
+use Taketool\Sysinfo\Utility\SysinfoUtility;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Belog\Domain\Model\Constraint;
@@ -168,9 +171,11 @@ class Mod1Controller extends ActionController
     protected Environment $environment;
     protected IconFactory $iconFactory;
     protected LogEntryRepository $logEntryRepository;
+    //protected Mod1Service $mod1Service;
     protected ModuleTemplate $moduleTemplate;
     protected PageRepository $pageRepository;
     protected SiteConfiguration $siteConfiguration;
+    protected SyslogService $syslogService;
 
     protected $defaultViewObjectName = \TYPO3\CMS\Backend\View\BackendTemplateView::class;
 
@@ -179,9 +184,11 @@ class Mod1Controller extends ActionController
         Environment $environment,
         IconFactory $iconFactory,
         LogEntryRepository $logEntryRepository,
+        //Mod1Service $mod1Service,
         // ModuleTemplateFactory $moduleTemplateFactory,
         PageRepository $pageRepository,
-        SiteConfiguration $siteConfiguration
+        SiteConfiguration $siteConfiguration,
+        SyslogService $syslogService
     )
     {
         $this->backendUserAuthentication = $GLOBALS['BE_USER'];
@@ -191,6 +198,7 @@ class Mod1Controller extends ActionController
         $this->logEntryRepository = $logEntryRepository;
         $this->pageRepository = $pageRepository;
         $this->siteConfiguration = $siteConfiguration;
+        $this->syslogService = $syslogService;
     }
 
     /**
@@ -500,75 +508,18 @@ class Mod1Controller extends ActionController
 
     public function syslogAction()
     {
-        //deliver only <max> +1 entries
-        $max = 19;
-
-        // Fetch logs
-        $rawLogs = $this->logEntryRepository->findByConstraint($this->getSyslogConstraint());
-
-        $msg = '';
-        $logsCount = [];
-
-        // If no logs were found, we don't need to continue
-        if (($cntLogs = count($rawLogs)) > 0) {
-            // Filter for errors, because the LogRepo cannot filter them in advance
-            $logs_0 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
-                return $log->getError() == 0;
-            });
-            $logsCount[0] = count($logs_0);
-
-            $logs_1 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
-                return $log->getError() == 1;
-            });
-            $logsCount[1] = count($logs_1);
-
-            $logs_2 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
-                return $log->getError() == 2;
-            });
-            $logsCount[2] = count($logs_2);
-
-            $logs_3 = array_filter($rawLogs->toArray(), function (\TYPO3\CMS\Belog\Domain\Model\LogEntry $log) {
-                return $log->getError() == 3;
-            });
-            $logsCount[3] = count($logs_3);
-
-            // Check if there are NO logs left after filtering, because in that case we will also stop!
-            if (($cntErrors = count($logs_2)) > 0) {
-                $res = [] ;
-                $uids = [];
-                foreach ($logs_2 as $log)
-                {
-                    $detail = $log->getDetails();
-                    $hash = hash('md5', $detail);
-                    if (empty($res[$hash])) {
-                        $res[$hash]['cnt'] = 1;
-                        $res[$hash]['detail'] = $detail;
-                        $res[$hash]['uidList'] = $this->getSyslogUidList($logs_2, $hash);
-                    } else {
-                        $res[$hash]['cnt'] += 1;
-                    }
-                    $res[$hash]['ts'] = $log->getTstamp();
-                }
-
-                $res = self::sort($res, 'cnt', true);
-
-                $cnt = 0;
-                $logs = [];
-                foreach ( $res as $r)
-                {
-                    $logs[] = $r;
-                    if ($cnt++ >= $max) break;
-                }
-                //\nn\t3::debug($res);
-            } else $msg = 'No error logs after filtering available.';
-        } else $msg = 'No error logs available.';
-
-        $this->view->assign('cntErrors', $cntErrors);
-        $this->view->assign('cntLogs', $cntLogs);
-        $this->view->assign('logs', $logs);
-        $this->view->assign('msg', $msg);
-        $this->view->assign('logsCount', $logsCount);
-        $this->view->assignMultiple($this->globalTemplateVars);
+        $arguments = $this->request->getArguments();
+        $logType = (isset($arguments['logType'])) ? $arguments['logType'] : 2;
+        $logCategory = ['notices', 'error', 'system error', 'security notices'][$logType];
+        $this->view->assignMultiple(
+            array_merge(
+                [
+                    'logType' => $logType,
+                    'logCategory' => $logCategory
+                ],
+                $this->syslogService->getLog($logType)
+            )
+        );
     }
 
     private function getSyslogUidList($logs, $hash)
@@ -630,21 +581,6 @@ class Mod1Controller extends ActionController
         $this->view->assign('content', $content);
         $this->view->assignMultiple($this->globalTemplateVars);
         
-    }
-
-    /**
-     * sort array by certain key, works together with self::sort()
-     * @param string $key
-     * @param bool $reverse
-     * @return Closure
-     */
-    private static function build_sorter(string $key, bool $reverse = false): Closure
-    {
-        return function ($a, $b) use ($key) {
-            return ($reverse)
-                ? strnatcmp($a[$key], $b[$key])
-                : strnatcmp($b[$key], $a[$key]);
-        };
     }
 
     /**

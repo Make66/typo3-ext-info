@@ -2,8 +2,7 @@
 
 namespace Taketool\Sysinfo\Controller;
 
-use Psr\Http\Message\ResponseInterface;
-use TYPO3\CMS\Backend\Template\Components\ButtonBar;
+use Taketool\Sysinfo\Service\Mod1Service;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
@@ -30,8 +29,7 @@ class Sha1Controller extends ActionController
     protected $backendUserAuthentication;
     protected ConnectionPool $connectionPool;
     protected Environment $environment;
-    protected IconFactory $iconFactory;
-    //protected ModuleTemplateFactory $moduleTemplateFactory;
+    protected Mod1Service $mod1Service;
     protected ModuleTemplate $moduleTemplate;
     protected PageRepository $pageRepository;
     protected SiteConfiguration $siteConfiguration;
@@ -39,8 +37,7 @@ class Sha1Controller extends ActionController
     public function __construct(
         ConnectionPool $connectionPool,
         Environment $environment,
-        IconFactory $iconFactory,
-        //ModuleTemplateFactory $moduleTemplateFactory,
+        Mod1Service $mod1Service,
         PageRepository $pageRepository,
         SiteConfiguration $siteConfiguration
     )
@@ -48,8 +45,7 @@ class Sha1Controller extends ActionController
         $this->backendUserAuthentication = $GLOBALS['BE_USER'];
         $this->connectionPool = $connectionPool;
         $this->environment = $environment;
-        $this->iconFactory = $iconFactory;
-        //$this->moduleTemplateFactory = $moduleTemplateFactory;
+        $this->mod1Service = $mod1Service;
         $this->pageRepository = $pageRepository;
         $this->siteConfiguration = $siteConfiguration;
     }
