@@ -3,6 +3,7 @@
 namespace Taketool\Sysinfo\Controller;
 
 use Psr\Http\Message\ResponseInterface;
+use Taketool\Sysinfo\Service\Mod1Service;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
@@ -31,6 +32,7 @@ class Sha1Controller extends ActionController
     protected ConnectionPool $connectionPool;
     protected Environment $environment;
     protected IconFactory $iconFactory;
+    protected Mod1Service $mod1Service;
     protected ModuleTemplateFactory $moduleTemplateFactory;
     protected ModuleTemplate $moduleTemplate;
     protected PageRepository $pageRepository;
@@ -40,6 +42,7 @@ class Sha1Controller extends ActionController
         ConnectionPool $connectionPool,
         Environment $environment,
         IconFactory $iconFactory,
+        Mod1Service $mod1Service,
         ModuleTemplateFactory $moduleTemplateFactory,
         PageRepository $pageRepository,
         SiteConfiguration $siteConfiguration
@@ -49,6 +52,7 @@ class Sha1Controller extends ActionController
         $this->connectionPool = $connectionPool;
         $this->environment = $environment;
         $this->iconFactory = $iconFactory;
+        $this->mod1Service = $mod1Service;
         $this->moduleTemplateFactory = $moduleTemplateFactory;
         $this->pageRepository = $pageRepository;
         $this->siteConfiguration = $siteConfiguration;
@@ -236,87 +240,6 @@ class Sha1Controller extends ActionController
             }
         }
         return $msg;
-    }
-
-    function debug_hexdump($string, $lines=10) {
-        if (true) //($_SESSION['debug'] & DEBUG_HEXDUMP)
-        {
-            $hexdump = '';
-            echo '<style>'."\n"
-                .' td { font-family: monospace; line-height: 1;}'."\n"
-                .'</style>'."\n";
-            // hexdump display
-            $hexdump .= '<table border="0" cellpadding="0" cellspacing="2" bgcolor="Silver"><tr><td>'."\n";
-            $hexdump .= '<table border="0" cellpadding="1" cellspacing="1" bgcolor="White"><tr bgcolor="Silver"><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>&nbsp;</th><th>8</th><th>9</th><th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>&nbsp;</th><th>ascii</th></tr>'."\n";
-            for ($i=0; $i<$lines; $i++){
-                $hexdump .= '<tr>';
-                $chrview = "";
-                for ($j=0; $j<16; $j++) {
-                    $chr = substr($string, $i*16+$j, 1);
-                    $asc = ord($chr);
-                    $hexdump .= "<td>".bin2hex($chr)."</td>";
-                    if ($j==7) { $hexdump .= "<td>&nbsp;</td>"; }
-                    if (($asc >31) and ($asc <128)) {
-                        $chrview .= chr($asc);
-                    } else {
-                        $chrview .= ".";
-                    }
-                }
-                $hexdump .= "<td>&nbsp;</td><td>".$chrview."</td>\n";
-                $hexdump .= "</tr>";
-            }
-            $hexdump .= "</table>\n";
-            $hexdump .= '</td></tr></table>'."\n";
-            echo $hexdump;
-        }
-    }
-
-    private function addDocHeaderButtons(): void
-    {
-        /*  Valid linkButton conditions are:
-            trim($this->getHref()) !== ''
-            && trim($this->getTitle()) !== ''
-            && $this->getType() === self::class
-            && $this->getIcon() !== null
-        */
-        //$languageService = $this->getLanguageService();
-        $buttonBar = $this->moduleTemplate->getDocHeaderComponent()->getButtonBar();
-        foreach([
-                'syslog' => 'Mod1:Syslog:actions-debug',
-                'securityCheck' => 'Mod1:Security Check:module-adminpanel',
-                'shaOne' => 'Sha1:Typo3 SHA1:actions-extension',
-                'plugins' => 'Mod1:Plugins:content-plugin',
-                'rootTemplates' => 'Mod1:Root Templates:actions-template',
-                'allTemplates' => 'Mod1:All Templates:actions-template',
-                'noCache' => 'Mod1:no_cache:actions-extension',
-                'checkDomains' => 'Mod1:robots.txt, sitemap.xml & 404:install-scan-extensions',
-            ] as $action => $param)
-        {
-            list($controller, $title, $icon) = explode(':', $param);
-            //\nn\t3::debug([$controller, $action, $title, $this->uriBuilder->uriFor($action,null,$controller)]);
-            $addButton = $buttonBar->makeLinkButton()
-                ->setTitle($title)
-                ->setShowLabelText($action)
-                ->setHref($this->uriBuilder->uriFor($action,null,$controller))
-                ->setIcon($this->iconFactory->getIcon($icon, Icon::SIZE_SMALL));
-            $buttonBar->addButton($addButton);
-        }
-        $composerButton = $buttonBar->makeLinkButton()
-            ->setTitle(($this->isComposerMode ? 'Composer Mode' : 'Legacy Mode'))
-            ->setShowLabelText(($this->isComposerMode ? 'Dieses Typo3 ist eine Composer basierende Installation' : 'Dieses Typo3 ist keine Composer Installation'))
-            ->setHref('#')
-            ->setIcon($this->iconFactory->getIcon('content-info', Icon::SIZE_SMALL));
-        $buttonBar->addButton($composerButton, ButtonBar::BUTTON_POSITION_RIGHT);
-    }
-
-    protected function getLanguageService(): LanguageService
-    {
-        return $GLOBALS['LANG'];
-    }
-
-    protected function getBackendUser(): BackendUserAuthentication
-    {
-        return $GLOBALS['BE_USER'];
     }
 
 }

@@ -7,6 +7,8 @@ use Doctrine\DBAL\DBALException;
 use PDO;
 use Psr\Http\Message\ResponseInterface;
 use Taketool\Sysinfo\Domain\Repository\LogEntryRepository;
+use Taketool\Sysinfo\Service\Mod1Service;
+use Taketool\Sysinfo\Service\SyslogService;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
@@ -30,6 +32,7 @@ use TYPO3\CMS\Core\Utility\RootlineUtility;
 use TYPO3\CMS\Extbase\Http\ForwardResponse;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
+use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
 
 /***************************************************************
  *  Copyright notice
@@ -175,10 +178,12 @@ class Mod1Controller extends ActionController
     protected Environment $environment;
     protected IconFactory $iconFactory;
     protected LogEntryRepository $logEntryRepository;
+    protected Mod1Service $mod1Service;
     protected ModuleTemplateFactory $moduleTemplateFactory;
     protected ModuleTemplate $moduleTemplate;
     protected PageRepository $pageRepository;
     protected SiteConfiguration $siteConfiguration;
+    protected SyslogService $syslogService;
 
     public function __construct(
         ConnectionPool $connectionPool,
@@ -186,8 +191,10 @@ class Mod1Controller extends ActionController
         IconFactory $iconFactory,
         LogEntryRepository $logEntryRepository,
         ModuleTemplateFactory $moduleTemplateFactory,
+        Mod1Service $mod1Service,
         PageRepository $pageRepository,
-        SiteConfiguration $siteConfiguration
+        SiteConfiguration $siteConfiguration,
+        SyslogService $syslogService
     )
     {
         $this->backendUserAuthentication = $GLOBALS['BE_USER'];
@@ -195,9 +202,11 @@ class Mod1Controller extends ActionController
         $this->environment = $environment;
         $this->iconFactory = $iconFactory;
         $this->logEntryRepository = $logEntryRepository;
+        $this->mod1Service = $mod1Service;
         $this->moduleTemplateFactory = $moduleTemplateFactory;
         $this->pageRepository = $pageRepository;
         $this->siteConfiguration = $siteConfiguration;
+        $this->syslogService = $syslogService;
     }
 
     /**
@@ -212,7 +221,7 @@ class Mod1Controller extends ActionController
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
         $this->moduleTemplate = $this->moduleTemplateFactory->create($this->request);
-        $this->addDocHeaderButtons();
+        $this->mod1Service->addDocHeaderButtons($this->moduleTemplate, $this->uriBuilder);
 
         // global template information
         $this->globalTemplateVars = [
@@ -521,87 +530,18 @@ class Mod1Controller extends ActionController
 
     public function syslogAction(): ResponseInterface
     {
-        // Fetch logs
-        $rawLogs = $this->logEntryRepository->findByConstraint($this->getSyslogConstraint());
-
-        //deliver only <max> +1 entries
-        $max = 19;
-
-        $logs = [];
-        $msg = '';
-        $cntErrors = 0;
-        $cntErrorsShown = 0;
-        $logsCount = [];
-
-        // If no logs were found, we don't need to continue
-        if (($cntLogs = count($rawLogs)) > 0) {
-            // Filter for errors, because the LogRepo cannot filter them in advance
-            $logs_0 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
-                return $log->getError() == 0;
-            });
-            $logsCount[0] = count($logs_0);
-
-            $logs_1 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
-                return $log->getError() == 1;
-            });
-            $logsCount[1] = count($logs_1);
-
-            $logs_2 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
-                return $log->getError() == 2;
-            });
-            $logsCount[2] = count($logs_2);
-
-            $logs_3 = array_filter($rawLogs->toArray(), function (LogEntry $log) {
-                return $log->getError() == 3;
-            });
-            $logsCount[3] = count($logs_3);
-
-            if (($cntErrors = count($logs_2)) > 0) {
-
-                // collect all errors to hash=>errorDetails[cnt, detail, uidList]
-                $res = [];
-                foreach ($logs_2 as $log)
-                {
-                    $detail = $log->getDetails();
-                    $hash = hash('md5', $detail);
-                    // first error of this kind
-                    if (empty($res[$hash])) {
-                        $res[$hash]['cnt'] = 1;
-                        $res[$hash]['detail'] = $detail;
-                    // subsequent errors of this kind
-                    } else {
-                        $res[$hash]['cnt'] += 1;
-                    }
-                    $res[$hash]['uidList'][] = $log->getUid();
-                    $res[$hash]['ts'] = $log->getTstamp();
-                }
-
-                // sort results
-                $res = self::sortReverse($res, 'cnt');
-
-                //deliver only <max> +1 entries
-                $cnt = 0;
-                foreach ($res as $r)
-                {
-                    $cntErrorsShown += $r['cnt'];
-                    $r['uidList'] = implode(',', $r['uidList']);
-                    $logs[] = $r;
-                    if ($cnt++ >= $max) break;
-                }
-
-                //\nn\t3::debug($res);
-            } else $msg = 'No error logs after filtering available.';
-        } else $msg = 'No error logs available.';
-
-        $this->view->assignMultiple([
-            'cntErrors' => $cntErrors,
-            'cntErrorsShown' => $cntErrorsShown,
-            'cntLogs' => $cntLogs,
-            'logs' => $logs,
-            'msg' => $msg,
-            'logsCount' => $logsCount,
-        ]);
-
+        $arguments = $this->request->getArguments();
+        $logType = (isset($arguments['logType'])) ? $arguments['logType'] : 2;
+        $logCategory = ['notices', 'error', 'system error', 'security notices'][$logType];
+        $this->view->assignMultiple(
+            array_merge(
+                [
+                    'logType' => $logType,
+                    'logCategory' => $logCategory
+                ],
+                $this->syslogService->getLog($logType)
+            )
+        );
         $this->moduleTemplate->setContent($this->view->render());
         return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
@@ -616,7 +556,7 @@ class Mod1Controller extends ActionController
         $arguments = $this->request->getArguments();
         //\nn\t3::debug($arguments);
         $uidList = (isset($arguments['uidList'])) ? $arguments['uidList'] : '';
-        if (!empty($uidList))
+        $logType = (isset($arguments['logType'])) ? $arguments['logType'] : 2;
         {
             $cntDeleted = $this->logEntryRepository->deleteByUidList($uidList);
             $this->addFlashMessage(
@@ -625,19 +565,8 @@ class Mod1Controller extends ActionController
                 AbstractMessage::OK,
                 false);
         }
-        return (new ForwardResponse('syslog'));
-    }
-
-    protected function getSyslogConstraint(): Constraint
-    {
-        /** @var Constraint $constraint */
-        $constraint = GeneralUtility::makeInstance(Constraint::class);
-        //$constraint->setStartTimestamp(intval($this->registry->get(\Datamints\DatamintsErrorReport\Utility\ErrorReportUtility::EXTENSION_NAME, 'lastExecutedTimestamp')));
-        $constraint->setStartTimestamp(0); // Output all reports for test purposes (but will be limited again, so don't worry)
-        //$constraint->setNumber(intval($this->input->getOption('max'))); // Maximum amount of log entries$constraint->setNumber();
-        $constraint->setNumber(10000);
-        $constraint->setEndTimestamp(time());
-        return $constraint;
+        return (new ForwardResponse('syslog'))
+            ->withArguments(['logType' => $logType]);
     }
 
     /**
