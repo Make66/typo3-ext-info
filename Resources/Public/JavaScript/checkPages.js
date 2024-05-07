@@ -1,3 +1,4 @@
+console.log('checkFiles', checkFiles)
 checkFiles.forEach((el) => {
     checkRemoteFile(el.site, el.url, 'robots', 'robots.txt');
     checkRemoteFile(el.site, el.url, 'sitemap', 'sitemap.xml');

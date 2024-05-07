@@ -9,8 +9,6 @@ use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
-use TYPO3\CMS\Core\Imaging\Icon;
-use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
@@ -109,9 +107,8 @@ class Sha1Controller extends ActionController
             'shaMsg' => $shaMsg,
         ]);
         $this->view->assignMultiple($this->globalTemplateVars);
-        $this->moduleTemplate->setContent($this->view->render());
-        return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
+
     /**
      * returns array of messages[$filepath] => message
      *
@@ -134,16 +131,6 @@ class Sha1Controller extends ActionController
             // does sha1 match?
             $index = '.' . substr($file, strlen($this->publicPath));
 
-            /*
-            \nn\t3::debug([
-                'file' => $file,
-                '$index' => $index,
-                'baseLineFiles[$index]' => $baseLineFiles[$index],
-                'sha1(file)' => sha1(file_get_contents($file)),
-                'key_exists()' => array_key_exists($index, $baseLineFiles),
-            ]);
-            //die();
-            */
             /*
              * case 1: file is not in baseLineFiles => should not be there
              * case 2: file is in baseLineFiles and sha1 does not match => error; message 'file has been altered'

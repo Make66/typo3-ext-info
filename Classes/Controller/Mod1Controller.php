@@ -246,7 +246,7 @@ class Mod1Controller extends ActionController
     public function checkDomainsAction()
     {
         $allDomains = $this->getAllDomains();
-        $jsInlineCode = 'var checkFiles = [' . "\n";
+        $jsInlineCode = 'const checkFiles = [' . "\n";
         foreach ($allDomains as $domain)
         {
             $jsInlineCode .= '  { site:"' . $domain['site'] . '", url:"' . $domain['baseUrl'] . '"},' . "\n";
@@ -260,7 +260,7 @@ class Mod1Controller extends ActionController
         $pageRenderer = GeneralUtility::makeInstance(PageRenderer::class);
         $pageRenderer->addJsInlineCode('tx_' . self::EXTKEY . '_m1', $jsInlineCode);
         // add checkPages.js is done in template
-        
+
     }
 
     public function deleteFileAction(string $file = '')
@@ -522,48 +522,28 @@ class Mod1Controller extends ActionController
         );
     }
 
-    private function getSyslogUidList($logs, $hash)
-    {
-        $res = [];
-        foreach($logs as $log)
-        {
-            if (hash('md5', $log->getDetails()) == $hash)
-            {
-                $res[] = $log->getUid();
-            }
-        }
-        return implode(',', $res);
-    }
-
     /**
      * @throws StopActionException
      */
-    public function syslogDeleteAction()
+    public function syslogDeleteAction(): void
     {
         $arguments = $this->request->getArguments();
         $uidList = (isset($arguments['uidList'])) ? $arguments['uidList'] : '';
+        $logType = (isset($arguments['logType'])) ? $arguments['logType'] : 2;
         $cntDeleted = $this->logEntryRepository->deleteByUidList($uidList);
         $this->addFlashMessage($cntDeleted . ' entries deleted.');
-        $this->forward('syslog');
-    }
-
-    protected function getSyslogConstraint (): Constraint
-    {
-        /** @var Constraint $constraint */
-        $constraint = GeneralUtility::makeInstance(Constraint::class);
-        //$constraint->setStartTimestamp(intval($this->registry->get(\Datamints\DatamintsErrorReport\Utility\ErrorReportUtility::EXTENSION_NAME, 'lastExecutedTimestamp')));
-        $constraint->setStartTimestamp(0); // Output all reports for test purposes (but will be limited again, so don't worry)
-        //$constraint->setNumber(intval($this->input->getOption('max'))); // Maximum amount of log entries$constraint->setNumber();
-        $constraint->setNumber(10000);
-        $constraint->setEndTimestamp(time());
-        return $constraint;
+        $this->forward(
+            'syslog',
+            'Mod1Controller',
+            self::EXTKEY,
+            ['logType' => $logType]);
     }
 
     /**
      * @param string $file
      * @return void
      */
-    public function viewFileAction(string $file = '')
+    public function viewFileAction(string $file = ''): void
     {
         //\nn\t3::debug($file);
 
@@ -617,7 +597,7 @@ class Mod1Controller extends ActionController
                 'cnt' => $p['cnt'],
             ];
         }
-        //debug(['$query' =>$query, '$res'=>$res, 'pT'=>$pT, '$contentTypes'=>$contentTypes], __line__.':'.__class__.'->'.__function__.'()');
+
         return $contentTypes;
     }
 
@@ -629,7 +609,6 @@ class Mod1Controller extends ActionController
     private function getAllDomains($limit = 1000): array
     {
         $domains = $this->siteConfiguration->getAllExistingSites(true);
-        //\nn\t3::debug($domains);
         $domainUrls = [];
         foreach ($domains as $domain) {
             //$robotsTxt = @file_get_contents($domain->getConfiguration()['base'] . '/robots.txt');
@@ -847,15 +826,6 @@ class Mod1Controller extends ActionController
             ->execute();
         $plugins = $res->fetchAll();
 
-        /*
-        $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
-        $res = $query->select('uid', 'pid')
-            ->from('tt_content')
-            ->where($query->expr()->eq('list_type', $query->createNamedParameter($type)))
-            ->execute();
-        $plugins = $res->fetchAll();
-        */
-
         // we need uid and pid and page rootpath
         $pagesOfPluginType = [];
         $rootLineArray = [];
@@ -917,18 +887,6 @@ class Mod1Controller extends ActionController
         }
         curl_close($curl);
         return $ret;
-    }
-
-    /**
-     * @param array $array
-     * @param string $key
-     * @param bool $reverse
-     * @return array
-     */
-    private static function sort(array $array, string $key, bool $reverse = false): array
-    {
-        usort($array, self::build_sorter($key, $reverse));
-        return $array;
     }
 
     /**
@@ -997,7 +955,7 @@ class Mod1Controller extends ActionController
             $templates[$key]['concatenateJs'] = $config['concatenateJs'] ?? 'undefined';
         }
         // order by siteroot
-        $templates = self::sort($templates, 'siteroot');
+        $templates = SysinfoUtility::sort($templates, 'siteroot');
 
         $this->view->assign('templates', $templates);
     }
@@ -1016,16 +974,6 @@ class Mod1Controller extends ActionController
         $template->runThroughTemplates($rootline, 0);
         $template->generateConfig();
         return $template->setup['config.'];
-    }
-
-    protected function getLanguageService(): LanguageService
-    {
-        return $GLOBALS['LANG'];
-    }
-
-    protected function getBackendUser(): BackendUserAuthentication
-    {
-        return $GLOBALS['BE_USER'];
     }
 
 }
