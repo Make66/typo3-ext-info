@@ -272,7 +272,65 @@ class Mod1Controller extends ActionController
         $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
 
         return $this->moduleTemplate->renderResponse();
-}
+    }
+
+
+    public function fileCheckAction(): ResponseInterface
+    {
+        // part 1: find all files in sys_file and compare to filesystem
+        $table = 'sys_file';
+        $rows = $this->connectionPool
+            ->getConnectionForTable($table)
+            ->select(
+                ['*'],
+                $table
+            )->fetchAllAssociative();
+        $cntFilesThere= count($rows);
+        $filesNotThere = [];
+        $sysFile = [];  // cache the database for part 2
+        foreach($rows as $row)
+        {
+            $filepath = ($row['storage'] === 1 )
+                ? 'fileadmin' . $row['identifier']
+                : $row['identifier'];
+
+            // publicPath is something like '/var/www/html/public'
+            $isFile = @is_file($this->publicPath . '/' . $filepath);
+            if (!$isFile) $filesNotThere[] = 'missing: ' . $this->publicPath . '/' . $filepath;
+            $sysFile[$row['identifier_hash']] = $filepath;
+        }
+        $cntFilesNotThere = count($filesNotThere);
+
+        // part 2: find all files in fileadmin and compare to sys_file entries
+        $directory = new \RecursiveDirectoryIterator($this->publicPath, \FilesystemIterator::SKIP_DOTS);
+        $iterator = new \RecursiveIteratorIterator($directory);
+        //$excessiveFiles = array();
+        foreach ($iterator as $info) {
+            // always remove publicPath.fileadmin
+            $filePath = str_replace($this->publicPath . '/fileadmin', '', $info->getPathname());
+            if (!array_key_exists(sha1($filePath), $sysFile))
+            {
+                if (str_contains($filePath, $this->publicPath . '/_assets/')) continue;
+                if (str_contains($filePath, $this->publicPath . '/typo3')) continue;
+                if (str_contains($filePath, '/index.html')) continue;
+                if (str_contains($filePath, '/index.php')) continue;
+                if (str_contains($filePath, '/.htaccess')) continue;
+                $excessiveFiles[sha1($filePath)] = $filePath;
+            }
+        }
+        $cntExcessiveFiles = count($excessiveFiles);
+
+        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->assignMultiple([
+            'cntFilesThere' => $cntFilesThere,
+            'cntFilesNotThere' => $cntFilesNotThere,
+            'filesNotThere' => $filesNotThere,
+            'cntExcessiveFiles' => $cntExcessiveFiles,
+            'excessiveFiles' => $excessiveFiles,
+        ]);
+
+        return $this->moduleTemplate->renderResponse();
+    }
 
     /**
      * @return ResponseInterface

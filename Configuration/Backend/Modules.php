@@ -22,7 +22,7 @@ return [
         'iconIdentifier' => 'mod1',
         'controllerActions' => [
             Mod1Controller::class => [
-                'syslog','syslogDelete','securityCheck','allTemplates',
+                'fileCheck','syslog','syslogDelete','securityCheck','allTemplates',
                 'checkDomains','deleteFile','plugins','rootTemplates','viewFile'
             ],
             Sha1Controller::class => ['shaOne','shaOneJs','shaOnePhp'],

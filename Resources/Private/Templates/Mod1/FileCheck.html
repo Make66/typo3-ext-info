@@ -1,0 +1,38 @@
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en"
+      xmlns:v="http://typo3.org/ns/FluidTYPO3/Vhs/ViewHelpers"
+      xmlns:f="http://typo3.org/ns/TYPO3/Fluid/ViewHelpers"
+      xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers" data-namespace-typo3-fluid="true">
+
+<f:layout name="Module"/>
+
+<f:section name="Content">
+
+    <h1>File Check</h1>
+    <h5>Compare {cntFilesThere} sys_file entries to filesystem entries</h5>
+    <f:if condition="{cntFilesNotThere} == 0">
+        <f:then>
+            <p><core:icon identifier="actions-check-circle-alt" size="small" /> All files from sys_file have been found in the filesystem.</p>
+        </f:then>
+        <f:else>
+            <p><core:icon identifier="install-check-extables" size="small" /> {cntFilesNotThere} files are missing:</p>
+            <f:for as="file" each="{filesNotThere}">
+                {file}<br>
+            </f:for>
+        </f:else>
+    </f:if>
+
+    <h5>List {cntExcessiveFiles} excessive filesystem entries that are not in sys_file</h5>
+    <f:if condition="{cntExcessiveFiles} == 0">
+        <f:then>
+            <p><core:icon identifier="actions-check-circle-alt" size="small" /> All files from filesystem have been found in the sys_file.</p>
+        </f:then>
+        <f:else>
+            <p><core:icon identifier="install-check-extables" size="small" /> {cntExcessiveFiles} files are excessive and should be considered be deleted:</p>
+            <f:for as="file" each="{excessiveFiles}">
+                {file}<br>
+            </f:for>
+        </f:else>
+    </f:if>
+
+</f:section>
+</html>
