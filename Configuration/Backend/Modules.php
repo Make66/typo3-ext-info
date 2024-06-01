@@ -17,7 +17,7 @@ return [
         'labels' => 'LLL:EXT:sysinfo/Resources/Private/Language/Module/locallang_mod.xlf',
         'extensionName' => 'Sysinfo',
         'controllerActions' => [
-            Mod1Controller::class => ['syslog,syslogDelete,securityCheck,allTemplates,checkDomains,deleteFile,plugins,rootTemplates,viewFile'],
+            Mod1Controller::class => ['index,fileCheck,syslog,syslogDelete,securityCheck,allTemplates,checkDomains,deleteFile,plugins,rootTemplates,viewFile'],
             Sha1Controller::class => ['shaOne,shaOneJs,shaOnePhp'],
             CurlController::class => ['index'],
         ],

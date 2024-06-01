@@ -239,6 +239,7 @@ class Mod1Controller extends ActionController
         $templates = $this->getAllTemplates(false);
         $this->templatesToView($templates);
         $this->view->assignMultiple($this->globalTemplateVars);
+
         $this->moduleTemplate->setContent($this->view->render());
         return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
@@ -290,6 +291,84 @@ class Mod1Controller extends ActionController
 
         $this->view->assign('file', $file);
         $this->view->assign('content', $content);
+        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->setContent($this->view->render());
+        return $this->htmlResponse($this->moduleTemplate->renderContent());
+    }
+
+    public function fileCheckAction(): ResponseInterface
+    {
+        // part 1: find all files in sys_file and compare to filesystem
+        $table = 'sys_file';
+        $rows = $this->connectionPool
+            ->getConnectionForTable($table)
+            ->select(
+                ['*'],
+                $table
+            )->fetchAllAssociative();
+        $cntFilesThere= count($rows);
+        $filesNotThere = [];
+        $sysFile = [];  // cache the database for part 2
+        $max = 50;
+        foreach($rows as $row)
+        {
+            //if ($max-- < 1) break;
+            $filePath = ($row['storage'] === 1 )
+                ? '/fileadmin' . $row['identifier']
+                : $row['identifier'];
+
+            // publicPath is something like '/var/www/html/public'
+            $isFile = @is_file($this->publicPath . '/' . $filePath);
+            if (!$isFile) $filesNotThere[] = $filePath;
+            $sysFile[sha1($filePath)] = $filePath;
+        }
+        $cntFilesNotThere = count($filesNotThere);
+        \nn\t3::debug([
+            'sysFile' => $sysFile,
+            'missing' => $filesNotThere,
+        ], 'Files in FAL, but not in filesystem');
+
+        // part 2: excessive files: find all public files and compare to sys_file entries
+        $directory = new \RecursiveDirectoryIterator($this->publicPath, \FilesystemIterator::SKIP_DOTS);
+        $iterator = new \RecursiveIteratorIterator($directory);
+        $excessiveFiles = array();
+        foreach ($iterator as $info) {
+            // always remove publicPath
+            $filePath = str_replace($this->publicPath, '', $info->getPathname());
+            if (!array_key_exists(sha1($filePath), $sysFile))
+            {
+                if (str_contains($filePath, '/fileadmin/kunden/mbauer/panorama/')) continue;
+                if (str_contains($filePath, '/Galerie/')) continue;
+                if (str_contains($filePath, '/fileadmin/templates/')) continue;
+                if (str_contains($filePath, '/_assets/')) continue;
+                if (str_contains($filePath, '/_processed_/')) continue;
+                if (str_contains($filePath, '/typo3')) continue;
+                if (str_contains($filePath, '/index.html')) continue;
+                if (str_contains($filePath, '/index.php')) continue;
+                if (str_contains($filePath, '/.htaccess')) continue;
+                $excessiveFiles[sha1($filePath)] = $filePath;
+            }
+        }
+        $cntExcessiveFiles = count($excessiveFiles);
+
+        \nn\t3::debug([
+            '$excessiveFiles' => $excessiveFiles,
+        ], 'Files in Filesystem, but not in FAL');
+
+        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->view->assignMultiple([
+            'cntFilesThere' => $cntFilesThere,
+            'cntFilesNotThere' => $cntFilesNotThere,
+            'filesNotThere' => $filesNotThere,
+            'cntExcessiveFiles' => $cntExcessiveFiles,
+            'excessiveFiles' => $excessiveFiles,
+        ]);
+
+        return $this->htmlResponse($this->moduleTemplate->renderContent());
+    }
+
+    public function indexAction(): ResponseInterface
+    {
         $this->view->assignMultiple($this->globalTemplateVars);
         $this->moduleTemplate->setContent($this->view->render());
         return $this->htmlResponse($this->moduleTemplate->renderContent());

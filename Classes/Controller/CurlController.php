@@ -99,7 +99,7 @@ class CurlController
         //don't fetch the actual page, you only want to check the connection is ok
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_NOBODY, true);
-        curl_setopt($curl, CURLOPT_TIMEOUT, 2);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 5);
         $result = curl_exec($curl);
         $ret = false;
 

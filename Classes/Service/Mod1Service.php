@@ -27,12 +27,14 @@ class Mod1Service extends ActionController
         //$languageService = $this->getLanguageService();
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
         foreach([
+                    'index' => 'Mod1::actions-house',
+                    'fileCheck' => 'Mod1:File Check:install-scan-extensions',
                     'syslog' => 'Mod1:Syslog:actions-debug',
                     'securityCheck' => 'Mod1:Security Check:overlay-locked',
                     'shaOne' => 'Sha1:Typo3 SHA1:actions-extension',
                     'plugins' => 'Mod1:Plugins:content-plugin',
                     'rootTemplates' => 'Mod1:Templates:actions-template',
-                    'checkDomains' => 'Mod1:robots.txt, sitemap.xml & 404:install-scan-extensions',
+                    'checkDomains' => 'Mod1:robots.txt, sitemap.xml & 404:apps-pagetree-folder-root',
                 ] as $action => $param)
         {
             list($controller, $title, $icon) = explode(':', $param);
