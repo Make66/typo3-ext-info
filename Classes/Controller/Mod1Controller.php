@@ -161,7 +161,8 @@ class Mod1Controller extends ActionController
         '/index.php' => [
             '10.4.37' => ['size' => 987],
             '11.5.36' => ['size' => 815],
-            '12.4.14' => ['size' => 815],
+            '11.5.37' => ['size' => 815],
+            '12.4.15' => ['size' => 815],
         ]
     ];
 
@@ -247,11 +248,10 @@ class Mod1Controller extends ActionController
         }
         $jsInlineCode .= '];';
 
-        // add JS
-        $this->pageRenderer->addJsFooterInlineCode('tx_' . self::EXTKEY . '_m1', $jsInlineCode);
-        // add checkSites.js is done in template
+        // add JS and checkSites.js is done in template
 
         $this->moduleTemplate->assign('allDomains', $allDomains);
+        $this->moduleTemplate->assign('jsInlineCode', $jsInlineCode);
         $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
 
         return $this->moduleTemplate->renderResponse();
@@ -274,7 +274,6 @@ class Mod1Controller extends ActionController
         return $this->moduleTemplate->renderResponse();
     }
 
-
     public function fileCheckAction(): ResponseInterface
     {
         // part 1: find all files in sys_file and compare to filesystem
@@ -288,30 +287,40 @@ class Mod1Controller extends ActionController
         $cntFilesThere= count($rows);
         $filesNotThere = [];
         $sysFile = [];  // cache the database for part 2
+        $max = 50;
         foreach($rows as $row)
         {
-            $filepath = ($row['storage'] === 1 )
-                ? 'fileadmin' . $row['identifier']
+            //if ($max-- < 1) break;
+            $filePath = ($row['storage'] === 1 )
+                ? '/fileadmin' . $row['identifier']
                 : $row['identifier'];
 
             // publicPath is something like '/var/www/html/public'
-            $isFile = @is_file($this->publicPath . '/' . $filepath);
-            if (!$isFile) $filesNotThere[] = 'missing: ' . $this->publicPath . '/' . $filepath;
-            $sysFile[$row['identifier_hash']] = $filepath;
+            $isFile = @is_file($this->publicPath . '/' . $filePath);
+            if (!$isFile) $filesNotThere[] = $filePath;
+            $sysFile[sha1($filePath)] = $filePath;
         }
         $cntFilesNotThere = count($filesNotThere);
+        \nn\t3::debug([
+            'sysFile' => $sysFile,
+            'missing' => $filesNotThere,
+        ], 'Files in FAL, but not in filesystem');
 
-        // part 2: find all files in fileadmin and compare to sys_file entries
+        // part 2: excessive files: find all public files and compare to sys_file entries
         $directory = new \RecursiveDirectoryIterator($this->publicPath, \FilesystemIterator::SKIP_DOTS);
         $iterator = new \RecursiveIteratorIterator($directory);
-        //$excessiveFiles = array();
+        $excessiveFiles = array();
         foreach ($iterator as $info) {
-            // always remove publicPath.fileadmin
-            $filePath = str_replace($this->publicPath . '/fileadmin', '', $info->getPathname());
+            // always remove publicPath
+            $filePath = str_replace($this->publicPath, '', $info->getPathname());
             if (!array_key_exists(sha1($filePath), $sysFile))
             {
-                if (str_contains($filePath, $this->publicPath . '/_assets/')) continue;
-                if (str_contains($filePath, $this->publicPath . '/typo3')) continue;
+                if (str_contains($filePath, '/fileadmin/kunden/mbauer/panorama/')) continue;
+                if (str_contains($filePath, '/Galerie/')) continue;
+                if (str_contains($filePath, '/fileadmin/templates/')) continue;
+                if (str_contains($filePath, '/_assets/')) continue;
+                if (str_contains($filePath, '/_processed_/')) continue;
+                if (str_contains($filePath, '/typo3')) continue;
                 if (str_contains($filePath, '/index.html')) continue;
                 if (str_contains($filePath, '/index.php')) continue;
                 if (str_contains($filePath, '/.htaccess')) continue;
@@ -319,6 +328,10 @@ class Mod1Controller extends ActionController
             }
         }
         $cntExcessiveFiles = count($excessiveFiles);
+
+        \nn\t3::debug([
+            '$excessiveFiles' => $excessiveFiles,
+        ], 'Files in Filesystem, but not in FAL');
 
         $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
         $this->moduleTemplate->assignMultiple([
@@ -329,6 +342,12 @@ class Mod1Controller extends ActionController
             'excessiveFiles' => $excessiveFiles,
         ]);
 
+        return $this->moduleTemplate->renderResponse();
+    }
+
+    public function indexAction(): ResponseInterface
+    {
+        $this->view->assignMultiple($this->globalTemplateVars);
         return $this->moduleTemplate->renderResponse();
     }
 
@@ -580,18 +599,30 @@ class Mod1Controller extends ActionController
     public function syslogDeleteAction(): ForwardResponse
     {
         $arguments = $this->request->getArguments();
-        //\nn\t3::debug($arguments);
+        //\nn\t3::debug($arguments);//die();
         $uidList = (isset($arguments['uidList'])) ? $arguments['uidList'] : '';
         $logType = (isset($arguments['logType'])) ? $arguments['logType'] : 2;
-        if (!empty($uidList))
+
+        if ($uidList == 'DeleteAllThisTypeSysLogEntries')
         {
-            $cntDeleted = $this->syslogService->deleteByUidList($uidList);
+            $cntDeleted = $this->syslogService->deleteByLogType((int)$logType);
             $this->addFlashMessage(
-                $cntDeleted . ' entries deleted.',
+                $cntDeleted . ' entries of type ' . $logType . ' deleted.',
                 'table sys_log',
                 ContextualFeedbackSeverity::OK,
                 false);
+        } else {
+            if (!empty($uidList))
+            {
+                $cntDeleted = $this->syslogService->deleteByUidList($uidList);
+                $this->addFlashMessage(
+                    $cntDeleted . ' entries deleted.',
+                    'table sys_log',
+                    ContextualFeedbackSeverity::OK,
+                    false);
+            }
         }
+
         return (new ForwardResponse('syslog'))
             ->withArguments(['logType' => $logType]);
     }

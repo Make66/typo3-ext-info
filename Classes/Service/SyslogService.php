@@ -101,9 +101,17 @@ class SyslogService
     /**
      * @throws Exception
      */
-    public function deleteByUidList($uidList): int
+    public function deleteByUidList(string $uidList): int
     {
-       return $this->logEntryRepository->deleteByUidList($uidList);
+        return $this->logEntryRepository->deleteByUidList($uidList);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function deleteByLogType(int $logType): int
+    {
+        return $this->logEntryRepository->deleteByLogType($logType);
     }
 
     protected function getSyslogConstraint(): Constraint

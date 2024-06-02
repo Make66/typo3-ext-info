@@ -32,6 +32,7 @@ class SysinfoCheck {
                     const resolved = await response.resolve("application/json")
                     const idStr = resolved.result.type + '-' + resolved.result.site
                     const fileExists = resolved.result.res
+                    console.log('resolved', resolved)
                     document.getElementById(idStr).innerHTML = (fileExists)
                         // iconGranted
                         ? '<span class="icon icon-size-small icon-state-default icon-status-status-permission-granted" data-identifier="status-status-permission-granted">\n' +

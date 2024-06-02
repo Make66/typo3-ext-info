@@ -6,11 +6,9 @@ use Psr\Http\Message\ResponseInterface;
 use Taketool\Sysinfo\Service\Mod1Service;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
-use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Core\Environment;
-use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
-use TYPO3\CMS\Core\Localization\LanguageService;
+use TYPO3\CMS\Core\Messaging\AbstractMessage;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
@@ -21,11 +19,12 @@ class Sha1Controller extends ActionController
     protected string $publicPath;
     protected string $configPath;
     protected string $extPath;
-    protected string $t3version;
+    protected Typo3Version $t3version;
     protected bool $isComposerMode;
     protected array $globalTemplateVars;
     protected ModuleTemplate $moduleTemplate;
     protected mixed $backendUserAuthentication;
+    private string $projectPath;
 
     public function __construct(
         protected readonly Environment $environment,
@@ -44,13 +43,14 @@ class Sha1Controller extends ActionController
         $environment = GeneralUtility::makeInstance(Environment::class);
         $this->isComposerMode = $environment->isComposerMode();
         $this->publicPath = $environment->getPublicPath();
+        $this->projectPath = $environment->getProjectPath();
         $this->extPath = $environment->getProjectPath() . '/vendor/taketool/' . self::extKey;
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
-        $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
+        $this->t3version = GeneralUtility::makeInstance(Typo3Version::class);
 
         // global template information
         $this->globalTemplateVars = [
-            't3version' => $this->t3version,
+            't3version' => $this->t3version->getVersion(),
             'publicPath' => $this->publicPath,
             'isComposerMode' => $this->isComposerMode,
             'memoryLimit' => $memoryLimit = ini_get('memory_limit'),
@@ -59,8 +59,12 @@ class Sha1Controller extends ActionController
 
     /**
      * compare all files in public/typo3 against precompiled SHA1 in Resources/Private/SHA1/ (~450kB each)
-     * precompiled file generated gzip(find ./typo3 -type f -name "*.php" -exec sha1sum {} \;)
+     * precompiled file generated. Generate it like that:
+     * cd ./vendor
+     * find ./typo3 -type f -name "*.php" -exec sha1sum {} \; | gzip > typo3_files_php.txt.gz
+     * find ./typo3 -type f -name "*.js" -exec sha1sum {} \; | gzip > typo3_files_js.txt.gz
      * a line looks like this: 5964dd3a9fcc9d3141415b1b8511b8938e1aabf0  ./typo3/index.php%
+     * Install full set of typo3 using Composer Helper from: https://get.typo3.org/misc/composer/helper
      *
      * @return ResponseInterface
      */
@@ -77,6 +81,13 @@ class Sha1Controller extends ActionController
         if (count($msg)== 0)
         {
             $shaMsg = $this->sha1compareFiles( $baseLineFiles, 'js');
+        }
+
+        if (count($msg))
+        {
+            $this->addFlashMessage(implode('. ', $msg), 'Error', AbstractMessage::ERROR);
+        } else {
+            $this->addFlashMessage('All checked files match.', 'Hint', AbstractMessage::OK);
         }
 
         $this->moduleTemplate->assignMultiple([
@@ -96,11 +107,19 @@ class Sha1Controller extends ActionController
             $shaMsg = $this->sha1compareFiles( $baseLineFiles, 'php');
         }
 
+        if (count($msg))
+        {
+            $this->addFlashMessage(implode('. ', $msg), 'Error', AbstractMessage::ERROR);
+        } else {
+            $this->addFlashMessage('All checked files match.', 'Hint', AbstractMessage::OK);
+        }
+
         $this->view->assignMultiple([
             'msg' => $msg,
             'shaMsg' => $shaMsg,
         ]);
         $this->view->assignMultiple($this->globalTemplateVars);
+
         return $this->moduleTemplate->renderResponse();
     }
     /**
@@ -113,7 +132,10 @@ class Sha1Controller extends ActionController
     private function sha1compareFiles(&$baseLineFiles, $filetype): array
     {
         // redirect stderr to stdout using 2>&1 to see error messages as well
-        $cmd = 'find "' . $this->publicPath . '/typo3" -type "f" -name "*.php" 2>&1'; //
+        $path =  ($this->t3version->getMajorVersion() >= 12)
+            ? $this->projectPath . '/vendor/typo3'
+            : $this->publicPath . '/typo3';
+        $cmd = 'find "' . $path . '" -type "f" -name "*.php" 2>&1'; //
         $msg = [];
 
         // the following line returns ca. 12.000 filenames and 1.5MB
@@ -168,13 +190,13 @@ class Sha1Controller extends ActionController
         // file to open is like /Resources/Private/SHA1/11005030/typo3_files_js.txt
         $msg = [];
         $baseLineFiles = [];
-        $gzFile = $this->extPath . '/Resources/Private/SHA1/' . $this->t3version . '/typo3_files_' . $fileType . '.txt.gz';
+        $gzFile = $this->extPath . '/Resources/Private/SHA1/' . $this->t3version->getVersion() . '/typo3_files_' . $fileType . '.txt.gz';
         //\nn\t3::debug($gzFile);
         $isFile = @file_exists($gzFile);
         //\nn\t3::debug($isFile);
         if (!$isFile)
         {
-            $msg[] = 'The file for version ' . $this->t3version . ' is not available: ' . $gzFile;
+            $msg[] = 'The file for version ' . $this->t3version->getVersion() . ' is not available: ' . $gzFile;
         } else {
             // ~450KB, unset after needed
             $gz = @file_get_contents($gzFile);

@@ -43,7 +43,14 @@
     </tr>
     </tbody>
   </table>
-
+  <p>&nbsp;</p>
+  <f:form
+      id="syslogDelete-allByType"
+      action="syslogDelete"
+      arguments="{logType: logType}"
+      style="margin-top: -1.8em;">
+    <f:form.button name="uidList" value="DeleteAllThisTypeSysLogEntries" style="border: 1px solid; margin-top:.3rem;"><core:icon identifier="actions-delete" /> Delete all entries by selected type</f:form.button>
+  </f:form>
   <h3>Top 20 {logCategory}</h3>
   <f:if condition="{msg}">
     <f:then>

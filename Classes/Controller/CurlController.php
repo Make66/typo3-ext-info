@@ -48,8 +48,9 @@ use TYPO3\CMS\Core\Localization\LanguageService;
  */
 class CurlController //extends ActionController
 {
-    public function __construct(protected readonly ResponseFactoryInterface $responseFactory)
-    {}
+    public function __construct(
+        private readonly ResponseFactoryInterface $responseFactory,
+    ) {}
 
     /**
      * finds out if a remote file exists or not
@@ -84,7 +85,7 @@ class CurlController //extends ActionController
     }
 
     /**
-     * waits up to 2 sec for the url to answer
+     * waits up to 5 sec for the url to answer
      * and accepts everything HTTP < 400 as success
      *
      * @param $url
@@ -95,7 +96,7 @@ class CurlController //extends ActionController
         //don't fetch the actual page, you only want to check the connection is ok
         $curl = curl_init($url);
         curl_setopt($curl, CURLOPT_NOBODY, true);
-        curl_setopt($curl, CURLOPT_TIMEOUT, 2);
+        curl_setopt($curl, CURLOPT_TIMEOUT, 5);
         $result = curl_exec($curl);
         $ret = false;
 

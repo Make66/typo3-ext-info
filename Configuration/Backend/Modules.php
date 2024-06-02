@@ -17,12 +17,12 @@ return [
         'access' => 'admin',
         'workspaces' => 'live',
         'path' => '/module/tools/sysinfo',
-        'labels' => 'LLL:EXT:sysinfo/Resources/Private/Language/Module/locallang_mod.xlf',
+        'labels' => 'LLL:EXT:sysinfo/Resources/Private/Language/locallang_mod1.xlf',
         'extensionName' => 'Sysinfo',
         'iconIdentifier' => 'mod1',
         'controllerActions' => [
             Mod1Controller::class => [
-                'fileCheck','syslog','syslogDelete','securityCheck','allTemplates',
+                'index','fileCheck','syslog','syslogDelete','securityCheck','allTemplates',
                 'checkDomains','deleteFile','plugins','rootTemplates','viewFile'
             ],
             Sha1Controller::class => ['shaOne','shaOneJs','shaOnePhp'],

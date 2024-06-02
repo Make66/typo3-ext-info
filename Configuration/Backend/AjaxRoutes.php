@@ -2,7 +2,7 @@
 
 return [
     'sysinfo_curl' => [
-        'path' => '/sysinfo/checksite',
-        'target' => Taketool\Sysinfo\Controller\CurlController::class . '::indexAction',
+        'path' => '/sysinfo/curl/checkDomains',
+        'target' => \Taketool\Sysinfo\Controller\CurlController::class . '::indexAction',
     ],
 ];

@@ -10,8 +10,4 @@ services:
   Taketool\Sysinfo\Controller\CurlController:
     public: true
     arguments:
-      - '@TYPO3\CMS\Core\Core\Environment'
       - '@Psr\Http\Message\ResponseFactoryInterface'
-
-  Taketool\Sysinfo\Controller\Mod1Controller:
-    tags: ['backend.controller']
