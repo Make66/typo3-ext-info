@@ -6,33 +6,72 @@
 <f:layout name="Default"/>
 
 <f:section name="Content">
-
   <h1>EXT:sysinfo</h1>
   <p>Please select an option to continue.</p>
+  <p>&nbsp;</p>
+  <table>
+    <tr>
+      <td>
+        <h5>File Check</h5>
+        <p>- Files in FAL, but not in filesystem<br>
+          - Files in Filesystem, but not in FAL<br>
+          (May takes a while if you have a huge installation)
+        </p>
 
-  <h5>File Check</h5>
-  <p>- Files in FAL, but not in filesystem<br>
-    - Files in Filesystem, but not in FAL<br>
-    (May takes a while if you have a huge installation)
-  </p>
+        <h5>Syslog</h5>
+        <p>Top 20 system errors by quantity</p>
 
-  <h5>Syslog</h5>
-  <p>Top 20 system errors by quantity</p>
+        <h5>Security Check</h5>
+        <p>various security checks</p>
 
-  <h5>Security Check</h5>
-  <p>various security checks</p>
+        <h5>Typo3 SHA1</h5>
+        <p>Check for altered files (may not be up-to-date)</p>
 
-  <h5>Typo3 SHA1</h5>
-  <p>Check for altered files (may not be up-to-date)</p>
+        <h5>Plugins</h5>
+        <p>Find CType and list_type in use</p>
 
-  <h5>Plugins</h5>
-  <p>Find CType and list_type in use</p>
+        <h5>Templates</h5>
+        <p>Find Templates</p>
 
-  <h5>Templates</h5>
-  <p>Find Templates</p>
+        <h5>robots.txt, sitemap.xml and 404</h5>
+        <p>Access pages that should be there (Takes a while if you have many sites)</p>
 
-  <h5>robots.txt, sitemap.xml and 404</h5>
-  <p>Access pages that should be there (Takes a while if you have many sites)</p>
+      </td>
+
+      <td style="vertical-align: top">
+        <table>
+          <tr>
+            <th>t3version</th>
+            <td>{t3version}</td>
+          </tr>
+          <tr>
+            <th>context</th>
+            <td>{context}</td>
+          </tr>
+          <tr>
+            <th>projectPath</th>
+            <td>{projectPath}</td>
+          </tr>
+          <tr>
+            <th>publicPath</th>
+            <td>{publicPath}</td>
+          </tr>
+          <tr>
+            <th>typo3Path</th>
+            <td>{typo3Path}</td>
+          </tr>
+          <tr>
+            <th>isComposerMode</th>
+            <td>{f:if(condition: isComposerMode, then: 'true', else: 'false')}</td>
+          </tr>
+          <tr>
+            <th>memoryLimit</th>
+            <td>{memoryLimit}</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 
 </f:section>
 

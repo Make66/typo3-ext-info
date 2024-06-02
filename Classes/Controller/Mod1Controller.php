@@ -163,10 +163,8 @@ class Mod1Controller extends ActionController
     protected array $fileInfo = [
         '/index.php' => [
             '10.4.37' => ['size' => 987],
-            '11.5.30' => ['size' => 815],
-            '11.5.31' => ['size' => 822],
-            '11.5.32' => ['size' => 822],
-            '11.5.33' => ['size' => 822],
+            '11.5.36' => ['size' => 815],
+            '11.5.37' => ['size' => 815],
         ]
     ];
 
@@ -181,6 +179,7 @@ class Mod1Controller extends ActionController
     protected PageRepository $pageRepository;
     protected SiteConfiguration $siteConfiguration;
     protected SyslogService $syslogService;
+    private \TYPO3\CMS\Core\Core\ApplicationContext $context;
 
     public function __construct(
         ConnectionPool $connectionPool,
@@ -213,7 +212,9 @@ class Mod1Controller extends ActionController
     public function initializeAction()
     {
         $this->isComposerMode = $this->environment->isComposerMode();
+        $this->context = $this->environment->getContext();
         $this->publicPath = $this->environment->getPublicPath();
+        $this->projectPath = $this->environment->getProjectPath();
         $this->extPath = $this->environment->getExtensionsPath() . '/' . self::EXTKEY;
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
@@ -223,9 +224,12 @@ class Mod1Controller extends ActionController
         // global template information
         $this->globalTemplateVars = [
             't3version' => $this->t3version,
+            'context' => $this->context,
+            'projectPath' => $this->projectPath,
             'publicPath' => $this->publicPath,
+            'typo3Path' => $this->publicPath . '/typo3', // up to T3v11, changes in T3v12
             'isComposerMode' => $this->isComposerMode,
-            'memoryLimit' => $memoryLimit = ini_get('memory_limit'),
+            'memoryLimit' => ini_get('memory_limit'),
             //'sysinfoWebPath' => $sysinfoWebPath,
             //'jsCheckPages' => $jsCheckPages,
         ];
