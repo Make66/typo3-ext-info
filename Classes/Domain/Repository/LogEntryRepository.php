@@ -35,4 +35,19 @@ class LogEntryRepository extends \TYPO3\CMS\Belog\Domain\Repository\LogEntryRepo
             ->executeStatement();
     }
 
+    /**
+     * @throws DBALException
+     */
+    public function deleteByLogType(int $logType): int
+    {
+        $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
+            ->getQueryBuilderForTable('sys_log');
+
+        return $queryBuilder->delete('sys_log')
+            ->where(
+                $queryBuilder->expr()->eq('type', $logType)
+            )
+            ->executeStatement();
+    }
+
 }

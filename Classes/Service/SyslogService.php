@@ -110,6 +110,14 @@ class SyslogService
        return $this->logEntryRepository->deleteByUidList($uidList);
     }
 
+    /**
+     * @throws Exception
+     */
+    public function deleteByLogType(int $logType): int
+    {
+        return $this->logEntryRepository->deleteByLogType($logType);
+    }
+
     protected function getSyslogConstraint(): Constraint
     {
         /** @var Constraint $constraint */

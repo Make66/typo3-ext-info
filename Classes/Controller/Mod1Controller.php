@@ -12,8 +12,6 @@ use Taketool\Sysinfo\Service\SyslogService;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
-use TYPO3\CMS\Belog\Domain\Model\Constraint;
-use TYPO3\CMS\Belog\Domain\Model\LogEntry;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -32,7 +30,6 @@ use TYPO3\CMS\Core\Utility\RootlineUtility;
 use TYPO3\CMS\Extbase\Http\ForwardResponse;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
-use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
 
 /***************************************************************
  *  Copyright notice
@@ -363,7 +360,7 @@ class Mod1Controller extends ActionController
             'cntExcessiveFiles' => $cntExcessiveFiles,
             'excessiveFiles' => $excessiveFiles,
         ]);
-
+        $this->moduleTemplate->setContent($this->view->render());
         return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
 
@@ -633,17 +630,30 @@ class Mod1Controller extends ActionController
     public function syslogDeleteAction(): ResponseInterface
     {
         $arguments = $this->request->getArguments();
-        //\nn\t3::debug($arguments);
+        //\nn\t3::debug($arguments);//die();
         $uidList = (isset($arguments['uidList'])) ? $arguments['uidList'] : '';
         $logType = (isset($arguments['logType'])) ? $arguments['logType'] : 2;
+
+        if ($uidList == 'DeleteAllThisTypeSysLogEntries')
         {
-            $cntDeleted = $this->logEntryRepository->deleteByUidList($uidList);
+            $cntDeleted = $this->syslogService->deleteByLogType((int)$logType);
             $this->addFlashMessage(
-                $cntDeleted . ' entries deleted.',
+                $cntDeleted . ' entries of type ' . $logType . ' deleted.',
                 'table sys_log',
                 AbstractMessage::OK,
                 false);
+        } else {
+            if (!empty($uidList))
+            {
+                $cntDeleted = $this->syslogService->deleteByUidList($uidList);
+                $this->addFlashMessage(
+                    $cntDeleted . ' entries deleted.',
+                    'table sys_log',
+                    AbstractMessage::OK,
+                    false);
+            }
         }
+
         return (new ForwardResponse('syslog'))
             ->withArguments(['logType' => $logType]);
     }

@@ -27,7 +27,7 @@ class Mod1Service extends ActionController
         //$languageService = $this->getLanguageService();
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
         foreach([
-                    'index' => 'Mod1:.:actions-house',
+                    'index' => 'Mod1:Home:actions-house',
                     'fileCheck' => 'Mod1:File Check:install-scan-extensions',
                     'syslog' => 'Mod1:Syslog:actions-debug',
                     'securityCheck' => 'Mod1:Security Check:overlay-locked',
