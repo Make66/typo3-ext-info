@@ -159,10 +159,6 @@ class Mod1Controller extends ActionController
     protected array $fileInfo = [
         '/index.php' => [
             '10.4.37' => ['size' => 987],
-            '11.5.30' => ['size' => 815],
-            '11.5.31' => ['size' => 822],
-            '11.5.32' => ['size' => 822],
-            '11.5.33' => ['size' => 822],
         ]
     ];
 
@@ -208,7 +204,9 @@ class Mod1Controller extends ActionController
     public function initializeAction()
     {
         $this->isComposerMode = $this->environment->isComposerMode();
+        $this->context = $this->environment->getContext();
         $this->publicPath = $this->environment->getPublicPath();
+        $this->projectPath = $this->environment->getProjectPath();
         $this->extPath = $this->environment->getExtensionsPath() . '/' . self::EXTKEY;
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
@@ -216,9 +214,12 @@ class Mod1Controller extends ActionController
         // global template information
         $this->globalTemplateVars = [
             't3version' => $this->t3version,
+            'context' => $this->context,
+            'projectPath' => $this->projectPath,
             'publicPath' => $this->publicPath,
+            'typo3Path' => $this->publicPath . '/typo3', // up to T3v11, changes in T3v12
             'isComposerMode' => $this->isComposerMode,
-            'memoryLimit' => $memoryLimit = ini_get('memory_limit'),
+            'memoryLimit' => ini_get('memory_limit'),
             //'sysinfoWebPath' => $sysinfoWebPath,
             //'jsCheckPages' => $jsCheckPages,
         ];
@@ -277,6 +278,80 @@ class Mod1Controller extends ActionController
         $this->view->assign('content', $content);
         $this->view->assignMultiple($this->globalTemplateVars);
         
+    }
+
+    public function fileCheckAction()
+    {
+        // part 1: find all files in sys_file and compare to filesystem
+        $table = 'sys_file';
+        $rows = $this->connectionPool
+            ->getConnectionForTable($table)
+            ->select(
+                ['*'],
+                $table
+            )->fetchAllAssociative();
+        $cntFilesThere= count($rows);
+        $filesNotThere = [];
+        $sysFile = [];  // cache the database for part 2
+        $max = 50;
+        foreach($rows as $row)
+        {
+            //if ($max-- < 1) break;
+            $filePath = ($row['storage'] === 1 )
+                ? '/fileadmin' . $row['identifier']
+                : $row['identifier'];
+
+            // publicPath is something like '/var/www/html/public'
+            $isFile = @is_file($this->publicPath . '/' . $filePath);
+            if (!$isFile) $filesNotThere[] = $filePath;
+            $sysFile[sha1($filePath)] = $filePath;
+        }
+        $cntFilesNotThere = count($filesNotThere);
+        \nn\t3::debug([
+            'sysFile' => $sysFile,
+            'missing' => $filesNotThere,
+        ], 'Files in FAL, but not in filesystem');
+
+        // part 2: excessive files: find all public files and compare to sys_file entries
+        $directory = new \RecursiveDirectoryIterator($this->publicPath, \FilesystemIterator::SKIP_DOTS);
+        $iterator = new \RecursiveIteratorIterator($directory);
+        $excessiveFiles = array();
+        foreach ($iterator as $info) {
+            // always remove publicPath
+            $filePath = str_replace($this->publicPath, '', $info->getPathname());
+            if (!array_key_exists(sha1($filePath), $sysFile))
+            {
+                if (str_contains($filePath, '/fileadmin/kunden/mbauer/panorama/')) continue;
+                if (str_contains($filePath, '/Galerie/')) continue;
+                if (str_contains($filePath, '/fileadmin/templates/')) continue;
+                if (str_contains($filePath, '/_assets/')) continue;
+                if (str_contains($filePath, '/_processed_/')) continue;
+                if (str_contains($filePath, '/typo3')) continue;
+                if (str_contains($filePath, '/index.html')) continue;
+                if (str_contains($filePath, '/index.php')) continue;
+                if (str_contains($filePath, '/.htaccess')) continue;
+                $excessiveFiles[sha1($filePath)] = $filePath;
+            }
+        }
+        $cntExcessiveFiles = count($excessiveFiles);
+
+        \nn\t3::debug([
+            '$excessiveFiles' => $excessiveFiles,
+        ], 'Files in Filesystem, but not in FAL');
+
+        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->view->assignMultiple([
+            'cntFilesThere' => $cntFilesThere,
+            'cntFilesNotThere' => $cntFilesNotThere,
+            'filesNotThere' => $filesNotThere,
+            'cntExcessiveFiles' => $cntExcessiveFiles,
+            'excessiveFiles' => $excessiveFiles,
+        ]);
+    }
+
+    public function indexAction()
+    {
+        $this->view->assignMultiple($this->globalTemplateVars);
     }
 
     /**
