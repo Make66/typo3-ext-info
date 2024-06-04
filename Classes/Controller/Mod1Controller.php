@@ -2,15 +2,12 @@
 
 namespace Taketool\Sysinfo\Controller;
 
-use Closure;
 use PDO;
 use Taketool\Sysinfo\Domain\Repository\LogEntryRepository;
-use Taketool\Sysinfo\Service\Mod1Service;
 use Taketool\Sysinfo\Service\SyslogService;
 use Taketool\Sysinfo\Utility\SysinfoUtility;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
-use TYPO3\CMS\Belog\Domain\Model\Constraint;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -26,6 +23,7 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
 use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
+use TYPO3\CMS\Core\Messaging\AbstractMessage;
 
 /***************************************************************
  *  Copyright notice
@@ -167,7 +165,6 @@ class Mod1Controller extends ActionController
     protected Environment $environment;
     protected IconFactory $iconFactory;
     protected LogEntryRepository $logEntryRepository;
-    //protected Mod1Service $mod1Service;
     protected ModuleTemplate $moduleTemplate;
     protected PageRepository $pageRepository;
     protected SiteConfiguration $siteConfiguration;
@@ -180,8 +177,6 @@ class Mod1Controller extends ActionController
         Environment $environment,
         IconFactory $iconFactory,
         LogEntryRepository $logEntryRepository,
-        //Mod1Service $mod1Service,
-        // ModuleTemplateFactory $moduleTemplateFactory,
         PageRepository $pageRepository,
         SiteConfiguration $siteConfiguration,
         SyslogService $syslogService
@@ -289,14 +284,12 @@ class Mod1Controller extends ActionController
             ->select(
                 ['*'],
                 $table
-            )->fetchAllAssociative();
+            )->fetchAll();
         $cntFilesThere= count($rows);
         $filesNotThere = [];
         $sysFile = [];  // cache the database for part 2
-        $max = 50;
         foreach($rows as $row)
         {
-            //if ($max-- < 1) break;
             $filePath = ($row['storage'] === 1 )
                 ? '/fileadmin' . $row['identifier']
                 : $row['identifier'];
@@ -603,13 +596,32 @@ class Mod1Controller extends ActionController
     public function syslogDeleteAction(): void
     {
         $arguments = $this->request->getArguments();
+        //\nn\t3::debug($arguments);//die();
         $uidList = (isset($arguments['uidList'])) ? $arguments['uidList'] : '';
         $logType = (isset($arguments['logType'])) ? $arguments['logType'] : 2;
-        $cntDeleted = $this->logEntryRepository->deleteByUidList($uidList);
-        $this->addFlashMessage($cntDeleted . ' entries deleted.');
+
+        if ($uidList == 'DeleteAllThisTypeSysLogEntries')
+        {
+            $cntDeleted = $this->syslogService->deleteByLogType((int)$logType);
+            $this->addFlashMessage(
+                $cntDeleted . ' entries of type ' . $logType . ' deleted.',
+                'table sys_log',
+                AbstractMessage::OK,
+                false);
+        } else {
+            if (!empty($uidList))
+            {
+                $cntDeleted = $this->syslogService->deleteByUidList($uidList);
+                $this->addFlashMessage(
+                    $cntDeleted . ' entries deleted.',
+                    'table sys_log',
+                    AbstractMessage::OK,
+                    false);
+            }
+        }
         $this->forward(
             'syslog',
-            'Mod1Controller',
+            'Mod1',
             self::EXTKEY,
             ['logType' => $logType]);
     }

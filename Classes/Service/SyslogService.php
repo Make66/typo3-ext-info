@@ -108,12 +108,20 @@ class SyslogService
        return $this->logEntryRepository->deleteByUidList($uidList);
     }
 
+    /**
+     * @throws Exception
+     */
+    public function deleteByLogType(int $logType): int
+    {
+        return $this->logEntryRepository->deleteByLogType($logType);
+    }
+
     protected function getSyslogConstraint(): Constraint
     {
         /** @var Constraint $constraint */
         $constraint = GeneralUtility::makeInstance(Constraint::class);
         $constraint->setStartTimestamp(0); // Output all reports for test purposes (but will be limited again, so don't worry)
-        $constraint->setNumber(10000);
+        $constraint->setNumber(100000);
         $constraint->setEndTimestamp(time());
         return $constraint;
     }
