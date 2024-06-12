@@ -5,6 +5,7 @@ namespace Taketool\Sysinfo\Controller;
 use Doctrine\DBAL\Exception;
 use PDO;
 use Psr\Http\Message\ResponseInterface;
+use Taketool\Sysinfo\Service\DeprecationService;
 use Taketool\Sysinfo\Service\Mod1Service;
 use Taketool\Sysinfo\Service\SyslogService;
 use Taketool\Sysinfo\Utility\SysinfoUtility;
@@ -270,6 +271,19 @@ class Mod1Controller extends ActionController
         $this->moduleTemplate->assign('file', $file);
         $this->moduleTemplate->assign('content', $content);
         $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+
+        return $this->moduleTemplate->renderResponse();
+    }
+
+    public function deprecationsAction(): ResponseInterface
+    {
+        $arguments = $this->request->getArguments();
+        $logFile = (isset($arguments['logFile'])) ? $arguments['logFile'] : '';
+
+        $this->moduleTemplate->assignMultiple([
+            'data' => DeprecationService::getLog($logFile),
+            'logFile' => $logFile,
+        ]);
 
         return $this->moduleTemplate->renderResponse();
     }
