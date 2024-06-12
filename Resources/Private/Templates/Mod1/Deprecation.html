@@ -25,14 +25,26 @@
     </f:then>
   </f:if>
 
-  <h3>Summary {logFile}</h3>
-  <p>We read a consolidated count of {data.res->f:count()} different deprecation log entries</p>
-
-  <f:if condition="{msg}">
+  <f:if condition="{data.msg}">
     <f:then>
-      <p>{msg}</p>
+      <p>{data.msg}</p>
     </f:then>
     <f:else>
+
+      <h3>Summary of {data.logFile}</h3>
+      <p>We read a consolidated count of {data.res->f:count()} different deprecation log entries
+        <f:form
+            action="deprecationDelete"
+            arguments="{logFile: data.logFile}"
+            id="deprecationDeleteForm"
+            style="margin-top: -1.8em;">
+          <f:form.button name="deprecationDeleteButton" style="border: 1px solid; margin-top:.3rem;" value="DeleteAllDeprecationLogEntries">
+            <core:icon identifier="actions-delete"/>
+            Delete deprecation log file
+          </f:form.button>
+        </f:form>
+      </p>
+
       <table>
         <thead>
         <th>What</th>
@@ -51,9 +63,8 @@
         </f:for>
         </tbody>
       </table>
+
     </f:else>
-
-
   </f:if>
 </f:section>
 </html>

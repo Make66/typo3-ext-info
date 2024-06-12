@@ -18,7 +18,9 @@ class DeprecationService
     public static function getLog($logFileName=''): array
     {
         $res = [];
+        $msg = '';
         $logFiles = [];
+        $file2process = $logFileName;
         $logPath = Environment::getProjectPath() . '/var/log/';
 
         // find log file(s)
@@ -35,20 +37,23 @@ class DeprecationService
         // Fetch logs
         if (count($logFiles) == 1 || $logFileName != '')
         {
-            $res = ($logFileName == '')
-                ? self::process($logPath.$logFiles[0])
-                : self::process($logPath.$logFileName);
+            $file2process = ($logFileName == '')
+                ? $logFiles[0]
+                : $logFileName;
+            $res = self::process($logPath . $file2process);
         }
 
         //\nn\t3::debug($logFiles);
 
         return [
+            'logFile' => $file2process,
             'logFiles' => $logFiles,
             'res' => $res,
+            'msg' => (count($logFiles) == 0) ? 'No deprecation log file found.' : '',
         ];
     }
 
-    private static function process($filePath)
+    private static function process($filePath): array
     {
         $res = [];
         $fileRows = file($filePath);
@@ -92,30 +97,9 @@ class DeprecationService
         return $res;
     }
 
-    /**
-     * @throws Exception
-     */
-    public function deleteByUidList(string $uidList): int
+    public static function deleteLog(string $logFile): bool
     {
-        return $this->logEntryRepository->deleteByUidList($uidList);
-    }
-
-    /**
-     * @throws Exception
-     */
-    public function deleteByLogType(int $logType): int
-    {
-        return $this->logEntryRepository->deleteByLogType($logType);
-    }
-
-    protected function getSyslogConstraint(): Constraint
-    {
-        /** @var Constraint $constraint */
-        $constraint = GeneralUtility::makeInstance(Constraint::class);
-        $constraint->setStartTimestamp(0); // Output all reports for test purposes (but will be limited again, so don't worry)
-        $constraint->setNumber(10000);
-        $constraint->setEndTimestamp(time());
-        return $constraint;
+        return @is_file(Environment::getProjectPath() . '/var/log/' . $logFile) && @unlink(Environment::getProjectPath() . '/var/log/' . $logFile);
     }
 
 }

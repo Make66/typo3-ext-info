@@ -275,7 +275,7 @@ class Mod1Controller extends ActionController
         return $this->moduleTemplate->renderResponse();
     }
 
-    public function deprecationsAction(): ResponseInterface
+    public function deprecationAction(): ResponseInterface
     {
         $arguments = $this->request->getArguments();
         $logFile = (isset($arguments['logFile'])) ? $arguments['logFile'] : '';
@@ -287,6 +287,27 @@ class Mod1Controller extends ActionController
 
         return $this->moduleTemplate->renderResponse();
     }
+
+    public function deprecationDeleteAction(): ForwardResponse
+    {
+        $arguments = $this->request->getArguments();
+      //  \nn\t3::debug($arguments);die();
+        $uidList = (isset($arguments['deprecationDeleteButton'])) ? $arguments['deprecationDeleteButton'] : '';
+        $logFile = (isset($arguments['logFile'])) ? $arguments['logFile'] : 2;
+
+        if ($uidList == 'DeleteAllDeprecationLogEntries')
+        {
+            $success = DeprecationService::deleteLog($logFile);
+            $this->addFlashMessage(
+                $logFile . ' deleted',
+                'Deprecations Log',
+                ContextualFeedbackSeverity::OK,
+                false);
+        }
+        return (new ForwardResponse('deprecation'))
+            ->withArguments(['logFile' => '']);
+    }
+
 
     public function fileCheckAction(): ResponseInterface
     {
