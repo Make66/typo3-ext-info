@@ -1,0 +1,70 @@
+{namespace tt=Taketool\Sysinfo\ViewHelpers}
+<html data-namespace-typo3-fluid="true" lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+      xmlns:f="http://typo3.org/ns/TYPO3/Fluid/ViewHelpers" xmlns:v="http://typo3.org/ns/FluidTYPO3/Vhs/ViewHelpers">
+
+<f:layout name="Default"/>
+<f:debug>{_all}</f:debug>
+<f:section name="Content">
+
+  <f:flashMessages/>
+
+  <h1>Deprecations</h1>
+
+  <f:if condition="{data.logFiles->f:count()} >1">
+    <f:then>
+      <p>There is more than one log file. Please choose a log file to investigate:</p>
+      <ul>
+        <f:for as="logFile" each="{data.logFiles}">
+          <li style="list-style: none;">
+            <f:link.action action="deprecations" arguments="{logFile: logFile}">{logFile} {core:icon(identifier:'actions-link')}</f:link.action>
+          </li>
+        </f:for>
+      </ul>
+    </f:then>
+  </f:if>
+
+  <f:if condition="{data.msg}">
+    <f:then>
+      <p>{data.msg}</p>
+    </f:then>
+    <f:else>
+
+      <h3>Summary of {data.logFile}</h3>
+      <p>We read a consolidated count of {data.res->f:count()} different deprecation log entries
+        <f:form
+            action="deprecationDelete"
+            arguments="{logFile: data.logFile}"
+            id="deprecationDeleteForm"
+            style="float: right;margin-top: -1.8em;">
+          <f:form.button name="deprecationDeleteButton" style="border: 1px solid; margin-top:.3rem;" value="DeleteAllDeprecationLogEntries">
+            <core:icon identifier="actions-delete"/>
+            Delete deprecation log file
+          </f:form.button>
+        </f:form>
+      </p>
+
+      <table>
+        <thead>
+        <th>What</th>
+        <th>&nbsp;&nbsp;&nbsp;</th>
+        <th>Issue</th>
+        <th>Message</th>
+        </thead>
+        <tbody>
+        <f:for as="log" each="{data.res}" iteration="i">
+          <tr>
+            <td nowrap="true" style="vertical-align: top">{log.what}</td>
+            <td></td>
+            <td style="vertical-align: top">{log.issue}</td>
+            <td style="">{log.row}</td>
+          </tr>
+        </f:for>
+        </tbody>
+      </table>
+
+    </f:else>
+  </f:if>
+</f:section>
+</html>

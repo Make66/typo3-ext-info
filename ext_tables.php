@@ -1,5 +1,8 @@
 <?php
 
+use Taketool\Sysinfo\Controller\CurlController;
+use Taketool\Sysinfo\Controller\Mod1Controller;
+use Taketool\Sysinfo\Controller\Sha1Controller;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\Utility\ExtensionUtility;
@@ -22,7 +25,8 @@ defined('TYPO3_MODE') || die();
             'm1',
             'top',
             [
-                'Mod1' => 'index,fileCheck,securityCheck,allTemplates,allTemplatesNoCache,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
+                'Mod1' => 'index,deprecation,deprecationDelete,fileCheck,securityCheck,allTemplates,'.
+                    'allTemplatesNoCache,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
                 'Curl'=> 'index',
                 'Sha1' => 'shaOne,shaOneJs,shaOnePhp',
             ],
@@ -41,9 +45,10 @@ defined('TYPO3_MODE') || die();
             'm1',
             'top',
             [
-                Taketool\Sysinfo\Controller\Mod1Controller::class => 'index,fileCheck,syslog,syslogDelete,securityCheck,allTemplates,allTemplatesNoCache,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
-                Taketool\Sysinfo\Controller\Sha1Controller::class => 'shaOne,shaOneJs,shaOnePhp',
-                Taketool\Sysinfo\Controller\CurlController::class => 'index',
+                Mod1Controller::class => 'index,deprecation,deprecationDelete,fileCheck,syslog,syslogDelete,'.
+                    'securityCheck,allTemplates,allTemplatesNoCache,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
+                Sha1Controller::class => 'shaOne,shaOneJs,shaOnePhp',
+                CurlController::class => 'index',
             ],
             [
                 'access' => 'user,group',

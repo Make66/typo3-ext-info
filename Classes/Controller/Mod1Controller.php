@@ -7,11 +7,13 @@ use Doctrine\DBAL\DBALException;
 use PDO;
 use Psr\Http\Message\ResponseInterface;
 use Taketool\Sysinfo\Domain\Repository\LogEntryRepository;
+use Taketool\Sysinfo\Service\DeprecationService;
 use Taketool\Sysinfo\Service\Mod1Service;
 use Taketool\Sysinfo\Service\SyslogService;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -20,6 +22,7 @@ use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Information\Typo3Version;
+use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\AbstractMessage;
 use TYPO3\CMS\Core\Package\Exception\PackageStatesUnavailableException;
 use TYPO3\CMS\Core\Page\PageRenderer;
@@ -297,6 +300,38 @@ class Mod1Controller extends ActionController
         return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
 
+    public function deprecationAction(): ResponseInterface
+    {
+        $arguments = $this->request->getArguments();
+        $logFile = (isset($arguments['logFile'])) ? $arguments['logFile'] : '';
+
+        $this->view->assignMultiple([
+            'data' => DeprecationService::getLog($logFile),
+            'logFile' => $logFile,
+        ]);
+        $this->moduleTemplate->setContent($this->view->render());
+        return $this->htmlResponse($this->moduleTemplate->renderContent());
+    }
+
+    public function deprecationDeleteAction(): ForwardResponse
+    {
+        $arguments = $this->request->getArguments();
+        //  \nn\t3::debug($arguments);die();
+        $uidList = (isset($arguments['deprecationDeleteButton'])) ? $arguments['deprecationDeleteButton'] : '';
+        $logFile = (isset($arguments['logFile'])) ? $arguments['logFile'] : 2;
+
+        if ($uidList == 'DeleteAllDeprecationLogEntries')
+        {
+            $success = DeprecationService::deleteLog($logFile);
+            $this->addFlashMessage(
+                $logFile . ' deleted',
+                'Deprecations Log',
+                AbstractMessage::OK,
+                false);
+        }
+        return (new ForwardResponse('deprecation'))
+            ->withArguments(['logFile' => '']);
+    }
     public function fileCheckAction(): ResponseInterface
     {
         // part 1: find all files in sys_file and compare to filesystem
