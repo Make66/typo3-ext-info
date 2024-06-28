@@ -1,0 +1,2 @@
+# cat=HideDeprecations; type=string; label=Serialized keys to hide
+hideDeprecations =
