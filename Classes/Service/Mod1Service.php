@@ -27,6 +27,7 @@ class Mod1Service extends ActionController
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
         foreach([
                     'index' => 'Mod1:Home:actions-house',
+                    'flexform' => 'Mod1:Flexform:actions-list',
                     'deprecation' => 'Mod1:Deprecations:actions-exclamation-triangle',
                     'fileCheck' => 'Mod1:File Check:install-scan-extensions',
                     'syslog' => 'Mod1:Syslog:actions-debug',

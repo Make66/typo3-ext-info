@@ -6,6 +6,7 @@ use Doctrine\DBAL\Exception;
 use PDO;
 use Psr\Http\Message\ResponseInterface;
 use Taketool\Sysinfo\Service\DeprecationService;
+use Taketool\Sysinfo\Service\FlexformService;
 use Taketool\Sysinfo\Service\Mod1Service;
 use Taketool\Sysinfo\Service\SyslogService;
 use Taketool\Sysinfo\Utility\SysinfoUtility;
@@ -164,6 +165,7 @@ class Mod1Controller extends ActionController
             '11.5.36' => ['size' => 815],
             '11.5.37' => ['size' => 815],
             '12.4.15' => ['size' => 815],
+            '12.4.16' => ['size' => 815],
         ]
     ];
 
@@ -397,9 +399,29 @@ class Mod1Controller extends ActionController
         return $this->moduleTemplate->renderResponse();
     }
 
+    public function flexformAction(): ResponseInterface
+    {
+        $ff = [];
+        $arguments = $this->request->getArguments();
+        $cType = (!empty($arguments['cType'])) ? $arguments['cType'] : '';
+        $extConf = FlexformService::getConf();
+
+        if (!empty($cType))
+        {
+            // get all Flexform entries filtered by ffFields
+            $ff = FlexformService::getFF($arguments['cType'], $extConf['ffFields']);
+        }
+
+        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->assign('extConf', $extConf);
+        $this->moduleTemplate->assign('ffData', $ff);
+        $this->moduleTemplate->assign('cType', $cType);
+        return $this->moduleTemplate->renderResponse();
+    }
+
     public function indexAction(): ResponseInterface
     {
-        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
         return $this->moduleTemplate->renderResponse();
     }
 
@@ -740,6 +762,7 @@ class Mod1Controller extends ActionController
             ];
         }
         //debug(['$query' =>$query, '$res'=>$res, 'pT'=>$pT, '$contentTypes'=>$contentTypes], __line__.':'.__class__.'->'.__function__.'()');
+        asort($contentTypes);
         return $contentTypes;
     }
 
@@ -832,6 +855,7 @@ class Mod1Controller extends ActionController
         }
 
         //DebuggerUtility::var_dump(['$type'=>$type, '$query' =>$query, '$res'=>$res, 'pT'=>$pT, '$pluginTypes'=>$pluginTypes], __class__.'->'.__function__.'()');
+        asort($pluginTypes);
         return $pluginTypes;
     }
 

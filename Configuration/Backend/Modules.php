@@ -23,6 +23,7 @@ return [
         'controllerActions' => [
             Mod1Controller::class => [
                 'index',
+                'flexform',
                 'deprecation','deprecationHide','deprecationClearHide','deprecationDelete',
                 'fileCheck',
                 'syslog','syslogDelete',

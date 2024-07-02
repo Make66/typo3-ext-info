@@ -1,0 +1,93 @@
+^^{namespace tt=Taketool\Sysinfo\ViewHelpers}
+<html data-namespace-typo3-fluid="true" lang="en"
+      xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
+      xmlns:f="http://typo3.org/ns/TYPO3/Fluid/ViewHelpers"
+      xmlns:v="http://typo3.org/ns/FluidTYPO3/Vhs/ViewHelpers">
+
+<f:layout name="Module"/>
+<f:debug>{_all}</f:debug>
+<f:section name="Content">
+
+    <f:flashMessages/>
+
+    <h1>Flexform</h1>
+    <p>Choose one of the following CTypes (or configure some in Extrension Configuration)</p>
+
+    <ul>
+        <f:for as="cType" each="{extConf.ffCTypes}">
+            <li style="">
+                <f:link.action action="flexform" arguments="{cType: cType}">{cType}
+                    {core:icon(identifier:'actions-link', title: 'select to continue')}
+                </f:link.action>
+            </li>
+        </f:for>
+    </ul>
+
+    <f:if condition="{ffData}">
+        <f:then>
+            <h3>Listing {f:if(condition:cType, then: 'for [{cType}]')}</h3>
+            <p>({ffData->f:count()} entries)</p>
+
+            <table>
+                <thead>
+                <th>uid</th>
+                <th>pid</th>
+                <th>hidden</th>
+                <th>deleted</th>
+                <th>values</th>
+                </thead>
+                <tbody>
+                <f:for each="{ffData}" key="key" as="f">
+                    <tr style="border-bottom: 1px solid #CCCCCC">
+                        <td nowrap="true" style="vertical-align: top">uid:{f.uid}</td>
+                        <td style="vertical-align: top">pid:{f.pid}</td>
+                        <td style="color:red;">
+                            <f:if condition="{f.hidden}">
+                                <core:icon identifier="actions-close"/>
+                            </f:if>
+                        </td>
+                        <td style="color:red;">
+                            <f:if condition="{f.deleted}">
+                                <core:icon identifier="actions-close"/>
+                            </f:if>
+                        </td>
+                        <td style="">
+                            <table>
+                                <f:for each="{f.ff}" key="key" as="val">
+                                    <tr>
+
+                                        <f:if condition="{key} == 'images'">
+                                            <f:then>
+                                                <f:for each="{val}" key="key" as="v">
+                                                image[{key}]: {v}<br>
+                                                </f:for>
+                                            </f:then>
+                                            <f:else>
+                                                <f:if condition="{key} == files">
+                                                    <f:then>
+                                                        <f:for each="{val}" key="key" as="v">
+                                                            file[{key}]: {v}<br>
+                                                        </f:for>
+                                                    </f:then>
+                                                    <f:else>
+                                                        <td>{key}:</td>
+                                                        <td>{val}</td>
+                                                    </f:else>
+                                                </f:if>
+                                            </f:else>
+                                        </f:if>
+
+                                    </tr>
+                                </f:for>
+                            </table>
+                        </td>
+                    </tr>
+                </f:for>
+                </tbody>
+            </table>
+        </f:then>
+    </f:if>
+</f:section>
+
+</html>
