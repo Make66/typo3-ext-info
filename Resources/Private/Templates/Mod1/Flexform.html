@@ -33,25 +33,29 @@
                 <thead>
                 <th>uid</th>
                 <th>pid</th>
-                <th>hidden</th>
-                <th>deleted</th>
+                <th>hid</th>
+                <td>|</td>
+                <th>del</th>
+                <th>header</th>
                 <th>values</th>
                 </thead>
                 <tbody>
                 <f:for each="{ffData}" key="key" as="f">
-                    <tr style="border-bottom: 1px solid #CCCCCC">
+                    <tr style="border-top: 1px solid #CCCCCC">
                         <td nowrap="true" style="vertical-align: top">uid:{f.uid}</td>
                         <td style="vertical-align: top">pid:{f.pid}</td>
-                        <td style="color:red;">
+                        <td style="color:red; vertical-align: top;">
                             <f:if condition="{f.hidden}">
                                 <core:icon identifier="actions-close"/>
                             </f:if>
                         </td>
-                        <td style="color:red;">
+                        <td style="vertical-align: top;">|</td>
+                        <td style="color:red; vertical-align: top;">
                             <f:if condition="{f.deleted}">
                                 <core:icon identifier="actions-close"/>
                             </f:if>
                         </td>
+                        <td style="vertical-align: top">{f.header}</td>
                         <td style="">
                             <table>
                                 <f:for each="{f.ff}" key="key" as="val">
