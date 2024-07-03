@@ -87,6 +87,11 @@
                 </tbody>
             </table>
         </f:then>
+        <f:else>
+            <f:if condition="{cType}">
+                <p style="color:red;">No data for content element "{extConf.ffPrefix}_{cType}"</p>
+            </f:if>
+        </f:else>
     </f:if>
 </f:section>
 

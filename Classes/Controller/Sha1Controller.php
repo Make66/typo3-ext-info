@@ -9,6 +9,7 @@ use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Messaging\AbstractMessage;
+use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
@@ -85,9 +86,9 @@ class Sha1Controller extends ActionController
 
         if (count($msg))
         {
-            $this->addFlashMessage(implode('. ', $msg), 'Error', AbstractMessage::ERROR);
+            $this->addFlashMessage(implode('. ', $msg), 'Error', ContextualFeedbackSeverity::ERROR);
         } else {
-            $this->addFlashMessage('All checked files match.', 'Hint', AbstractMessage::OK);
+            $this->addFlashMessage('All checked files match.', 'Hint', ContextualFeedbackSeverity::OK);
         }
 
         $this->moduleTemplate->assignMultiple([
@@ -109,9 +110,9 @@ class Sha1Controller extends ActionController
 
         if (count($msg))
         {
-            $this->addFlashMessage(implode('. ', $msg), 'Error', AbstractMessage::ERROR);
+            $this->addFlashMessage(implode('. ', $msg), 'Error', ContextualFeedbackSeverity::ERROR);
         } else {
-            $this->addFlashMessage('All checked files match.', 'Hint', AbstractMessage::OK);
+            $this->addFlashMessage('All checked files match.', 'Hint', ContextualFeedbackSeverity::OK);
         }
 
         $this->view->assignMultiple([
