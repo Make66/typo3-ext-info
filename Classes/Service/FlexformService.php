@@ -7,6 +7,8 @@ use Taketool\Sysinfo\Domain\Model\LogEntry;
 use Taketool\Sysinfo\Domain\Repository\LogEntryRepository;
 use Taketool\Sysinfo\Utility\SysinfoUtility;
 use TYPO3\CMS\Belog\Domain\Model\Constraint;
+use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationExtensionNotConfiguredException;
+use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationPathDoesNotExistException;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Configuration\FlexForm\FlexFormTools;
 use TYPO3\CMS\Core\Core\Environment;
@@ -18,6 +20,10 @@ class FlexformService
     public function __construct(
     ){}
 
+    /**
+     * @throws ExtensionConfigurationPathDoesNotExistException
+     * @throws ExtensionConfigurationExtensionNotConfiguredException
+     */
     public static function getConf(): array
     {
         $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class);
@@ -31,6 +37,11 @@ class FlexformService
         ];
     }
 
+    /**
+     * @throws ExtensionConfigurationPathDoesNotExistException
+     * @throws ExtensionConfigurationExtensionNotConfiguredException
+     * @throws Exception
+     */
     public static function getFF(string $cType, array $fields): array
     {
         $extConf = self::getConf();
