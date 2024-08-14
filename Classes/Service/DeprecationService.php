@@ -2,11 +2,9 @@
 
 namespace Taketool\Sysinfo\Service;
 
-use Doctrine\DBAL\Exception;
-use Taketool\Sysinfo\Domain\Model\LogEntry;
-use Taketool\Sysinfo\Domain\Repository\LogEntryRepository;
-use Taketool\Sysinfo\Utility\SysinfoUtility;
-use TYPO3\CMS\Belog\Domain\Model\Constraint;
+use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationExtensionNotConfiguredException;
+use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationPathDoesNotExistException;
+use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
@@ -53,19 +51,27 @@ class DeprecationService
         ];
     }
 
+    /**
+     * @throws ExtensionConfigurationPathDoesNotExistException
+     * @throws ExtensionConfigurationExtensionNotConfiguredException
+     */
     private static function process($filePath): array
     {
         $res = [];
         $fileRows = file($filePath);
+        $hides = self::getHides();
         foreach ($fileRows as $row)
         {
             // NOTICE
             if (strpos($row, '[NOTICE]'))
             {
-                $t = explode(':', $row);
-                $res[sha1(trim($t[array_key_last($t)]))] = [
+                $issue = trim(substr($row, strpos($row, 'TYPO3 Deprecation Notice:')+26));
+                $sha1 = sha1($issue);
+                if (in_array($sha1, $hides)) continue;
+
+                $res[$sha1] = [
                     'what' => 'Notice',
-                    'issue' => trim($t[array_key_last($t)]),
+                    'issue' => trim($issue),
                     'row' => trim($row),
                 ];
             }
@@ -77,7 +83,7 @@ class DeprecationService
                 $res[sha1(trim($t[array_key_last($t)]))] = [
                     'what' => 'TCA field',
                     'issue' => trim($t[0]),
-                    'row' => trim($row),
+                    'row' => '',//trim($row),
                 ];
             }
 
@@ -101,6 +107,52 @@ class DeprecationService
     {
         return @is_file(Environment::getProjectPath() . '/var/log/' . $logFile)
             && @unlink(Environment::getProjectPath() . '/var/log/' . $logFile);
+    }
+
+    /**
+     * @throws ExtensionConfigurationPathDoesNotExistException
+     * @throws ExtensionConfigurationExtensionNotConfiguredException
+     */
+    public static function hide(string $hash)
+    {
+        $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class);
+        $extConf = $extensionConfiguration->get('sysinfo');
+
+        // read ExtConf to array
+        $hides = explode(',', $extConf['hideDeprecations']);
+
+        // add hash to ExtConf
+        $hides[] = $hash;
+        if (empty($hides[0])) unset($hides[0]);
+
+        // write back ExtConf
+        $extConf['hideDeprecations'] = implode(',', $hides);
+        $extensionConfiguration->set('sysinfo', $extConf);
+    }
+
+    /**
+     * @throws ExtensionConfigurationPathDoesNotExistException
+     * @throws ExtensionConfigurationExtensionNotConfiguredException
+     */
+    public static function getHides(): array
+    {
+        $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class);
+        $extConf = $extensionConfiguration->get('sysinfo');
+
+        // read ExtConf to array
+        $hides = explode(',', $extConf['hideDeprecations']);
+        if (empty($hides[0])) unset($hides[0]);
+        return $hides;
+    }
+
+    public static function clearHide(): void
+    {
+        $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class);
+        $extConf = $extensionConfiguration->get('sysinfo');
+
+        // write back ExtConf
+        $extConf['hideDeprecations'] = '';
+        $extensionConfiguration->set('sysinfo', $extConf);
     }
 
 }

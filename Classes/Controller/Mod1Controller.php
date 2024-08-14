@@ -307,10 +307,27 @@ class Mod1Controller extends ActionController
 
         $this->view->assignMultiple([
             'data' => DeprecationService::getLog($logFile),
+            'cntFiltered' => count(DeprecationService::getHides()),
             'logFile' => $logFile,
         ]);
         $this->moduleTemplate->setContent($this->view->render());
         return $this->htmlResponse($this->moduleTemplate->renderContent());
+    }
+
+    public function deprecationHideAction(): ForwardResponse
+    {
+        $arguments = $this->request->getArguments();
+        //\nn\t3::debug($arguments);die();
+        DeprecationService::hide($arguments['key']);
+        return (new ForwardResponse('deprecation'))
+            ->withArguments(['logFile' => '']);
+    }
+
+    public function deprecationClearHideAction(): ForwardResponse
+    {
+        DeprecationService::clearHide();
+        return (new ForwardResponse('deprecation'))
+            ->withArguments(['logFile' => '']);
     }
 
     public function deprecationDeleteAction(): ForwardResponse

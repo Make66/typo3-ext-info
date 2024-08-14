@@ -2,7 +2,8 @@
 <html data-namespace-typo3-fluid="true" lang="en"
       xmlns="http://www.w3.org/1999/xhtml"
       xmlns:core="http://typo3.org/ns/TYPO3/CMS/Core/ViewHelpers"
-      xmlns:f="http://typo3.org/ns/TYPO3/Fluid/ViewHelpers" xmlns:v="http://typo3.org/ns/FluidTYPO3/Vhs/ViewHelpers">
+      xmlns:f="http://typo3.org/ns/TYPO3/Fluid/ViewHelpers"
+      xmlns:v="http://typo3.org/ns/FluidTYPO3/Vhs/ViewHelpers">
 
 <f:layout name="Default"/>
 <f:debug>{_all}</f:debug>
@@ -31,18 +32,13 @@
     </f:then>
     <f:else>
 
+      <div class="actions" style="position: absolute;right: 2rem;">
+        <div style="display: inline-block;"><f:render section="clearHideButton" arguments="{cntFiltered: cntFiltered}" /></div>
+        <div style="display: inline-block;"><f:render section="deleteLogButton" arguments="{logFile: data.logFile}" /></div>
+      </div>
+
       <h3>Summary of {data.logFile}</h3>
       <p>We read a consolidated count of {data.res->f:count()} different deprecation log entries
-        <f:form
-            action="deprecationDelete"
-            arguments="{logFile: data.logFile}"
-            id="deprecationDeleteForm"
-            style="float: right;margin-top: -1.8em;">
-          <f:form.button name="deprecationDeleteButton" style="border: 1px solid; margin-top:.3rem;" value="DeleteAllDeprecationLogEntries">
-            <core:icon identifier="actions-delete"/>
-            Delete deprecation log file
-          </f:form.button>
-        </f:form>
       </p>
 
       <table>
@@ -53,10 +49,10 @@
         <th>Message</th>
         </thead>
         <tbody>
-        <f:for as="log" each="{data.res}" iteration="i">
+        <f:for as="log" each="{data.res}" key="key" iteration="i">
           <tr>
             <td nowrap="true" style="vertical-align: top">{log.what}</td>
-            <td></td>
+            <td style="vertical-align: top"><f:render section="hideButton" arguments="{key: key}" /></td>
             <td style="vertical-align: top">{log.issue}</td>
             <td style="">{log.row}</td>
           </tr>
@@ -67,4 +63,32 @@
     </f:else>
   </f:if>
 </f:section>
+
+<f:section name="deleteLogButton">
+  <f:form
+      action="deprecationDelete"
+      arguments="{logFile: logFile}">
+    <f:form.button name="deprecationDeleteButton" style="border: 1px solid;" value="DeleteAllDeprecationLogEntries">
+      <core:icon identifier="actions-delete"/> Delete deprecation log file
+    </f:form.button>
+  </f:form>
+</f:section>
+
+<f:section name="clearHideButton">
+  <f:form action="deprecationClearHide">
+    <f:form.button value="ClearHide" style="border: 1px solid;"><core:icon identifier="actions-close" />Clear hide filter ({cntFiltered})</f:form.button>
+  </f:form>
+</f:section>
+
+<f:section name="hideButton">
+  <f:form
+      id="deprecation-hide-{key}"
+      action="deprecationHide"
+      arguments="{key: key}"
+      style="margin-top: -1.8em;">
+    <f:form.button title="Hide this" name="hide-{key}" value="HideThisSha1" style="border: 0; margin-top: 1.4rem;
+};background-color: white; color: red;"><core:icon identifier="actions-close" /></f:form.button>
+  </f:form>
+</f:section>
+
 </html>

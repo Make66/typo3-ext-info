@@ -1,0 +1,8 @@
+# cat=HideDeprecations; type=string; label=Serialized keys to hide
+hideDeprecations =
+# cat=Flexform; type=string; label=Flexform CTypes prefix
+ffPrefix =
+# cat=Flexform; type=string; label=Flexform CTypes to investigate as CSV
+ffCTypes =
+# cat=Flexform; type=string; label=Flexform fields to investigate as CSV
+ffFields = image,overlayImage,link,buttonLink

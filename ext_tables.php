@@ -25,7 +25,7 @@ defined('TYPO3_MODE') || die();
             'm1',
             'top',
             [
-                'Mod1' => 'index,deprecation,deprecationDelete,fileCheck,securityCheck,allTemplates,'.
+                'Mod1' => 'index,deprecation,deprecationHide,deprecationClearHide,deprecationDelete,fileCheck,securityCheck,allTemplates,'.
                     'allTemplatesNoCache,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
                 'Curl'=> 'index',
                 'Sha1' => 'shaOne,shaOneJs,shaOnePhp',
@@ -37,7 +37,7 @@ defined('TYPO3_MODE') || die();
             ]
         );
     }
-    if ($t3majorVersion > 9)
+    if ($t3majorVersion < 12)
     {
         ExtensionUtility::registerModule(
             $extensionName,
@@ -45,7 +45,7 @@ defined('TYPO3_MODE') || die();
             'm1',
             'top',
             [
-                Mod1Controller::class => 'index,deprecation,deprecationDelete,fileCheck,syslog,syslogDelete,'.
+                Mod1Controller::class => 'index,deprecation,deprecationHide,deprecationClearHide,deprecationDelete,fileCheck,syslog,syslogDelete,'.
                     'securityCheck,allTemplates,allTemplatesNoCache,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
                 Sha1Controller::class => 'shaOne,shaOneJs,shaOnePhp',
                 CurlController::class => 'index',
