@@ -80,22 +80,26 @@ class DeprecationService
             if (str_contains($row, 'The TCA field'))
             {
                 $t = explode('.', $row);
-                $res[sha1(trim($t[array_key_last($t)]))] = [
-                    'what' => 'TCA field',
-                    'issue' => trim($t[0]),
-                    'row' => trim($row),
-                ];
+                $hash = sha1(trim($t[array_key_last($t)]));
+                if (!in_array($hash, $hides))
+                    $res[sha1(trim($t[array_key_last($t)]))] = [
+                        'what' => 'TCA field',
+                        'issue' => trim($t[0]),
+                        'row' => trim($row),
+                    ];
             }
 
             // TCA property
             if (str_contains($row, 'The TCA property'))
             {
                 $t = explode('.', $row);
-                $res[sha1(trim($t[array_key_last($t)]))] = [
-                    'what' => 'TCA property',
-                    'issue' => trim($t[0]),
-                    'row' => trim($row),
-                ];
+                $hash = sha1(trim($t[array_key_last($t)]));
+                if (!in_array($hash, $hides))
+                    $res[sha1(trim($t[array_key_last($t)]))] = [
+                        'what' => 'TCA property',
+                        'issue' => trim($t[0]),
+                        'row' => trim($row),
+                    ];
             }
 
         }
