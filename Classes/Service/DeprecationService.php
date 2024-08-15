@@ -58,19 +58,19 @@ class DeprecationService
     {
         $res = [];
         $fileRows = file($filePath);
-        $hideDeprecations = self::getHide();
-
+        $hides = self::getHides();
         foreach ($fileRows as $row)
         {
             // NOTICE
             if (strpos($row, '[NOTICE]'))
             {
-                $t = explode(':', $row);
-                $hash = sha1(trim($t[array_key_last($t)]));
-                if (!in_array($hash, $hideDeprecations))
-                $res[$hash] = [
+                $issue = trim(substr($row, strpos($row, 'TYPO3 Deprecation Notice:')+26));
+                $sha1 = sha1($issue);
+                if (in_array($sha1, $hides)) continue;
+
+                $res[$sha1] = [
                     'what' => 'Notice',
-                    'issue' => trim($t[array_key_last($t)]),
+                    'issue' => trim($issue),
                     'row' => trim($row),
                 ];
             }
@@ -80,7 +80,7 @@ class DeprecationService
             {
                 $t = explode('.', $row);
                 $hash = sha1(trim($t[array_key_last($t)]));
-                if (!in_array($hash, $hideDeprecations))
+                if (!in_array($hash, $hides))
                 $res[sha1(trim($t[array_key_last($t)]))] = [
                     'what' => 'TCA field',
                     'issue' => trim($t[0]),
@@ -93,7 +93,7 @@ class DeprecationService
             {
                 $t = explode('.', $row);
                 $hash = sha1(trim($t[array_key_last($t)]));
-                if (!in_array($hash, $hideDeprecations))
+                if (!in_array($hash, $hides))
                 $res[sha1(trim($t[array_key_last($t)]))] = [
                     'what' => 'TCA property',
                     'issue' => trim($t[0]),
