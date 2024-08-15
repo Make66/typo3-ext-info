@@ -83,7 +83,7 @@ class DeprecationService
                 $res[sha1(trim($t[array_key_last($t)]))] = [
                     'what' => 'TCA field',
                     'issue' => trim($t[0]),
-                    'row' => '',//trim($row),
+                    'row' => trim($row),
                 ];
             }
 
