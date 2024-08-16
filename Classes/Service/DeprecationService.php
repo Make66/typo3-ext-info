@@ -67,7 +67,10 @@ class DeprecationService
             {
                 $issue = trim(substr($row, strpos($row, 'TYPO3 Deprecation Notice:')+26));
                 $sha1 = sha1($issue);
-                if (in_array($sha1, $hides)) continue;
+                if (
+                    in_array($sha1, $hides) ||
+                    str_contains($row, 'Automatic TCA migration done during bootstrap')
+                ) continue;
 
                 $res[$sha1] = [
                     'what' => 'Notice',

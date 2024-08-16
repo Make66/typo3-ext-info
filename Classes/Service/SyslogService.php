@@ -11,7 +11,8 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class SyslogService
 {
-    protected LogEntryRepository $logEntryRepository;
+    private LogEntryRepository $logEntryRepository;
+
     public function __construct(
         LogEntryRepository $logEntryRepository
     )

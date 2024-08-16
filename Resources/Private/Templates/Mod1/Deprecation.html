@@ -19,7 +19,7 @@
       <ul>
         <f:for as="logFile" each="{data.logFiles}">
           <li style="list-style: none;">
-            <f:link.action action="deprecations" arguments="{logFile: logFile}">{logFile} {core:icon(identifier:'actions-link')}</f:link.action>
+            <f:link.action action="deprecation" arguments="{logFile: logFile}">{logFile} {core:icon(identifier:'actions-link')}</f:link.action>
           </li>
         </f:for>
       </ul>

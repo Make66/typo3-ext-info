@@ -183,6 +183,7 @@ class Mod1Controller extends ActionController
     protected SiteConfiguration $siteConfiguration;
     protected SyslogService $syslogService;
     private \TYPO3\CMS\Core\Core\ApplicationContext $context;
+    private string $projectPath;
 
     public function __construct(
         ConnectionPool $connectionPool,

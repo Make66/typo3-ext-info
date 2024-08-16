@@ -45,7 +45,7 @@ defined('TYPO3_MODE') || die();
             'm1',
             'top',
             [
-                Mod1Controller::class => 'index,deprecation,deprecations,deprecationHide,deprecationClearHide,deprecationDelete,fileCheck,syslog,syslogDelete,'.
+                Mod1Controller::class => 'index,deprecation,deprecationHide,deprecationClearHide,deprecationDelete,fileCheck,syslog,syslogDelete,'.
                     'securityCheck,allTemplates,allTemplatesNoCache,checkDomains,deleteFile,plugins,rootTemplates,viewFile',
                 Sha1Controller::class => 'shaOne,shaOneJs,shaOnePhp',
                 CurlController::class => 'index',
