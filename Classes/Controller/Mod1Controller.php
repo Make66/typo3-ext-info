@@ -285,7 +285,7 @@ class Mod1Controller extends ActionController
 
         $this->moduleTemplate->assignMultiple([
             'data' => DeprecationService::getLog($logFile),
-            'cntFiltered' => count(DeprecationService::getHide()),
+            'cntFiltered' => count(DeprecationService::getHides()),
             'logFile' => $logFile,
         ]);
 

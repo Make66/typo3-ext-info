@@ -61,12 +61,14 @@ class DeprecationService
         $hides = self::getHides();
         foreach ($fileRows as $row)
         {
-            // NOTICE
+            // NOTICE; special treatment for Notice with "Automatic TCA migration done during bootstrap"
+            // => drop line because it contains no valuable information
             if (strpos($row, '[NOTICE]'))
             {
                 $issue = trim(substr($row, strpos($row, 'TYPO3 Deprecation Notice:')+26));
                 $sha1 = sha1($issue);
                 if (in_array($sha1, $hides)) continue;
+                if (str_contains($row, 'Automatic TCA migration done during bootstrap')) continue;
 
                 $res[$sha1] = [
                     'what' => 'Notice',
@@ -128,7 +130,7 @@ class DeprecationService
         $extensionConfiguration->set('sysinfo', $extConf);
     }
 
-    public static function getHide(): array
+    public static function getHides(): array
     {
         $extensionConfiguration = GeneralUtility::makeInstance(ExtensionConfiguration::class);
         $extConf = $extensionConfiguration->get('sysinfo');
