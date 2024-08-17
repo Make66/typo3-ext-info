@@ -8,6 +8,7 @@ use PDO;
 use Psr\Http\Message\ResponseInterface;
 use Taketool\Sysinfo\Domain\Repository\LogEntryRepository;
 use Taketool\Sysinfo\Service\DeprecationService;
+use Taketool\Sysinfo\Service\FlexformService;
 use Taketool\Sysinfo\Service\Mod1Service;
 use Taketool\Sysinfo\Service\SyslogService;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
@@ -417,6 +418,28 @@ class Mod1Controller extends ActionController
             'cntExcessiveFiles' => $cntExcessiveFiles,
             'excessiveFiles' => $excessiveFiles,
         ]);
+        $this->moduleTemplate->setContent($this->view->render());
+        return $this->htmlResponse($this->moduleTemplate->renderContent());
+    }
+
+    public function flexformAction(): ResponseInterface
+    {
+        $ff = [];
+        $arguments = $this->request->getArguments();
+        $cType = (!empty($arguments['cType'])) ? $arguments['cType'] : '';
+        $extConf = FlexformService::getConf();
+
+        if (!empty($cType))
+        {
+            // get all Flexform entries filtered by ffFields
+            $ff = FlexformService::getFF($arguments['cType'], $extConf['ffFields']);
+        }
+
+        $this->view->assignMultiple($this->globalTemplateVars);
+        $this->view->assign('extConf', $extConf);
+        $this->view->assign('ffData', $ff);
+        $this->view->assign('cType', $cType);
+
         $this->moduleTemplate->setContent($this->view->render());
         return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
