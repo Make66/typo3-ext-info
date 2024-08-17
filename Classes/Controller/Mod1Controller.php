@@ -171,6 +171,8 @@ class Mod1Controller extends ActionController
     protected SyslogService $syslogService;
 
     protected $defaultViewObjectName = \TYPO3\CMS\Backend\View\BackendTemplateView::class;
+    private \TYPO3\CMS\Core\Core\ApplicationContext $context;
+    private string $projectPath;
 
     public function __construct(
         ConnectionPool $connectionPool,
