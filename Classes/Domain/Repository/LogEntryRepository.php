@@ -36,18 +36,21 @@ class LogEntryRepository extends \TYPO3\CMS\Belog\Domain\Repository\LogEntryRepo
     }
 
     /**
+     * executes something like
+     * DELETE FROM `sys_log` WHERE `error` = 2
+     *
      * @throws DBALException
      */
-    public function deleteByLogType(int $logType): int
+    public function deleteByLogType(int $errorType): int
     {
         $queryBuilder = GeneralUtility::makeInstance(ConnectionPool::class)
             ->getQueryBuilderForTable('sys_log');
 
-        return $queryBuilder->delete('sys_log')
+         $queryBuilder->delete('sys_log')
             ->where(
-                $queryBuilder->expr()->eq('type', $logType)
-            )
-            ->executeStatement();
+                $queryBuilder->expr()->eq('error', $errorType)
+            );
+        return $queryBuilder->executeStatement();
     }
 
 }
