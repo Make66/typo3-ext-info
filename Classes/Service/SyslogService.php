@@ -3,10 +3,12 @@
 namespace Taketool\Sysinfo\Service;
 
 use Doctrine\DBAL\Exception;
-use Taketool\Sysinfo\Domain\Model\LogEntry;
+//use Taketool\Sysinfo\Domain\Model\LogEntry;
 use Taketool\Sysinfo\Domain\Repository\LogEntryRepository;
 use Taketool\Sysinfo\Utility\SysinfoUtility;
 use TYPO3\CMS\Belog\Domain\Model\Constraint;
+use TYPO3\CMS\Belog\Domain\Model\LogEntry;
+use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class SyslogService
@@ -32,25 +34,27 @@ class SyslogService
         $logsCount[2] = 0;
         $logsCount[3] = 0;
 
+        //DebugUtility::debug($rawLogs);
+
         // If no logs were found, we don't need to continue
         if (($cntLogs = count($rawLogs)) > 0) {
             // Filter for errors, because the LogRepo cannot filter them in advance
-            $logsByType[0] = array_filter($rawLogs->toArray(), function (LogEntry $log) {
+            $logsByType[0] = array_filter($rawLogs, function (LogEntry $log) {
                 return $log->getError() == 0;
             });
             $logsCount[0] = count($logsByType[0]);
 
-            $logsByType[1] = array_filter($rawLogs->toArray(), function (LogEntry $log) {
+            $logsByType[1] = array_filter($rawLogs, function (LogEntry $log) {
                 return $log->getError() == 1;
             });
             $logsCount[1] = count($logsByType[1]);
 
-            $logsByType[2] = array_filter($rawLogs->toArray(), function (LogEntry $log) {
+            $logsByType[2] = array_filter($rawLogs, function (LogEntry $log) {
                 return $log->getError() == 2;
             });
             $logsCount[2] = count($logsByType[2]);
 
-            $logsByType[3] = array_filter($rawLogs->toArray(), function (LogEntry $log) {
+            $logsByType[3] = array_filter($rawLogs, function (LogEntry $log) {
                 return $log->getError() == 3;
             });
             $logsCount[3] = count($logsByType[3]);

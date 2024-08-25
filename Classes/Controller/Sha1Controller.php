@@ -13,6 +13,7 @@ use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
+use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
 class Sha1Controller extends ActionController
 {
@@ -39,6 +40,8 @@ class Sha1Controller extends ActionController
     public function initializeAction(): void
     {
         $this->moduleTemplate = $this->moduleTemplateFactory->create($this->request);
+        $this->moduleTemplate->setTitle(LocalizationUtility::translate('LLL:EXT:beuser/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'));
+        $this->moduleTemplate->setFlashMessageQueue($this->getFlashMessageQueue());
         $this->mod1Service->addDocHeaderButtons($this->moduleTemplate, $this->uriBuilder);
 
         $environment = GeneralUtility::makeInstance(Environment::class);
@@ -72,7 +75,7 @@ class Sha1Controller extends ActionController
     public function shaOneAction(): ResponseInterface
     {
         $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
-        return $this->moduleTemplate->renderResponse();
+        return $this->moduleTemplate->renderResponse('Sha1/ShaOne');
     }
 
     public function shaOneJsAction(): ResponseInterface
@@ -96,7 +99,7 @@ class Sha1Controller extends ActionController
             'shaMsg' => $shaMsg,
         ]);
         $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
-        return $this->moduleTemplate->renderResponse();
+        return $this->moduleTemplate->renderResponse('Sha1/ShaOneJs');
     }
 
     public function shaOnePhpAction(): ResponseInterface
@@ -121,7 +124,7 @@ class Sha1Controller extends ActionController
         ]);
         $this->view->assignMultiple($this->globalTemplateVars);
 
-        return $this->moduleTemplate->renderResponse();
+        return $this->moduleTemplate->renderResponse('Sha1/ShaOnePhp');
     }
     /**
      * returns array of messages[$filepath] => message
