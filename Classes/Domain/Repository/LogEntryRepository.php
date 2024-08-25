@@ -41,7 +41,7 @@ class LogEntryRepository extends \TYPO3\CMS\Belog\Domain\Repository\LogEntryRepo
 
         return $queryBuilder->delete('sys_log')
             ->where(
-                $queryBuilder->expr()->eq('type', $logType)
+                $queryBuilder->expr()->eq('error', $logType)
             )
             ->execute();
     }
