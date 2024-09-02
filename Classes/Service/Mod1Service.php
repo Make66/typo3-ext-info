@@ -28,6 +28,7 @@ class Mod1Service extends ActionController
         foreach([
                     'index' => 'Mod1:Home:actions-house',
                     'flexform' => 'Mod1:Flexform:actions-list',
+                    'crawler' => 'Crawl:Crawler:actions-debug',
                     'deprecation' => 'Mod1:Deprecations:actions-exclamation-triangle',
                     'fileCheck' => 'Mod1:File Check:install-scan-extensions',
                     'syslog' => 'Mod1:Syslog:actions-debug',
