@@ -329,10 +329,10 @@ class Mod1Controller extends ActionController
             ->withArguments(['logFile' => '']);
     }
 
-
     public function fileCheckAction(): ResponseInterface
     {
-        // part 1: find all files in sys_file and compare to filesystem
+        // part 1: find all files in sys_file, that are referenced in sys_file_reference and compare to filesystem
+        /*
         $table = 'sys_file';
         $rows = $this->connectionPool
             ->getConnectionForTable($table)
@@ -340,6 +340,23 @@ class Mod1Controller extends ActionController
                 ['*'],
                 $table
             )->fetchAllAssociative();
+        */
+
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_file');
+        $result = $queryBuilder
+        ->select('sys_file.uid', 'sys_language.title')
+        ->from('sys_file', 'f')
+        ->join(
+            'f',
+            'sys_file_reference',
+            'r',
+            $queryBuilder->expr()->eq('r.uid_foreign', $queryBuilder->quoteIdentifier('f.uid'))
+        )
+        ->where(
+            $queryBuilder->expr()->left(6,'f.identifier', $queryBuilder->createNamedParameter(42, Connection::PARAM_INT))
+        )
+        ->executeQuery();
+
         $cntFilesThere= count($rows);
         $filesNotThere = [];
         $sysFile = [];  // cache the database for part 2

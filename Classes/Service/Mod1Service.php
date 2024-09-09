@@ -28,7 +28,7 @@ class Mod1Service extends ActionController
         foreach([
                     'index' => 'Mod1:Home:actions-house',
                     'flexform' => 'Mod1:Flexform:actions-list',
-                    'crawler' => 'Crawl:Crawler:actions-debug',
+                    //'crawler' => 'Crawl:Crawler:actions-debug',
                     'deprecation' => 'Mod1:Deprecations:actions-exclamation-triangle',
                     'fileCheck' => 'Mod1:File Check:install-scan-extensions',
                     'syslog' => 'Mod1:Syslog:actions-debug',
@@ -44,7 +44,8 @@ class Mod1Service extends ActionController
                 ->setTitle($title)
                 ->setShowLabelText($action)
                 ->setHref($uriBuilder->uriFor($action,null,$controller))
-                ->setIcon($iconFactory->getIcon($icon, Icon::SIZE_SMALL));
+                ->setIcon($iconFactory->getIcon($icon, \TYPO3\CMS\Core\Imaging\IconSize::SMALL
+                ));
             $buttonBar->addButton($addButton);
         }
     }
