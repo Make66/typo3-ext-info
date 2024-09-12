@@ -332,7 +332,6 @@ class Mod1Controller extends ActionController
     public function fileCheckAction(): ResponseInterface
     {
         // part 1: find all files in sys_file, that are referenced in sys_file_reference and compare to filesystem
-        /*
         $table = 'sys_file';
         $rows = $this->connectionPool
             ->getConnectionForTable($table)
@@ -340,25 +339,11 @@ class Mod1Controller extends ActionController
                 ['*'],
                 $table
             )->fetchAllAssociative();
-        */
 
-        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('sys_file');
-        $result = $queryBuilder
-        ->select('sys_file.uid', 'sys_language.title')
-        ->from('sys_file', 'f')
-        ->join(
-            'f',
-            'sys_file_reference',
-            'r',
-            $queryBuilder->expr()->eq('r.uid_foreign', $queryBuilder->quoteIdentifier('f.uid'))
-        )
-        ->where(
-            $queryBuilder->expr()->left(6,'f.identifier', $queryBuilder->createNamedParameter(42, Connection::PARAM_INT))
-        )
-        ->executeQuery();
 
         $cntFilesThere= count($rows);
         $filesNotThere = [];
+        $filesIsThere = [];
         $sysFile = [];  // cache the database for part 2
         $max = 50;
         foreach($rows as $row)
@@ -371,15 +356,18 @@ class Mod1Controller extends ActionController
             // publicPath is something like '/var/www/html/public'
             $isFile = @is_file($this->publicPath . '/' . $filePath);
             if (!$isFile) $filesNotThere[] = $filePath;
+            else $filesIsThere[] = $filePath;
+
             $sysFile[sha1($filePath)] = $filePath;
         }
         $cntFilesNotThere = count($filesNotThere);
-        /*
-        \nn\t3::debug([
+
+        DebugUtility::debug([
             'sysFile' => $sysFile,
+            'having' => $filesIsThere,
             'missing' => $filesNotThere,
         ], 'Files in FAL, but not in filesystem');
-        */
+
 
         // part 2: excessive files: find all public files and compare to sys_file entries
         $directory = new \RecursiveDirectoryIterator($this->publicPath, \FilesystemIterator::SKIP_DOTS);
@@ -410,6 +398,7 @@ class Mod1Controller extends ActionController
         ], 'Files in Filesystem, but not in FAL');
         */
 
+        $dirsFromSFR = $this->mod1Service->getDirsFromSFR();
         $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
         $this->moduleTemplate->assignMultiple([
             'cntFilesThere' => $cntFilesThere,
@@ -417,6 +406,8 @@ class Mod1Controller extends ActionController
             'filesNotThere' => $filesNotThere,
             'cntExcessiveFiles' => $cntExcessiveFiles,
             'excessiveFiles' => $excessiveFiles,
+            'dirsFromSFR' => $dirsFromSFR,
+            'cntDirsFromSFR' => count($dirsFromSFR)??0,
         ]);
 
         return $this->moduleTemplate->renderResponse('Mod1/FileCheck');
