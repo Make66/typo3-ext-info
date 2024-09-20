@@ -3,19 +3,19 @@
 namespace Taketool\Sysinfo\Controller;
 
 use Doctrine\DBAL\Exception;
-use PDO;
 use Psr\Http\Message\ResponseInterface;
 use Taketool\Sysinfo\Service\DeprecationService;
 use Taketool\Sysinfo\Service\FlexformService;
 use Taketool\Sysinfo\Service\Mod1Service;
 use Taketool\Sysinfo\Service\SyslogService;
 use Taketool\Sysinfo\Utility\SysinfoUtility;
-use TYPO3\CMS\Backend\Attribute\Controller as BackendController;
+use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
@@ -23,11 +23,13 @@ use TYPO3\CMS\Core\Information\Typo3Version;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
+use TYPO3\CMS\Core\Utility\DebugUtility;
 use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
 use TYPO3\CMS\Extbase\Http\ForwardResponse;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
+use TYPO3\CMS\Extbase\Utility\LocalizationUtility;
 
 /***************************************************************
  *  Copyright notice
@@ -161,9 +163,6 @@ class Mod1Controller extends ActionController
     ];
     protected array $fileInfo = [
         '/index.php' => [
-            '10.4.37' => ['size' => 987],
-            '11.5.36' => ['size' => 815],
-            '11.5.37' => ['size' => 815],
             '12.4.15' => ['size' => 815],
             '12.4.16' => ['size' => 815],
             '12.4.17' => ['size' => 815],
@@ -195,6 +194,8 @@ class Mod1Controller extends ActionController
     {
         $this->moduleTemplate = $this->moduleTemplateFactory->create($this->request);
         $this->mod1Service->addDocHeaderButtons($this->moduleTemplate, $this->uriBuilder);
+        $this->moduleTemplate->setTitle(LocalizationUtility::translate('LLL:EXT:beuser/Resources/Private/Language/locallang_mod.xlf:mlang_tabs_tab'));
+        $this->moduleTemplate->setFlashMessageQueue($this->getFlashMessageQueue());
 
         $this->isComposerMode = $this->environment->isComposerMode();
         $this->publicPath = $this->environment->getPublicPath();
@@ -216,12 +217,11 @@ class Mod1Controller extends ActionController
      */
     public function allTemplatesAction(): ResponseInterface
     {
-        $templates = $this->getAllTemplates(false);
+        $data['templates'] = $this->templatesToView($this->getAllTemplates(false));
 
-        $this->moduleTemplate->assign('templates', $this->templatesToView($templates));
-        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->assignMultiple(array_merge($data,$this->globalTemplateVars));
 
-        return $this->moduleTemplate->renderResponse();
+        return $this->moduleTemplate->renderResponse('Mod1/AllTemplates');
     }
 
     /**
@@ -258,7 +258,7 @@ class Mod1Controller extends ActionController
         $this->moduleTemplate->assign('jsInlineCode', $jsInlineCode);
         $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
 
-        return $this->moduleTemplate->renderResponse();
+        return $this->moduleTemplate->renderResponse('Mod1/CheckDomains');
     }
 
     public function deleteFileAction( string $file = ''): ResponseInterface
@@ -275,7 +275,7 @@ class Mod1Controller extends ActionController
         $this->moduleTemplate->assign('content', $content);
         $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
 
-        return $this->moduleTemplate->renderResponse();
+        return $this->moduleTemplate->renderResponse('Mod1/DeleteFile');
     }
 
     public function deprecationAction(): ResponseInterface
@@ -289,7 +289,7 @@ class Mod1Controller extends ActionController
             'logFile' => $logFile,
         ]);
 
-        return $this->moduleTemplate->renderResponse();
+        return $this->moduleTemplate->renderResponse('Mod1/Deprecation');
     }
 
     public function deprecationHideAction(): ForwardResponse
@@ -328,19 +328,21 @@ class Mod1Controller extends ActionController
             ->withArguments(['logFile' => '']);
     }
 
-
     public function fileCheckAction(): ResponseInterface
     {
-        // part 1: find all files in sys_file and compare to filesystem
+        // part 1: find all files in sys_file, that are referenced in sys_file_reference and compare to filesystem
         $table = 'sys_file';
         $rows = $this->connectionPool
             ->getConnectionForTable($table)
             ->select(
                 ['*'],
                 $table
-            )->fetchAllAssociative();
+            )
+            ->fetchAllAssociative();
+
         $cntFilesThere= count($rows);
         $filesNotThere = [];
+        $filesIsThere = [];
         $sysFile = [];  // cache the database for part 2
         $max = 50;
         foreach($rows as $row)
@@ -351,15 +353,23 @@ class Mod1Controller extends ActionController
                 : $row['identifier'];
 
             // publicPath is something like '/var/www/html/public'
-            $isFile = @is_file($this->publicPath . '/' . $filePath);
-            if (!$isFile) $filesNotThere[] = $filePath;
+            $isFile = @is_file($this->publicPath . '/fileadmin' . $filePath);
+            //DebugUtility::debug($this->publicPath . '/fileadmin' . $filePath);
+            if (!$isFile &&  $this->isPathOfInterest($filePath)) {
+                $filesNotThere[] = $filePath;
+            }
+            else $filesIsThere[] = $filePath;
+
             $sysFile[sha1($filePath)] = $filePath;
         }
         $cntFilesNotThere = count($filesNotThere);
-        \nn\t3::debug([
+
+        DebugUtility::debug([
             'sysFile' => $sysFile,
+            'having' => $filesIsThere,
             'missing' => $filesNotThere,
         ], 'Files in FAL, but not in filesystem');
+
 
         // part 2: excessive files: find all public files and compare to sys_file entries
         $directory = new \RecursiveDirectoryIterator($this->publicPath, \FilesystemIterator::SKIP_DOTS);
@@ -384,10 +394,13 @@ class Mod1Controller extends ActionController
         }
         $cntExcessiveFiles = count($excessiveFiles);
 
+        /*
         \nn\t3::debug([
             '$excessiveFiles' => $excessiveFiles,
         ], 'Files in Filesystem, but not in FAL');
+        */
 
+        $dirsFromSFR = $this->mod1Service->getDirsFromSFR();
         $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
         $this->moduleTemplate->assignMultiple([
             'cntFilesThere' => $cntFilesThere,
@@ -395,9 +408,11 @@ class Mod1Controller extends ActionController
             'filesNotThere' => $filesNotThere,
             'cntExcessiveFiles' => $cntExcessiveFiles,
             'excessiveFiles' => $excessiveFiles,
+            'dirsFromSFR' => $dirsFromSFR,
+            'cntDirsFromSFR' => count($dirsFromSFR)??0,
         ]);
 
-        return $this->moduleTemplate->renderResponse();
+        return $this->moduleTemplate->renderResponse('Mod1/FileCheck');
     }
 
     public function flexformAction(): ResponseInterface
@@ -417,7 +432,7 @@ class Mod1Controller extends ActionController
         $this->moduleTemplate->assign('extConf', $extConf);
         $this->moduleTemplate->assign('ffData', $ff);
         $this->moduleTemplate->assign('cType', $cType);
-        return $this->moduleTemplate->renderResponse();
+        return $this->moduleTemplate->renderResponse('Mod1/Flexform');
     }
 
     public function indexAction(): ResponseInterface
@@ -434,20 +449,24 @@ class Mod1Controller extends ActionController
     {
         $arguments = $this->request->getArguments();
         $type = (isset($arguments['type'])) ? $arguments['type'] : '';
-        //DebuggerUtility::var_dump(['$arguments'=>$arguments,'$type'=>$type], __class__.'->'.__function__.'()');
+        $data = [];
 
         if ($type == '') {
-            $this->moduleTemplate->assign('type', '');
-            $this->moduleTemplate->assign('pluginTypes', $this->getAllPluginTypes());
-            $this->moduleTemplate->assign('contentTypes', $this->getAllContentTypes());
+            $data = [
+                'type' => '',
+                'pluginTypes' => $this->getAllPluginTypes(),
+                'contentTypes' => $this->getAllContentTypes()
+            ];
         } else {
-            $this->moduleTemplate->assign('type', $type);
-            $this->moduleTemplate->assign('pages4PluginType', $this->getPages4PluginType($type));
-            $this->moduleTemplate->assign('pages4ContentType', $this->getPages4ContentType($type));
+            $data = [
+                'type' => $type,
+                'pages4PluginType' => $this->getPages4PluginType($type),
+                'pages4ContentType' => $this->getPages4ContentType($type)
+            ];
         }
-        $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
+        $this->moduleTemplate->assignMultiple(array_merge($data,$this->globalTemplateVars));
 
-        return $this->moduleTemplate->renderResponse();
+        return $this->moduleTemplate->renderResponse('Mod1/Plugins');
     }
 
     public function postAction(): ResponseInterface
@@ -472,7 +491,7 @@ class Mod1Controller extends ActionController
         $this->moduleTemplate->assign('templates', $this->templatesToView($templates));
         $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
 
-        return $this->moduleTemplate->renderResponse();
+        return $this->moduleTemplate->renderResponse('Mod1/RootTemplates');
     }
 
     public function securityCheckAction(): ResponseInterface
@@ -648,7 +667,7 @@ class Mod1Controller extends ActionController
         ]);
         $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
 
-        return $this->moduleTemplate->renderResponse();
+        return $this->moduleTemplate->renderResponse('Mod1/SecurityCheck');
     }
 
     public function syslogAction(): ResponseInterface
@@ -665,7 +684,7 @@ class Mod1Controller extends ActionController
                 $this->syslogService->getLog($logType)
             )
         );
-        return $this->moduleTemplate->renderResponse();
+        return $this->moduleTemplate->renderResponse('Mod1/Syslog');
     }
 
     /**
@@ -724,7 +743,7 @@ class Mod1Controller extends ActionController
         $this->moduleTemplate->assign('content', $content);
         $this->moduleTemplate->assignMultiple($this->globalTemplateVars);
 
-        return $this->moduleTemplate->renderResponse();
+        return $this->moduleTemplate->renderResponse('Mod1/ViewFile');
     }
 
     /**
@@ -735,14 +754,15 @@ class Mod1Controller extends ActionController
     {
         // 1st query: get contentTypes
         $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
-        $res = $query->select('*')
+        $res = $query->select('CType')
             ->from('tt_content')
             ->groupBy('CType')
             ->executeQuery();
         $pT = $res->fetchAllAssociative();
 
         // 2nd query: get count()
-        $res = $query->select('*')
+        $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
+        $res = $query->select('CType')
             ->from('tt_content')
             ->groupBy('CType')
             ->count('CType')
@@ -759,10 +779,10 @@ class Mod1Controller extends ActionController
             if ($p['CType'] == '') continue;
             $contentTypes[] = [
                 'CType' => $p['CType'],
-                'cnt' => $p['cnt'],
+                'cnt' => (!empty($p['cnt'])) ? $p['cnt'] : 0,
             ];
         }
-        //debug(['$query' =>$query, '$res'=>$res, 'pT'=>$pT, '$contentTypes'=>$contentTypes], __line__.':'.__class__.'->'.__function__.'()');
+        //DebugUtility::debug(['$query' =>$query, '$res'=>$res, 'pT'=>$pT, '$contentTypes'=>$contentTypes], __line__.':'.__class__.'->'.__function__.'()');
         asort($contentTypes);
         return $contentTypes;
     }
@@ -827,14 +847,15 @@ class Mod1Controller extends ActionController
     {
         // 1st query: get pluginTypes
         $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
-        $res = $query->select('*')
+        $res = $query->select('list_type')
             ->from('tt_content')
             ->groupBy('list_type')
             ->executeQuery();
         $pT = $res->fetchAllAssociative();
 
         // 2nd query: get count()
-        $res = $query->select('*')
+        $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
+        $res = $query->select('list_type')
             ->from('tt_content')
             ->groupBy('list_type')
             ->count('list_type')
@@ -851,7 +872,7 @@ class Mod1Controller extends ActionController
             if ($p['list_type'] == '') continue;
             $pluginTypes[] = [
                 'list_type' => $p['list_type'],
-                'cnt' => $p['cnt'],
+                'cnt' => (!empty($p['cnt'])) ? $p['cnt'] : 0,
             ];
         }
 
@@ -991,7 +1012,7 @@ class Mod1Controller extends ActionController
                 $queryBuilder->expr()->eq('p.uid', $queryBuilder->quoteIdentifier('c.pid'))
             )
             ->where(
-                $queryBuilder->expr()->eq('list_type', $queryBuilder->createNamedParameter($type, PDO::PARAM_STR))
+                $queryBuilder->expr()->eq('list_type', $queryBuilder->createNamedParameter($type, Connection::PARAM_STR))
             )
             ->executeQuery();
         $plugins = $res->fetchAllAssociative();
@@ -1016,7 +1037,7 @@ class Mod1Controller extends ActionController
                 // This could be improved by handing in a Context object and decide whether hidden pages
                 // Should be linkeable too
             }
-            $siteRoot = $rootLineArray[0]['title'];
+            $siteRoot = (!empty($rootLineArray[0]['title'])) ? $rootLineArray[0]['title'] : '* no title *';
             unset($rootLineArray[0]);
 
             $rLTemp = [];
