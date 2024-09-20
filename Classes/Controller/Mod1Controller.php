@@ -3,7 +3,6 @@
 namespace Taketool\Sysinfo\Controller;
 
 use Doctrine\DBAL\Exception;
-use PDO;
 use Psr\Http\Message\ResponseInterface;
 use Taketool\Sysinfo\Service\DeprecationService;
 use Taketool\Sysinfo\Service\FlexformService;
@@ -16,6 +15,7 @@ use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
+use TYPO3\CMS\Core\Database\Connection;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Domain\Repository\PageRepository;
 use TYPO3\CMS\Core\Exception\Page\PageNotFoundException;
@@ -338,8 +338,8 @@ class Mod1Controller extends ActionController
             ->select(
                 ['*'],
                 $table
-            )->fetchAllAssociative();
-
+            )
+            ->fetchAllAssociative();
 
         $cntFilesThere= count($rows);
         $filesNotThere = [];
@@ -354,9 +354,12 @@ class Mod1Controller extends ActionController
                 : $row['identifier'];
 
             // publicPath is something like '/var/www/html/public'
-            $isFile = @is_file($this->publicPath . '/' . $filePath);
-            if (!$isFile) $filesNotThere[] = $filePath;
-            else $filesIsThere[] = $filePath;
+            $isFile = @is_file($this->publicPath . '/fileadmin' . $filePath);
+            //DebugUtility::debug($this->publicPath . '/fileadmin' . $filePath);
+            if (!$isFile &&  $this->isPathOfInterest($filePath)) {
+                $filesNotThere[] = $filePath;
+            }
+                else $filesIsThere[] = $filePath;
 
             $sysFile[sha1($filePath)] = $filePath;
         }
@@ -752,14 +755,15 @@ class Mod1Controller extends ActionController
     {
         // 1st query: get contentTypes
         $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
-        $res = $query->select('*')
+        $res = $query->select('CType')
             ->from('tt_content')
             ->groupBy('CType')
             ->executeQuery();
         $pT = $res->fetchAllAssociative();
 
         // 2nd query: get count()
-        $res = $query->select('*')
+        $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
+        $res = $query->select('CType')
             ->from('tt_content')
             ->groupBy('CType')
             ->count('CType')
@@ -776,7 +780,7 @@ class Mod1Controller extends ActionController
             if ($p['CType'] == '') continue;
             $contentTypes[] = [
                 'CType' => $p['CType'],
-                'cnt' => $p['cnt'],
+                'cnt' => (!empty($p['cnt'])) ? $p['cnt'] : 0,
             ];
         }
         //DebugUtility::debug(['$query' =>$query, '$res'=>$res, 'pT'=>$pT, '$contentTypes'=>$contentTypes], __line__.':'.__class__.'->'.__function__.'()');
@@ -844,14 +848,15 @@ class Mod1Controller extends ActionController
     {
         // 1st query: get pluginTypes
         $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
-        $res = $query->select('*')
+        $res = $query->select('list_type')
             ->from('tt_content')
             ->groupBy('list_type')
             ->executeQuery();
         $pT = $res->fetchAllAssociative();
 
         // 2nd query: get count()
-        $res = $query->select('*')
+        $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
+        $res = $query->select('list_type')
             ->from('tt_content')
             ->groupBy('list_type')
             ->count('list_type')
@@ -868,7 +873,7 @@ class Mod1Controller extends ActionController
             if ($p['list_type'] == '') continue;
             $pluginTypes[] = [
                 'list_type' => $p['list_type'],
-                'cnt' => $p['cnt'],
+                'cnt' => (!empty($p['cnt'])) ? $p['cnt'] : 0,
             ];
         }
 
@@ -1008,7 +1013,7 @@ class Mod1Controller extends ActionController
                 $queryBuilder->expr()->eq('p.uid', $queryBuilder->quoteIdentifier('c.pid'))
             )
             ->where(
-                $queryBuilder->expr()->eq('list_type', $queryBuilder->createNamedParameter($type, PDO::PARAM_STR))
+                $queryBuilder->expr()->eq('list_type', $queryBuilder->createNamedParameter($type, Connection::PARAM_STR))
             )
             ->executeQuery();
         $plugins = $res->fetchAllAssociative();
@@ -1033,7 +1038,7 @@ class Mod1Controller extends ActionController
                 // This could be improved by handing in a Context object and decide whether hidden pages
                 // Should be linkeable too
             }
-            $siteRoot = $rootLineArray[0]['title'];
+            $siteRoot = (!empty($rootLineArray[0]['title'])) ? $rootLineArray[0]['title'] : '* no title *';
             unset($rootLineArray[0]);
 
             $rLTemp = [];
@@ -1197,6 +1202,24 @@ class Mod1Controller extends ActionController
     protected function getBackendUser(): BackendUserAuthentication
     {
         return $GLOBALS['BE_USER'];
+    }
+
+    private function isPathOfInterest(mixed $filePath): bool
+    {
+        $notOfInterest = [
+            '/typo3/',
+            '/uploads/',
+            '/fileadmin/templates/',
+            '/fileadmin/_temp_/',
+            '/fileadmin/powermail_upload/',
+            '/fileadmin/content/dekanat',
+            '/typo3conf/ext/',
+            '/fileadmin/T3D__',
+        ];
+        foreach($notOfInterest as $n) {
+            if(str_starts_with($filePath, $n)) return false;
+        }
+        return true;
     }
 
 }
