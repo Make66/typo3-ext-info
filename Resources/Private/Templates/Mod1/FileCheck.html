@@ -35,13 +35,18 @@
     </f:if>
 </f:comment>
 
-    <h5>List {cntDirsFromSFR} directories required</h5>
+    <h5>List missing</h5>
+    <f:for key="dir" as="cnt" each="{filesNotThere}">
+        {dir} ({cnt})<br>
+    </f:for>
+
+    <h5>List directories required</h5>
     <f:if condition="{cntDirsFromSFR} == 0">
         <f:then>
             <p><core:icon identifier="actions-check-circle-alt" size="small" /> There are no files in sys_file.</p>
         </f:then>
         <f:else>
-            <p><core:icon identifier="install-check-extables" size="small" /> {$dirsFromSFR} directories required from sys_file_reference:</p>
+            <p><core:icon identifier="actions-info-circle" size="small" /> {cntDirsFromSFR} directories required from sys_file_reference:</p>
             <f:for key="dir" as="cnt" each="{dirsFromSFR}">
                 {dir} ({cnt})<br>
             </f:for>
