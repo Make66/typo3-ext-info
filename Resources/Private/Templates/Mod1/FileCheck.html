@@ -6,7 +6,7 @@
 <f:layout name="Module"/>
 
 <f:section name="Content">
-
+<f:comment>
     <h1>File Check</h1>
     <h5>Compare {cntFilesThere} sys_file entries to filesystem entries</h5>
     <f:if condition="{cntFilesNotThere} == 0">
@@ -33,6 +33,28 @@
             </f:for>
         </f:else>
     </f:if>
+</f:comment>
+
+    <h5>List missing</h5>
+    <f:for key="dir" as="cnt" each="{filesNotThere}">
+        {dir} ({cnt})<br>
+    </f:for>
+
+    <h5>List directories required</h5>
+    <f:if condition="{cntDirsFromSFR} == 0">
+        <f:then>
+            <p><core:icon identifier="actions-check-circle-alt" size="small" /> There are no files in sys_file.</p>
+        </f:then>
+        <f:else>
+            <p><core:icon identifier="actions-info-circle" size="small" /> {cntDirsFromSFR} directories required from sys_file_reference:</p>
+            <f:for key="dir" as="cnt" each="{dirsFromSFR}">
+                {dir} ({cnt})<br>
+            </f:for>
+        </f:else>
+    </f:if>
+
+
+
 
 </f:section>
 </html>
