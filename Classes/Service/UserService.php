@@ -108,10 +108,12 @@ class UserService
         $res = '';
         $users = [];
         foreach ($this->users as $u) {
-            $userGroups = explode(',', $u['usergroup']);
-            if (in_array($gUid, $userGroups) ) $users[] = ($u['admin'] == 1)
-                ? '<span class=".text-primary">' . $u['username'] . '</span>'
-                : $u['username'] . ' (' . $u['realName'] . ')';
+            if (!empty($u['usergroup'])) {
+                $userGroups = explode(',', $u['usergroup']);
+                if (in_array($gUid, $userGroups) ) $users[] = ($u['admin'] == 1)
+                    ? '<span class=".text-primary">' . $u['username'] . '</span>'
+                    : $u['username'] . ' (' . $u['realName'] . ')';
+            }
         }
         asort($users);
         if ($users) return '<ul><li>' . implode('<br>', $users) . '</li></ul>';

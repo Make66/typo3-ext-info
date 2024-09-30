@@ -1,0 +1,47 @@
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en"
+      xmlns:f="http://typo3.org/ns/TYPO3/Fluid/ViewHelpers"
+      data-namespace-typo3-fluid="true">
+
+<f:layout name="Module"/>
+
+<f:section name="Content">
+
+    <h1>EXT:sysinfo</h1>
+    <p>Please select an option to continue.</p>
+
+    <f:link.action controller="Mod1" action="user"><h5>Groups and User</h5></f:link.action>
+    <p>Show an overview of groups and their users</p>
+
+    <f:link.action controller="Mod1" action="flexform"><h5>Flexform Insight</h5></f:link.action>
+    <p>Show some migration relevant values for tt_content.pi_flexform</p>
+
+    <f:link.action controller="Mod1" action="deprecation"><h5>Deprecations</h5></f:link.action>
+    <p>Show deprecations non-redundant</p>
+
+    <f:link.action controller="Mod1" action="fileCheck"><h5>File Check</h5></f:link.action>
+    <p>- Files in FAL, but not in filesystem<br>
+        - Files in Filesystem, but not in FAL<br>
+        (May takes a while if you have a huge installation)
+    </p>
+
+    <f:link.action controller="Mod1" action="syslog"><h5>Syslog</h5></f:link.action>
+    <p>Top 20 system errors by quantity</p>
+
+    <f:link.action controller="Mod1" action="securityCheck"><h5>Security Check</h5></f:link.action>
+    <p>various security checks</p>
+
+    <f:link.action controller="Sha1" action="shaOne"><h5>Typo3 SHA1</h5></f:link.action>
+    <p>Check for altered files (may not be up-to-date)</p>
+
+    <f:link.action controller="Mod1" action="plugins"><h5>Plugins</h5></f:link.action>
+    <p>Find CType and list_type in use</p>
+
+    <f:link.action controller="Mod1" action="allTemplates"><h5>Templates</h5></f:link.action>
+    <p>Find root or all templates</p>
+
+    <f:link.action controller="Mod1" action="checkDomains"><h5>robots.txt, sitemap.xml and 404</h5></f:link.action>
+    <p>Access pages that should be there (Takes a while if you have many sites)</p>
+
+</f:section>
+
+</html>
