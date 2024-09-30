@@ -32,6 +32,7 @@ return [
                 'checkDomains','deleteFile','plugins','allTemplates','rootTemplates','viewFile'
             ],
             Sha1Controller::class => ['shaOne','shaOneJs','shaOnePhp'],
+            //CrawlController::class => ['index','exception','link'],
             CurlController::class => ['index'],
         ],
     ],
