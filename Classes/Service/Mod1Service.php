@@ -72,6 +72,7 @@ class Mod1Service extends ActionController
         $buttonBar = $moduleTemplate->getDocHeaderComponent()->getButtonBar();
         foreach([
                     'index' => 'Mod1:Home:actions-house',
+                    'user' => 'Mod1:User:status-user-group-backend',
                     'flexform' => 'Mod1:Flexform:actions-list',
                     //'crawler' => 'Crawl:Crawler:actions-debug',
                     'deprecation' => 'Mod1:Deprecations:actions-exclamation-triangle',
