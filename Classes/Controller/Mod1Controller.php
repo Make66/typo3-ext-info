@@ -3,11 +3,13 @@
 namespace Taketool\Sysinfo\Controller;
 
 use Doctrine\DBAL\Exception;
+use http\Client\Curl\User;
 use Psr\Http\Message\ResponseInterface;
 use Taketool\Sysinfo\Service\DeprecationService;
 use Taketool\Sysinfo\Service\FlexformService;
 use Taketool\Sysinfo\Service\Mod1Service;
 use Taketool\Sysinfo\Service\SyslogService;
+use Taketool\Sysinfo\Service\UserService;
 use Taketool\Sysinfo\Utility\SysinfoUtility;
 use TYPO3\CMS\Backend\Attribute\AsController;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
@@ -182,7 +184,8 @@ class Mod1Controller extends ActionController
         protected readonly PageRenderer $pageRenderer,
         protected readonly PageRepository $pageRepository,
         protected readonly SiteConfiguration $siteConfiguration,
-        protected readonly SyslogService $syslogService
+        protected readonly SyslogService $syslogService,
+        protected readonly UserService $userService
     ){
         $this->backendUserAuthentication = $GLOBALS['BE_USER'];
     }
@@ -721,6 +724,14 @@ class Mod1Controller extends ActionController
             ->withArguments(['logType' => $logType]);
     }
 
+    public function userAction(): ResponseInterface
+    {
+        $groupTree = $this->userService->buildGroupTree();
+        $this->moduleTemplate->assignMultiple([
+            'tree' => $groupTree,
+        ]);
+        return $this->moduleTemplate->renderResponse('Mod1/User');
+    }
     /**
      * @param string $file
      * @return ResponseInterface
