@@ -168,6 +168,9 @@ class Mod1Controller extends ActionController
             '12.4.15' => ['size' => 815],
             '12.4.16' => ['size' => 815],
             '12.4.17' => ['size' => 815],
+            '12.4.18' => ['size' => 815],
+            '12.4.19' => ['size' => 815],
+            '12.4.20' => ['size' => 815],
         ]
     ];
 
@@ -1214,4 +1217,21 @@ class Mod1Controller extends ActionController
         return $GLOBALS['BE_USER'];
     }
 
+    private function isPathOfInterest(mixed $filePath): bool
+    {
+        $notOfInterest = [
+            '/typo3/',
+            '/uploads/',
+            '/fileadmin/templates/',
+            '/fileadmin/_temp_/',
+            '/fileadmin/powermail_upload/',
+            '/fileadmin/content/dekanat',
+            '/typo3conf/ext/',
+            '/fileadmin/T3D__',
+        ];
+        foreach($notOfInterest as $n) {
+            if(str_starts_with($filePath, $n)) return false;
+        }
+        return true;
+    }
 }
