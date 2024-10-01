@@ -13,8 +13,10 @@ use TYPO3\CMS\Extbase\Mvc\Web\Routing\UriBuilder;
 
 class Mod1Service extends ActionController
 {
+    protected ConnectionPool $connectionPool;
+
     public function __construct(
-        protected readonly ConnectionPool $connectionPool,
+        ConnectionPool $connectionPool
     )
     {}
 
