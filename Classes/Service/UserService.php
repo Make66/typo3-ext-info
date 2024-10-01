@@ -9,6 +9,7 @@ use TYPO3\CMS\Core\Utility\DebugUtility;
 class UserService
 {
     private array $allGroups = [];
+    private int $subGroupLevel = 0;
     private array $users;
 
     public function __construct(
@@ -39,6 +40,7 @@ class UserService
         //DebugUtility::debug($this->allGroups, 'allGroups');
         //DebugUtility::debug($parentGroups, '$parentGroups');
         foreach($this->allGroups as $uid => $pG) {
+            $this->subGroupLevel = 0;
             $result .= '<ul>' . $this->getSubGroups($uid) . '</ul>';
         }
         return $result;
@@ -46,15 +48,25 @@ class UserService
 
     private function getSubGroups($gUid)
     {
+        $this->subGroupLevel += 1;
         //DebugUtility::debug($this->allGroups[$gUid]['subgroup'],$gUid.':'.$this->allGroups[$gUid]['title']);
         if ($this->allGroups[$gUid]['subgroup'] == '') {
+            $this->subGroupLevel -= 1;
             return '<li>' . $gUid . ':<b>' . $this->allGroups[$gUid]['title'] . '</b><br>' . $this->usersFromGroups($gUid) . '</li>';
         }
         $res = '<li>' . $gUid . ':<b>' . $this->allGroups[$gUid]['title']  . '</b><br>'
             . $this->usersFromGroups($gUid)
             . '</li><ul>';
-        foreach (explode(',', $this->allGroups[$gUid]['subgroup']) as $gUid) {
-            $res .= $this->getSubGroups($gUid);
+        if ($this->subGroupLevel <10) {
+            foreach (explode(',', $this->allGroups[$gUid]['subgroup']) as $uid) {
+                if ((int)$uid == $gUid) {
+                    $res .= '<span class="text-primary">** self reference detected **</span>';
+                } else {
+                    $res .= $this->getSubGroups((int)$uid);
+                }
+            }
+        } else {
+            $res .= '<span class="text-primary">** maximum level reached **</span>';
         }
 
         return $res . '</ul>';
