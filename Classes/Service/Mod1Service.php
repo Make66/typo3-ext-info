@@ -18,7 +18,9 @@ class Mod1Service extends ActionController
     public function __construct(
         ConnectionPool $connectionPool
     )
-    {}
+    {
+        $this->connectionPool = $connectionPool;
+    }
 
     /**
      * @throws Exception

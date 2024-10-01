@@ -16,7 +16,9 @@ class UserService
     public function __construct(
         ConnectionPool $connectionPool
     )
-    {}
+    {
+        $this->connectionPool = $connectionPool;
+    }
 
     /**
      * @throws Exception
