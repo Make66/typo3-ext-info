@@ -11,9 +11,10 @@ class UserService
     private array $allGroups = [];
     private int $subGroupLevel = 0;
     private array $users;
+    protected ConnectionPool $connectionPool;
 
     public function __construct(
-        protected readonly ConnectionPool $connectionPool,
+        ConnectionPool $connectionPool
     )
     {}
 
@@ -46,7 +47,7 @@ class UserService
         return $result;
     }
 
-    private function getSubGroups(int $gUid)
+    private function getSubGroups(int $gUid): string
     {
         $this->subGroupLevel += 1;
         //DebugUtility::debug($this->allGroups[$gUid]['subgroup'],$gUid.':'.$this->allGroups[$gUid]['title']);
@@ -117,7 +118,6 @@ class UserService
 
     private function usersFromGroups($gUid): string
     {
-        $res = '';
         $users = [];
         foreach ($this->users as $u) {
             if (!empty($u['usergroup'])) {
