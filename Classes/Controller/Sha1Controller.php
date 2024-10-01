@@ -233,8 +233,10 @@ class Sha1Controller extends ActionController
                         // create final array fName => sha1
                         foreach($gzArray as $line)
                         {
-                            $l = explode('  ', $line);
-                            $baseLineFiles[$l[1]] = $l[0];
+                            if (!empty($line)) {
+                                $l = explode('  ', $line);
+                                $baseLineFiles[$l[1]] = $l[0];
+                            }
                         }
                         $gzArray = null;
                         unset($gzArray);

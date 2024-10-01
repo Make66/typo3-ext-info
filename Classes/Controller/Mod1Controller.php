@@ -11,6 +11,7 @@ use Taketool\Sysinfo\Service\DeprecationService;
 use Taketool\Sysinfo\Service\FlexformService;
 use Taketool\Sysinfo\Service\Mod1Service;
 use Taketool\Sysinfo\Service\SyslogService;
+use Taketool\Sysinfo\Service\UserService;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
@@ -169,6 +170,8 @@ class Mod1Controller extends ActionController
             '10.4.37' => ['size' => 987],
             '11.5.36' => ['size' => 815],
             '11.5.37' => ['size' => 815],
+            '11.5.38' => ['size' => 815],
+            '11.5.39' => ['size' => 815],
         ]
     ];
 
@@ -183,6 +186,7 @@ class Mod1Controller extends ActionController
     protected PageRepository $pageRepository;
     protected SiteConfiguration $siteConfiguration;
     protected SyslogService $syslogService;
+    protected UserService $userService;
     private \TYPO3\CMS\Core\Core\ApplicationContext $context;
     private string $projectPath;
 
@@ -195,7 +199,8 @@ class Mod1Controller extends ActionController
         Mod1Service $mod1Service,
         PageRepository $pageRepository,
         SiteConfiguration $siteConfiguration,
-        SyslogService $syslogService
+        SyslogService $syslogService,
+        UserService $userService
     )
     {
         $this->backendUserAuthentication = $GLOBALS['BE_USER'];
@@ -208,6 +213,7 @@ class Mod1Controller extends ActionController
         $this->pageRepository = $pageRepository;
         $this->siteConfiguration = $siteConfiguration;
         $this->syslogService = $syslogService;
+        $this->userService = $userService;
     }
 
     /**
@@ -736,6 +742,16 @@ class Mod1Controller extends ActionController
 
         return (new ForwardResponse('syslog'))
             ->withArguments(['logType' => $logType]);
+    }
+
+    public function userAction(): ResponseInterface
+    {
+        $groupTree = $this->userService->buildGroupTree();
+        $this->view->assignMultiple([
+            'tree' => $groupTree,
+        ]);
+        $this->moduleTemplate->setContent($this->view->render());
+        return $this->htmlResponse($this->moduleTemplate->renderContent());
     }
 
     /**
