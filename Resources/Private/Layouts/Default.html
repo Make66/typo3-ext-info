@@ -3,11 +3,30 @@
     xmlns:be="http://typo3.org/ns/TYPO3/CMS/Backend/ViewHelpers"
     data-namespace-typo3-fluid="true">
 
-<f:be.container>
-  <div class="typo3-fullDoc">
-    <div id="typo3-docheader" style="position: relative; margin-top: -81px; z-index: 301">
-      <div class="typo3-docheader-functions" style="padding: 1em 0;">
-        <div class="left">
+<be:moduleLayout>
+  <f:be.pageRenderer
+      includeRequireJsModules="{
+            0:'TYPO3/CMS/Backend/ContextMenu',
+            1:'TYPO3/CMS/Backend/Modal'
+        }"
+  />
+  <be:moduleLayout.menu identifier="SysinfoModuleMenu">
+
+    <be:moduleLayout.menuItem label="Home"            uri="{f:uri.action(controller: 'Mod1', action: 'index')}"/>
+    <be:moduleLayout.menuItem label="File Check"      uri="{f:uri.action(controller: 'Mod1', action: 'fileCheck')}"/>
+    <be:moduleLayout.menuItem label="Security Check"  uri="{f:uri.action(controller: 'Mod1', action: 'securityCheck')}"/>
+    <be:moduleLayout.menuItem label="SysLog"          uri="{f:uri.action(controller: 'Mod1', action: 'syslog')}"/>
+    <be:moduleLayout.menuItem label="SHA1"            uri="{f:uri.action(controller: 'Sha1', action: 'shaOne')}"/>
+    <be:moduleLayout.menuItem label="Plugins"         uri="{f:uri.action(controller: 'Mod1', action: 'plugins')}"/>
+    <be:moduleLayout.menuItem label="Root Templates"  uri="{f:uri.action(controller: 'Mod1', action: 'rootTemplates')}"/>
+    <be:moduleLayout.menuItem label="All Templates"   uri="{f:uri.action(controller: 'Mod1', action: 'allTemplates')}"/>
+    <be:moduleLayout.menuItem label="robots.txt, sitemap.xml & 404" uri="{f:uri.action(controller: 'Mod1', action: 'checkDomains')}"/>
+    <f:if condition="{isExtTool}">
+      <be:moduleLayout.menuItem label="Config records" uri="{f:uri.action(controller: 'Mod1', action: 'configSizes')}"/>
+    </f:if>
+
+  </be:moduleLayout.menu>
+  <f:comment>
           <span class="btn btn-default"><f:link.action action="index">Home</f:link.action></span>
           <span class="btn btn-default"><f:link.action action="fileCheck">File Check</f:link.action></span>
           <span class="btn btn-default"><f:link.action action="securityCheck">Security Check</f:link.action></span>
@@ -17,26 +36,19 @@
           <span class="btn btn-default"><f:link.action action="rootTemplates">Root Templates</f:link.action></span>
           <span class="btn btn-default"><f:link.action action="allTemplates">All Templates</f:link.action></span>
           <span class="btn btn-default"><f:link.action action="checkDomains">robots.txt, sitemap.xml & 404</f:link.action></span>
-          <f:if condition="{isExtTool}">
-            <span class="btn btn-default"><f:link.action action="configSizes">Config records</f:link.action></span>
-          </f:if>
-        </div>
+
         <div class="right">
           <f:if condition="{isComposerMode}">
             <f:then><span title="Dieses Typo3 ist eine Composer basierende Installation"><core:icon identifier="content-info"/> Composer Mode</span></f:then>
             <f:else><span title="Dieses Typo3 ist keine Composer Installaition"><core:icon identifier="content-info"/>Legacy Mode</span></f:else>
           </f:if>
         </div>
-      </div>
-
-    </div>
-    <div id="typo3-docbody">
-      <div id="typo3-inner-docbody" style="margin: 2em;">
+  </f:comment>
+    <div id="beuser-main-content">
         <f:flashMessages/>
         <f:render section="Content"/>
-      </div>
     </div>
-  </div>
-</f:be.container>
+
+</be:moduleLayout>
 
 </html>

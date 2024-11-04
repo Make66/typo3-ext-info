@@ -2,12 +2,12 @@
 
 namespace Taketool\Sysinfo\Controller;
 
+use Doctrine\DBAL\Exception;
 use PDO;
 use Taketool\Sysinfo\Domain\Repository\LogEntryRepository;
 use Taketool\Sysinfo\Service\SyslogService;
 use Taketool\Sysinfo\Utility\SysinfoUtility;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
-use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
 use TYPO3\CMS\Core\Configuration\SiteConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Database\ConnectionPool;
@@ -22,7 +22,6 @@ use TYPO3\CMS\Core\Utility\ExtensionManagementUtility;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\RootlineUtility;
 use TYPO3\CMS\Extbase\Mvc\Controller\ActionController;
-use TYPO3\CMS\Extbase\Mvc\Exception\StopActionException;
 use TYPO3\CMS\Core\Messaging\AbstractMessage;
 
 /***************************************************************
@@ -170,10 +169,6 @@ class Mod1Controller extends ActionController
     protected SiteConfiguration $siteConfiguration;
     protected SyslogService $syslogService;
 
-    protected $defaultViewObjectName = \TYPO3\CMS\Backend\View\BackendTemplateView::class;
-    private \TYPO3\CMS\Core\Core\ApplicationContext $context;
-    private string $projectPath;
-
     public function __construct(
         ConnectionPool $connectionPool,
         Environment $environment,
@@ -198,12 +193,12 @@ class Mod1Controller extends ActionController
      * initialize action
      * @throws PackageStatesUnavailableException
      */
-    public function initializeAction()
+    public function initializeAction(): void
     {
         $this->isComposerMode = $this->environment->isComposerMode();
-        $this->context = $this->environment->getContext();
+        $context = $this->environment->getContext();
         $this->publicPath = $this->environment->getPublicPath();
-        $this->projectPath = $this->environment->getProjectPath();
+        $projectPath = $this->environment->getProjectPath();
         $this->extPath = $this->environment->getExtensionsPath() . '/' . self::EXTKEY;
         $this->configPath = $this->publicPath . '/typo3conf'; //$environment->getConfigPath();
         $this->t3version = GeneralUtility::makeInstance(Typo3Version::class)->getVersion();
@@ -211,8 +206,8 @@ class Mod1Controller extends ActionController
         // global template information
         $this->globalTemplateVars = [
             't3version' => $this->t3version,
-            'context' => $this->context,
-            'projectPath' => $this->projectPath,
+            'context' => $context,
+            'projectPath' => $projectPath,
             'publicPath' => $this->publicPath,
             'typo3Path' => $this->publicPath . '/typo3', // up to T3v11, changes in T3v12
             'isComposerMode' => $this->isComposerMode,
@@ -316,15 +311,15 @@ class Mod1Controller extends ActionController
             $filePath = str_replace($this->publicPath, '', $info->getPathname());
             if (!array_key_exists(sha1($filePath), $sysFile))
             {
-                if (str_contains($filePath, '/fileadmin/kunden/mbauer/panorama/')) continue;
-                if (str_contains($filePath, '/Galerie/')) continue;
-                if (str_contains($filePath, '/fileadmin/templates/')) continue;
-                if (str_contains($filePath, '/_assets/')) continue;
-                if (str_contains($filePath, '/_processed_/')) continue;
-                if (str_contains($filePath, '/typo3')) continue;
-                if (str_contains($filePath, '/index.html')) continue;
-                if (str_contains($filePath, '/index.php')) continue;
-                if (str_contains($filePath, '/.htaccess')) continue;
+                if (strpos($filePath, '/fileadmin/kunden/mbauer/panorama/')) continue;
+                if (strpos($filePath, '/Galerie/')) continue;
+                if (strpos($filePath, '/fileadmin/templates/')) continue;
+                if (strpos($filePath, '/_assets/')) continue;
+                if (strpos($filePath, '/_processed_/')) continue;
+                if (strpos($filePath, '/typo3')) continue;
+                if (strpos($filePath, '/index.html')) continue;
+                if (strpos($filePath, '/index.php')) continue;
+                if (strpos($filePath, '/.htaccess')) continue;
                 $excessiveFiles[sha1($filePath)] = $filePath;
             }
         }
@@ -593,7 +588,7 @@ class Mod1Controller extends ActionController
     }
 
     /**
-     * @throws StopActionException
+     *
      */
     public function syslogDeleteAction(): void
     {
@@ -607,21 +602,19 @@ class Mod1Controller extends ActionController
             $cntDeleted = $this->syslogService->deleteByLogType((int)$logType);
             $this->addFlashMessage(
                 $cntDeleted . ' entries of type ' . $logType . ' deleted.',
-                'table sys_log',
-                AbstractMessage::OK,
-                false);
+                'table sys_log'
+            );
         } else {
             if (!empty($uidList))
             {
                 $cntDeleted = $this->syslogService->deleteByUidList($uidList);
                 $this->addFlashMessage(
                     $cntDeleted . ' entries deleted.',
-                    'table sys_log',
-                    AbstractMessage::OK,
-                    false);
+                    'table sys_log'
+                );
             }
         }
-        $this->forward(
+        $this->redirect(
             'syslog',
             'Mod1',
             self::EXTKEY,
@@ -786,6 +779,7 @@ class Mod1Controller extends ActionController
      * @param string $showAll
      * @param bool $filterNoCache
      * @return array
+     * @throws Exception
      */
     private function getAllTemplates(bool $rootOnly = true, bool $filterNoCache = false): array
     {
