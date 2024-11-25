@@ -966,14 +966,24 @@ class Mod1Controller extends ActionController
      */
     private function getPages4ContentType($type): array
     {
-        $query = $this->connectionPool->getQueryBuilderForTable('tt_content');
-        $res = $query->select('*')
-            ->from('tt_content')
-            ->where($query->expr()->eq('CType', $query->createNamedParameter($type)))
+        $queryBuilder = $this->connectionPool->getQueryBuilderForTable('tt_content');
+        $queryBuilder->getRestrictions()
+            ->removeAll();
+        $res = $queryBuilder
+            ->select('c.uid', 'c.pid', 'c.hidden as cHidden', 'c.deleted as cDeleted',
+                'p.title as pTitle', 'p.hidden as pHidden', 'p.deleted as pDeleted')
+            ->from('tt_content', 'c')
+            ->join(
+                'c',
+                'pages',
+                'p',
+                $queryBuilder->expr()->eq('p.uid', $queryBuilder->quoteIdentifier('c.pid'))
+            )
+            ->where($queryBuilder->expr()->eq('CType', $queryBuilder->createNamedParameter($type)))
             ->executeQuery();
         $plugins = $res->fetchAllAssociative();
 
-        // we need uid and pid and page rootpath
+        // we need uid and pid and page rootpath and page hidden/deleted info
         $pagesOfContentType = [];
         $rootLineArray = [];
         foreach ($plugins as $plugin) {
@@ -984,7 +994,10 @@ class Mod1Controller extends ActionController
                 // This could be improved by handing in a Context object and decide whether hidden pages
                 // Should be linkeable too
             }
-            $siteRoot = $rootLineArray[0]['title'];
+            $siteRoot = (!empty($rootLineArray[0]['title']))
+                ? $rootLineArray[0]['title']
+                : '* no title *';
+
             unset($rootLineArray[0]);
             $rLTemp = [];
             foreach ($rootLineArray as $rL) {
@@ -995,13 +1008,15 @@ class Mod1Controller extends ActionController
             $pagesOfContentType[] = [
                 'uid' => $plugin['uid'],
                 'pid' => $plugin['pid'],
-                'hidden' => $plugin['hidden'],
-                'deleted' => $plugin['deleted'],
+                'cHidden' => $plugin['cHidden'],
+                'cDeleted' => $plugin['cDeleted'],
+                'pHidden' => $plugin['pHidden'],
+                'pDeleted' => $plugin['pDeleted'],
                 'siteroot' => $siteRoot,
                 'rootline' => $rootLine,
             ];
         }
-        //DebuggerUtility::var_dump(['$type'=>$type, '$pagesOfContentType'=>$pagesOfContentType], __class__.'->'.__function__.'()');
+
         return $pagesOfContentType;
     }
 
