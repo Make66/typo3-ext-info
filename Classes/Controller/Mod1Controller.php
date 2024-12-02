@@ -1005,7 +1005,7 @@ class Mod1Controller extends ActionController
             ->removeAll();
         $res = $queryBuilder
             ->select('c.uid', 'c.pid', 'c.hidden as cHidden', 'c.deleted as cDeleted',
-                'p.title as pTitle', 'p.hidden as pHidden', 'p.deleted as pDeleted')
+                'p.title as pTitle', 'p.hidden as pHidden', 'p.deleted as pDeleted', 'sfr.uid_local')
             ->from('tt_content', 'c')
             ->join(
                 'c',
@@ -1013,14 +1013,29 @@ class Mod1Controller extends ActionController
                 'p',
                 $queryBuilder->expr()->eq('p.uid', $queryBuilder->quoteIdentifier('c.pid'))
             )
+            ->join(
+                'c',
+                'sys_file_reference',
+                'sfr',
+                $queryBuilder->expr()->eq('sfr.uid_foreign', $queryBuilder->quoteIdentifier('c.uid'))
+            )
             ->where($queryBuilder->expr()->eq('CType', $queryBuilder->createNamedParameter($type)))
             ->executeQuery();
         $plugins = $res->fetchAllAssociative();
 
+        // make results unique again and collect sfr entries to new field
+        $p = [];
+        foreach ($plugins as $plugin) {
+            if (empty($p[$plugin['uid']])) $p[$plugin['uid']] = $plugin;
+            $p[$plugin['uid']]['sys_file'][] = $plugin['uid_local'];
+            //if ($plugin['uid']==29004) \nn\t3::debug($p[$plugin['uid']]);
+        }
+        //\nn\t3::debug($p);
+
         // we need uid and pid and page rootpath and page hidden/deleted info
         $pagesOfContentType = [];
         $rootLineArray = [];
-        foreach ($plugins as $plugin) {
+        foreach ($p as $plugin) {
             try {
                 $rootLineArray = GeneralUtility::makeInstance(RootlineUtility::class, $plugin['pid'])->get();
             } catch (PageNotFoundException $ex) {
@@ -1048,6 +1063,7 @@ class Mod1Controller extends ActionController
                 'pDeleted' => $plugin['pDeleted'],
                 'siteroot' => $siteRoot,
                 'rootline' => $rootLine,
+                'sys_file' => $plugin['sys_file'],
             ];
         }
 

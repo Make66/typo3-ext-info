@@ -6,20 +6,25 @@
 <f:layout name="Default"/>
 
 <f:section name="Content">
-
-  <h1>Plugin Info</h1>
-  <p>This tool finds all plugins that have a "list_type" configuration in tt_content.</p>
+  <f:if condition="{pages4PluginType}">
+    <f:then><f:variable name="title">Plugin</f:variable></f:then>
+    <f:else><f:variable name="title">Content Element</f:variable></f:else>
+  </f:if>
+  <h1>{title} Info</h1>
+  <p>This tool finds all content elements by their "CType" or plugins by their "list_type" in tt_content.</p>
 
   <f:if condition="{type}">
     <f:then>
-      <h2>Plugin "{type}" found here:</h2>
+      <h2>{title} "{type}" found here:</h2>
       <table class="table">
         <tr>
           <th>d|h uid</th>
           <th>d|h pid</th>
           <th>siteroot</th>
           <th>rootline</th>
+          <th>sys_file</th>
         </tr>
+
         <f:for each="{pages4PluginType}" as="plugin">
           <tr>
             <td>
@@ -41,11 +46,9 @@
               </f:if>
               {plugin.uid}
             </td>
-
             <f:comment>{f:if condition({plugin.hidden then:'apps-pagetree-page-default', else:'apps-pagetree-drag-place-denied
               ')}
             </f:comment>
-
             <td>
               <f:if condition="{plugin.pDeleted}">
                 <f:then>
@@ -70,6 +73,8 @@
             <td>
               <f:be.link parameters="{id: plugin.pid}" route="web_layout">/{plugin.rootline}</f:be.link>
             </td>
+
+            <td></td>
           </tr>
         </f:for>
 
@@ -113,6 +118,12 @@
             <td>{plugin.siteroot}</td>
             <td>
               <f:be.link parameters="{id: plugin.pid}" route="web_layout">{plugin.rootline}</f:be.link>
+            </td>
+            <td>
+              <f:count subject="{plugin.sys_file}" />x&nbsp;
+              <span
+                  title="{f:if(condition: i.isLast, then: '{x}', else: '{x},') -> f:for(each: '{plugin.sys_file}', as: 'x', iteration: 'i')}"
+              ><core:icon identifier="actions-info-circle" size="small" /></span>
             </td>
           </tr>
         </f:for>
